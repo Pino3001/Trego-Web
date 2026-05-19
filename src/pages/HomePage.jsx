@@ -89,6 +89,7 @@ export default function HomePage() {
         onBusquedaChange={setBusqueda}
         onBuscar={handleBuscar}
         onAbrirFiltros={() => setFiltrosAbiertos(true)}
+        abrirPerfil={true}
       />
 
       <main className="mx-auto max-w-[1100px] px-4 py-5 sm:px-6 sm:py-6">
