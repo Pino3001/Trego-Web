@@ -40,6 +40,10 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-    "allowJs": true,          // Permite que coexistan archivos .js
-  }
+    "allowJs": true // Permite que coexistan archivos .js
+  },
+  "include": [
+    "src/**/*", // incluye toda la carpeta src
+    "src/images.d.ts" 
+  ]
 }
