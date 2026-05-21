@@ -2,18 +2,18 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 
 // Firebase imports — ajustá la ruta a tu configuración
-import { auth, googleProvider } from "../../firebase.config.js";
+import { auth, googleProvider } from "../../../firebase.config.js";
 import {
   signInWithPopup,
   signInWithPhoneNumber,
   RecaptchaVerifier,
 } from "firebase/auth";
 import type { ConfirmationResult } from "firebase/auth";
-import Header from "../components/Header.js";
-import logo from "../assets/bolsa-trego.svg";
-import OTPInput from "../components/inicio/OTPInput.js";
-import { GoogleIcon, SMSIcon } from "../components/icons.jsx";
-import { apiService } from "../api/api.js";
+import Header from "../../components/Header.js";
+import logo from "../../assets/bolsa-trego.svg";
+import OTPInput from "../../components/inicio/OTPInput.js";
+import { GoogleIcon, SMSIcon } from "../../components/icons.jsx";
+import { apiService } from "../../api/api.js";
 
 // ─── Tipos de estados del inicio ───────────────────────────────────────────────
 

@@ -1,5 +1,8 @@
 import { useNavigate } from "react-router";
 import Header from "../components/Header.js";
+import trego from "../assets/tregoCliente.svg"
+import tregoRestaurante from "../assets/tregoRestaurante.svg"
+import tregoAdmin from "../assets/tregoAdminy.svg"
 
 type Rol = {
   id: string;
@@ -23,13 +26,7 @@ const roles: Rol[] = [
     bg: "hover:bg-orange-50",
     border: "hover:border-orange-400",
     iconBg: "bg-orange-100 group-hover:bg-orange-200",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-orange-500">
-        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-        <line x1="3" y1="6" x2="21" y2="6" />
-        <path d="M16 10a4 4 0 0 1-8 0" />
-      </svg>
-    ),
+    icon: <img src={trego} alt="Trego" className="w-14 h-14" />,
   },
   {
     id: "restaurante",
@@ -40,28 +37,18 @@ const roles: Rol[] = [
     bg: "hover:bg-emerald-50",
     border: "hover:border-emerald-400",
     iconBg: "bg-emerald-100 group-hover:bg-emerald-200",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-emerald-600">
-        <path d="M3 11l19-9-9 19-2-8-8-2z" />
-      </svg>
-    ),
+    icon: <img src={tregoRestaurante} alt="Trego" className="w-14 h-14" />,
   },
   {
     id: "administrador",
     label: "Administrador",
     descripcion: "Accedé al panel de control de la plataforma.",
-    ruta: "/login/admin",
+    ruta: "/login/Administrador",
     acento: "text-sky-600",
     bg: "hover:bg-sky-50",
     border: "hover:border-sky-400",
     iconBg: "bg-sky-100 group-hover:bg-sky-200",
-    icon: (
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8 text-sky-600">
-        <circle cx="12" cy="8" r="4" />
-        <path d="M6 20v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
-        <path d="M19 8h2M3 8h2M12 3V1M12 15v-2" />
-      </svg>
-    ),
+    icon: <img src={tregoAdmin} alt="Trego" className="w-14 h-14" />,
   },
 ];
 
