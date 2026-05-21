@@ -7,16 +7,18 @@ interface InputProps {
   className?: string;
   value: string;
   onChange: (value: string) => void;
-  colorStyle?: string // color que tenfra los outlained y el texto del label flotante
+  colorStyle?: string; // color que tenfra los outlained y el texto del label flotante
+  label?: boolean;
 }
 
 export const TextInput = ({
   placeholder,
   type = "text",
   className,
-  value, 
+  value,
   onChange,
-  colorStyle = "trego-orange" 
+  colorStyle = "trego-orange",
+  label = true,
 }: InputProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -27,7 +29,7 @@ export const TextInput = ({
   const inputType = type === "password" && showPassword ? "text" : type;
 
   return (
-    <div className="relative w-full">
+    <div className={`relative w-full ${className}`}>
       <input
         type={inputType}
         value={value}
@@ -39,17 +41,24 @@ export const TextInput = ({
          duration-200 placeholder-transparent ${className}`}
         placeholder={placeholder}
       />
-
-      <label
-        className={`absolute left-5 transition-all duration-200 pointer-events-none 
+      {label ? (
+        <label
+          className={`absolute left-5 transition-all duration-200 pointer-events-none 
           ${
             isFloating
               ? `-top-2 text-xs text-${colorStyle}  bg-white px-1`
               : "top-3.5 text-base text-gray-500"
-        } ${className}`}
-      >
-        {placeholder}
-      </label>
+          } ${className}`}
+        >
+          {placeholder}
+        </label>
+      ) : (
+        <label
+          className={`absolute left-5 transition-all duration-200 pointer-events-none top-3.5 text-base  ${isFloating ? "text-transparent" : "text-gray-500"} ${className}`}
+        >
+          {placeholder}
+        </label>
+      )}
 
       {/* Solo mostramos el botón si el tipo es 'password' */}
       {type === "password" && (

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import OTPInput from "../../components/inicio/OTPInput.js";
 import { TextInput } from "../../components/TextInput.js";
+import TextoDivider from "../../components/TextoDivider.js";
 
 type AuthStep = "INGRESO" | "VERI_CODE" | "LOADING";
 
@@ -17,7 +18,7 @@ export default function LoginRestaurante() {
   const [resendCooldown, setResendCooldown] = useState(0);
 
   const [email, setEmail] = useState<string>("");
-  const [contrasenia, setContrasenia] =useState<string>("");
+  const [contrasenia, setContrasenia] = useState<string>("");
 
   return (
     <>
@@ -90,19 +91,26 @@ export default function LoginRestaurante() {
             {/* ── Selección de método ── */}
             {step === "INGRESO" && (
               <div className="flex flex-col gap-8">
-                <div className="flex items-center gap-3 text-xs text-gray-400 uppercase tracking-widest">
-                  <div className="flex-1 h-px bg-gray-200" />
-                  <span>Ingresa Usuario y Contraseña</span>
-                  <div className="flex-1 h-px bg-gray-200" />
-                </div>
+                <TextoDivider texto="Ingresa Usuario y Contraseña" />
 
+                <TextInput
+                  value={email}
+                  onChange={setEmail}
+                  placeholder="Correo electrónico"
+                  type="email"
+                  colorStyle="trego-restaurante"
+                />
 
-                <TextInput value={email} onChange={setEmail} placeholder="Correo electrónico" type="email" colorStyle="trego-restaurante" />
-
-                <TextInput value={contrasenia} onChange={setContrasenia} placeholder="Contraseña" type="password" colorStyle="trego-restaurante"/>
+                <TextInput
+                  value={contrasenia}
+                  onChange={setContrasenia}
+                  placeholder="Contraseña"
+                  type="password"
+                  colorStyle="trego-restaurante"
+                />
 
                 <button
-                  onClick={() =>setStep("VERI_CODE")}
+                  onClick={() => setStep("VERI_CODE")}
                   className="
                     group flex items-center justify-center gap-3
                     w-full py-3.5 px-6 rounded-3xl

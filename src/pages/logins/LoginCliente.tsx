@@ -14,6 +14,7 @@ import logo from "../../assets/bolsa-trego.svg";
 import OTPInput from "../../components/inicio/OTPInput.js";
 import { GoogleIcon, SMSIcon } from "../../components/icons.jsx";
 import { apiService } from "../../api/api.js";
+import TextoDivider from "../../components/TextoDivider.js";
 
 // ─── Tipos de estados del inicio ───────────────────────────────────────────────
 
@@ -68,38 +69,39 @@ export default function LoginCliente() {
   }
 
   // ── Google ─────────────────────────────────────────────────────────────────
-async function handleGoogle() {
-  setError(null);
-  setStep("LOADING");
-  try {
-    // Firebase Web abre el popup
-    const result = await signInWithPopup(auth, googleProvider);
-    const idToken = await result.user.getIdToken();
+  async function handleGoogle() {
+    setError(null);
+    setStep("LOADING");
+    try {
+      // Firebase Web abre el popup
+      const result = await signInWithPopup(auth, googleProvider);
+      const idToken = await result.user.getIdToken();
 
-    const data = await apiService.loginConGoogle(idToken);
+      const data = await apiService.loginConGoogle(idToken);
 
-    // Guardar el token que te devolvió Spring Boot para tus futuras peticiones
-    localStorage.setItem("jwtToken", data.token);
+      // Guardar el token que te devolvió Spring Boot para tus futuras peticiones
+      localStorage.setItem("jwtToken", data.token);
 
-    /*Ver esto con mas detalle tenemos que usar un dato que google no pueda obtener de firebase*/
-    // Dependiendo del tipo de inicio se dirije
-    const isNewUser = !data.nombre || data.nombre === "";
-    handlePostLogin(isNewUser);
+      /*Ver esto con mas detalle tenemos que usar un dato que google no pueda obtener de firebase*/
+      // Dependiendo del tipo de inicio se dirije
+      const isNewUser = !data.nombre || data.nombre === "";
+      handlePostLogin(isNewUser);
+    } catch (err: unknown) {
+      setStep("METHOD_SELECT");
 
-  } catch (err: unknown) {
-    setStep("METHOD_SELECT");
-    
-    if (err instanceof Error && err.message === "CUENTA_DESHABILITADA") {
-      setError("Acceso denegado. Su cuenta se encuentra deshabilitada. Contacte al soporte.");
-      await auth.signOut();
-    } else {
-      setError("No se pudo conectar con el servidor de Trego.");
+      if (err instanceof Error && err.message === "CUENTA_DESHABILITADA") {
+        setError(
+          "Acceso denegado. Su cuenta se encuentra deshabilitada. Contacte al soporte.",
+        );
+        await auth.signOut();
+      } else {
+        setError("No se pudo conectar con el servidor de Trego.");
+      }
     }
   }
-}
 
   // ── SMS — enviar código ────────────────────────────────────────────────────
-async function handleSendCode() {
+  async function handleSendCode() {
     if (!phone.trim()) {
       setError("Ingresá tu número de teléfono.");
       return;
@@ -111,30 +113,24 @@ async function handleSendCode() {
       clearRecaptcha();
 
       // Configuramos el verificador apuntando al contenedor del DOM
-      const verifier = new RecaptchaVerifier(
-        auth,
-        "recaptcha-container",
-        {
-          size: "invisible",
-          // Este callback se asegura de que el token de reCAPTCHA esté listo
-          callback: () => {
-            console.log("reCAPTCHA resuelto con éxito");
-          }
-        }
-      );
+      const verifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+        size: "invisible",
+        // Este callback se asegura de que el token de reCAPTCHA esté listo
+        callback: () => {
+          console.log("reCAPTCHA resuelto con éxito");
+        },
+      });
 
       // Guardamos la referencia en el window
       window.recaptchaVerifier = verifier;
 
-      //  Firebase espera el número en formato E.164. 
-      const formatted = phone.startsWith("+") ? phone : `+598${phone.replace(/^0/, "")}`;
+      //  Firebase espera el número en formato E.164.
+      const formatted = phone.startsWith("+")
+        ? phone
+        : `+598${phone.replace(/^0/, "")}`;
 
       //  Disparamos la petición
-      const result = await signInWithPhoneNumber(
-        auth,
-        formatted,
-        verifier
-      );
+      const result = await signInWithPhoneNumber(auth, formatted, verifier);
 
       //Actualizamos todo el estado JUNTO al final del flujo exitoso
       setConfirmation(result);
@@ -145,7 +141,6 @@ async function handleSendCode() {
       setTimeout(() => {
         setStep("SMS_CODE");
       }, 30);
-
     } catch (err: unknown) {
       clearRecaptcha();
       setStep("SMS_PHONE");
@@ -156,57 +151,58 @@ async function handleSendCode() {
   }
 
   // ------ SMS --- verificar código ------------
-async function handleVerifyCode() {
-  if (otp.length !== 6) {
-    setError("Ingresá el código de 6 dígitos.");
-    return;
-  }
-  if (!confirmation) return;
-  setError(null);
-  setStep("LOADING");
-
-  try {
-    // Validamos el código de 6 dígitos con Firebase
-    const result = await confirmation.confirm(otp);
-    const { user } = result;
-
-    // Extraemos el idToken que generó Firebase para este teléfono
-    const idToken = await user.getIdToken();
-
-    // Enviamos el token a nuestro backend usando el apiService
-    const data = await apiService.loginConSMS(idToken);
-
-    // Guardamos el JWT de Spring Boot (EL DEL BACKEND) en el navegador
-    localStorage.setItem("jwtToken", data.token);
-
-    // Evaluamos si es un usuario nuevo (Lo mismo que antes, tenemos que ver cual va a ser la condicion de comparacion)
-    const isNewUser = !data.nombre || data.nombre === "";
-    handlePostLogin(isNewUser);
-
-  } catch (err: unknown) {
-    // Manejo de errores de la API de Spring Boot
-    if (err instanceof Error && err.message === "CUENTA_DESHABILITADA") {
-      setError("Acceso denegado. Su cuenta se encuentra deshabilitada. Contacte al soporte.");
-      setStep("METHOD_SELECT");
-      await auth.signOut();
+  async function handleVerifyCode() {
+    if (otp.length !== 6) {
+      setError("Ingresá el código de 6 dígitos.");
       return;
     }
+    if (!confirmation) return;
+    setError(null);
+    setStep("LOADING");
 
-    // Manejo de errores nativos de Firebase SMS (Código inválido/expirado)
-    const msg = err instanceof Error ? err.message : "";
-    const isCodeError =
-      msg.includes("invalid-verification-code") ||
-      msg.includes("expired-code") ||
-      msg.includes("invalid-code");
+    try {
+      // Validamos el código de 6 dígitos con Firebase
+      const result = await confirmation.confirm(otp);
+      const { user } = result;
 
-    setError(
-      isCodeError
-        ? "El código es incorrecto o ha expirado."
-        : "No se pudo conectar con el servidor de Trego."
-    );
-    setStep("SMS_CODE");
+      // Extraemos el idToken que generó Firebase para este teléfono
+      const idToken = await user.getIdToken();
+
+      // Enviamos el token a nuestro backend usando el apiService
+      const data = await apiService.loginConSMS(idToken);
+
+      // Guardamos el JWT de Spring Boot (EL DEL BACKEND) en el navegador
+      localStorage.setItem("jwtToken", data.token);
+
+      // Evaluamos si es un usuario nuevo (Lo mismo que antes, tenemos que ver cual va a ser la condicion de comparacion)
+      const isNewUser = !data.nombre || data.nombre === "";
+      handlePostLogin(isNewUser);
+    } catch (err: unknown) {
+      // Manejo de errores de la API de Spring Boot
+      if (err instanceof Error && err.message === "CUENTA_DESHABILITADA") {
+        setError(
+          "Acceso denegado. Su cuenta se encuentra deshabilitada. Contacte al soporte.",
+        );
+        setStep("METHOD_SELECT");
+        await auth.signOut();
+        return;
+      }
+
+      // Manejo de errores nativos de Firebase SMS (Código inválido/expirado)
+      const msg = err instanceof Error ? err.message : "";
+      const isCodeError =
+        msg.includes("invalid-verification-code") ||
+        msg.includes("expired-code") ||
+        msg.includes("invalid-code");
+
+      setError(
+        isCodeError
+          ? "El código es incorrecto o ha expirado."
+          : "No se pudo conectar con el servidor de Trego.",
+      );
+      setStep("SMS_CODE");
+    }
   }
-}
 
   // ── Reenviar código ────────────────────────────────────────────────────────
   async function handleResend() {
@@ -307,11 +303,7 @@ async function handleVerifyCode() {
             {/* ── Selección de método ── */}
             {step === "METHOD_SELECT" && (
               <div className="flex flex-col gap-8">
-                <div className="flex items-center gap-3 text-xs text-gray-400 uppercase tracking-widest">
-                  <div className="flex-1 h-px bg-gray-200" />
-                  <span>Elegir método de inicio</span>
-                  <div className="flex-1 h-px bg-gray-200" />
-                </div>
+                <TextoDivider texto="Elegir método de inicio" />
 
                 <button
                   onClick={handleGoogle}
