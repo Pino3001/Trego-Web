@@ -1,27 +1,23 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from 'react-router';
+import { useNavigate } from "react-router";
 
 // Firebase imports — ajustá la ruta a tu configuración
-import { auth } from "../../firebase.config.js"
+import { auth, googleProvider } from "../../firebase.config.js";
 import {
-  GoogleAuthProvider,
   signInWithPopup,
   signInWithPhoneNumber,
   RecaptchaVerifier,
 } from "firebase/auth";
 import type { ConfirmationResult } from "firebase/auth";
 import Header from "../components/Header.js";
-import logo from "../assets/bolsa-trego.svg"
+import logo from "../assets/bolsa-trego.svg";
 import OTPInput from "../components/inicio/OTPInput.js";
 import { GoogleIcon, SMSIcon } from "../components/icons.jsx";
+import { apiService } from "../api/api.js";
 
-// ─── Tipos ────────────────────────────────────────────────────────────────────
+// ─── Tipos de estados del inicio ───────────────────────────────────────────────
 
-type AuthStep =
-  | "METHOD_SELECT"
-  | "SMS_PHONE"
-  | "SMS_CODE"
-  | "LOADING";
+type AuthStep = "METHOD_SELECT" | "SMS_PHONE" | "SMS_CODE" | "LOADING";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -38,7 +34,6 @@ function clearRecaptcha() {
   }
 }
 
-
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function LoginCliente() {
@@ -47,7 +42,9 @@ export default function LoginCliente() {
   const [step, setStep] = useState<AuthStep>("METHOD_SELECT");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
-  const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(null);
+  const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -61,53 +58,48 @@ export default function LoginCliente() {
     return () => clearInterval(t);
   }, [resendCooldown]);
 
-  // ── Redirige tras login exitoso ────────────────────────────────────────────
-  // El paso 6 del flujo principal: el backend/AuthService identifica el perfil.
-  // Aquí redirigís según la respuesta de tu API; ajustá las rutas según tu proyecto.
+  // ------ Redirige tras login exitoso -----------------
   function handlePostLogin(isNewUser: boolean) {
     if (isNewUser) {
-      navigate("/completar-perfil"); // CU "Modificar perfil" — flujo 7.1
+      navigate("/completar-perfil"); // Cuando implementemos modificar perfil aca cambiamos la redireccion
     } else {
-      navigate("/inicio");
+      navigate("/restaurantes");
     }
   }
 
   // ── Google ─────────────────────────────────────────────────────────────────
-  async function handleGoogle() {
-    setError(null);
-    setStep("LOADING");
-    try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const { user } = result;
+async function handleGoogle() {
+  setError(null);
+  setStep("LOADING");
+  try {
+    // Firebase Web abre el popup
+    const result = await signInWithPopup(auth, googleProvider);
+    const idToken = await result.user.getIdToken();
 
-      // Enviar idToken a tu backend (POST /api/auth/google/{idToken})
-      const idToken = await user.getIdToken();
-      const res = await fetch(`/api/auth/google/${idToken}`, { method: "POST" });
+    const data = await apiService.loginConGoogle(idToken);
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (res.status === 403) {
-          // Flujo 6.1 — cuenta deshabilitada
-          setError("Acceso denegado. Su cuenta se encuentra deshabilitada. Contacte al soporte.");
-          setStep("METHOD_SELECT");
-          await auth.signOut();
-          return;
-        }
-        throw new Error(data?.message ?? "Error al autenticar con Google.");
-      }
+    // Guardar el token que te devolvió Spring Boot para tus futuras peticiones
+    localStorage.setItem("jwtToken", data.token);
 
-      const data = await res.json();
-      handlePostLogin(data.isNewUser ?? false);
-    } catch (err: unknown) {
-      setStep("METHOD_SELECT");
-      const msg = err instanceof Error ? err.message : "Error al iniciar con Google.";
-      setError(msg);
+    /*Ver esto con mas detalle tenemos que usar un dato que google no pueda obtener de firebase*/
+    // Dependiendo del tipo de inicio se dirije
+    const isNewUser = !data.nombre || data.nombre === "";
+    handlePostLogin(isNewUser);
+
+  } catch (err: unknown) {
+    setStep("METHOD_SELECT");
+    
+    if (err instanceof Error && err.message === "CUENTA_DESHABILITADA") {
+      setError("Acceso denegado. Su cuenta se encuentra deshabilitada. Contacte al soporte.");
+      await auth.signOut();
+    } else {
+      setError("No se pudo conectar con el servidor de Trego.");
     }
   }
+}
 
   // ── SMS — enviar código ────────────────────────────────────────────────────
-  async function handleSendCode() {
+async function handleSendCode() {
     if (!phone.trim()) {
       setError("Ingresá tu número de teléfono.");
       return;
@@ -118,72 +110,103 @@ export default function LoginCliente() {
     try {
       clearRecaptcha();
 
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
-        size: "invisible",
-      });
+      // Configuramos el verificador apuntando al contenedor del DOM
+      const verifier = new RecaptchaVerifier(
+        auth,
+        "recaptcha-container",
+        {
+          size: "invisible",
+          // Este callback se asegura de que el token de reCAPTCHA esté listo
+          callback: () => {
+            console.log("reCAPTCHA resuelto con éxito");
+          }
+        }
+      );
 
-      // Firebase espera el número en formato E.164, ej: +59891234567
-      const formatted = phone.startsWith("+") ? phone : `+${phone}`;
-      const result = await signInWithPhoneNumber(auth, formatted, window.recaptchaVerifier);
+      // Guardamos la referencia en el window
+      window.recaptchaVerifier = verifier;
+
+      //  Firebase espera el número en formato E.164. 
+      const formatted = phone.startsWith("+") ? phone : `+598${phone.replace(/^0/, "")}`;
+
+      //  Disparamos la petición
+      const result = await signInWithPhoneNumber(
+        auth,
+        formatted,
+        verifier
+      );
+
+      //Actualizamos todo el estado JUNTO al final del flujo exitoso
       setConfirmation(result);
       setResendCooldown(60);
       setOtp("");
-      setStep("SMS_CODE");
+
+      //Esperamos un poco a que se envie el codigo y se cierre el captcha y mostramos campos para ingresar el codigo
+      setTimeout(() => {
+        setStep("SMS_CODE");
+      }, 30);
+
     } catch (err: unknown) {
       clearRecaptcha();
       setStep("SMS_PHONE");
-      const msg = err instanceof Error ? err.message : "No se pudo enviar el código.";
+      const msg =
+        err instanceof Error ? err.message : "No se pudo enviar el código.";
       setError(msg);
     }
   }
 
-  // ── SMS — verificar código ─────────────────────────────────────────────────
-  async function handleVerifyCode() {
-    if (otp.length !== 6) {
-      setError("Ingresá el código de 6 dígitos.");
+  // ------ SMS --- verificar código ------------
+async function handleVerifyCode() {
+  if (otp.length !== 6) {
+    setError("Ingresá el código de 6 dígitos.");
+    return;
+  }
+  if (!confirmation) return;
+  setError(null);
+  setStep("LOADING");
+
+  try {
+    // Validamos el código de 6 dígitos con Firebase
+    const result = await confirmation.confirm(otp);
+    const { user } = result;
+
+    // Extraemos el idToken que generó Firebase para este teléfono
+    const idToken = await user.getIdToken();
+
+    // Enviamos el token a nuestro backend usando el apiService
+    const data = await apiService.loginConSMS(idToken);
+
+    // Guardamos el JWT de Spring Boot (EL DEL BACKEND) en el navegador
+    localStorage.setItem("jwtToken", data.token);
+
+    // Evaluamos si es un usuario nuevo (Lo mismo que antes, tenemos que ver cual va a ser la condicion de comparacion)
+    const isNewUser = !data.nombre || data.nombre === "";
+    handlePostLogin(isNewUser);
+
+  } catch (err: unknown) {
+    // Manejo de errores de la API de Spring Boot
+    if (err instanceof Error && err.message === "CUENTA_DESHABILITADA") {
+      setError("Acceso denegado. Su cuenta se encuentra deshabilitada. Contacte al soporte.");
+      setStep("METHOD_SELECT");
+      await auth.signOut();
       return;
     }
-    if (!confirmation) return;
-    setError(null);
-    setStep("LOADING");
 
-    try {
-      const result = await confirmation.confirm(otp);
-      const { user } = result;
+    // Manejo de errores nativos de Firebase SMS (Código inválido/expirado)
+    const msg = err instanceof Error ? err.message : "";
+    const isCodeError =
+      msg.includes("invalid-verification-code") ||
+      msg.includes("expired-code") ||
+      msg.includes("invalid-code");
 
-      // Flujo 3.B.2.b.7 — enviar idToken al backend igual que Google
-      const idToken = await user.getIdToken();
-      const res = await fetch(`/api/auth/google/${idToken}`, { method: "POST" });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (res.status === 403) {
-          setError("Acceso denegado. Su cuenta se encuentra deshabilitada. Contacte al soporte.");
-          setStep("METHOD_SELECT");
-          await auth.signOut();
-          return;
-        }
-        throw new Error(data?.message ?? "Error al validar sesión.");
-      }
-
-      const data = await res.json();
-      handlePostLogin(data.isNewUser ?? false);
-    } catch (err: unknown) {
-      // Flujo 3.B.2.b.E1 — código expirado o inválido
-      const msg = err instanceof Error ? err.message : "";
-      const isCodeError =
-        msg.includes("invalid-verification-code") ||
-        msg.includes("expired-code") ||
-        msg.includes("invalid-code");
-
-      setError(
-        isCodeError
-          ? "El código es incorrecto o ha expirado."
-          : "No se pudo verificar el código."
-      );
-      setStep("SMS_CODE");
-    }
+    setError(
+      isCodeError
+        ? "El código es incorrecto o ha expirado."
+        : "No se pudo conectar con el servidor de Trego."
+    );
+    setStep("SMS_CODE");
   }
+}
 
   // ── Reenviar código ────────────────────────────────────────────────────────
   async function handleResend() {
@@ -204,11 +227,10 @@ export default function LoginCliente() {
 
       <main className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gray-50 px-4 py-10">
         <div className="flex w-full max-w-4xl rounded-3xl mb-5 overflow-hidden shadow-2xl shadow-orange-100 bg-white">
-
           {/* Panel izquierdo — marca */}
           <div className="hidden md:flex flex-col items-center justify-center bg-orange-500 w-5/12 h-130 p-10 gap-6">
             <div className="w-60 h-60 rounded-full bg-white/15 flex items-center justify-center shadow-inner mb-10">
-            <img src={logo} />
+              <img src={logo} />
             </div>
             <p className="text-white text-4xl font-bold tracking-tight text-center leading-tight">
               Lo Pedís, Terego
@@ -217,35 +239,50 @@ export default function LoginCliente() {
 
           {/* Panel derecho — formulario */}
           <div className="flex-1 flex flex-col justify-center px-8 md:px-14 py-12 gap-6">
-
             {/* Encabezado dinámico */}
             <div className="mb-10">
               {step === "METHOD_SELECT" && (
                 <>
-                  <h1 className="text-4xl font-bold text-center text-gray-800">Bienvenido</h1>
+                  <h1 className="text-4xl font-bold text-center text-gray-800">
+                    Bienvenido
+                  </h1>
                 </>
               )}
               {step === "SMS_PHONE" && (
                 <>
                   <button
-                    onClick={() => { setStep("METHOD_SELECT"); setError(null); setPhone(""); }}
+                    onClick={() => {
+                      setStep("METHOD_SELECT");
+                      setError(null);
+                      setPhone("");
+                    }}
                     className="text-orange-500 text-sm font-medium mb-3 flex items-center gap-1 hover:underline"
                   >
                     ← Volver
                   </button>
-                  <h1 className="text-2xl font-bold text-gray-800">Ingresá tu número</h1>
-                  <p className="text-sm text-gray-500 mt-1">Te enviaremos un código de verificación</p>
+                  <h1 className="text-2xl font-bold text-gray-800">
+                    Ingresá tu número
+                  </h1>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Te enviaremos un código de verificación
+                  </p>
                 </>
               )}
               {step === "SMS_CODE" && (
                 <>
                   <button
-                    onClick={() => { setStep("SMS_PHONE"); setError(null); setOtp(""); }}
+                    onClick={() => {
+                      setStep("SMS_PHONE");
+                      setError(null);
+                      setOtp("");
+                    }}
                     className="text-orange-500 text-sm font-medium mb-3 flex items-center gap-1 hover:underline"
                   >
                     ← Volver
                   </button>
-                  <h1 className="text-2xl font-bold text-gray-800">Código de verificación</h1>
+                  <h1 className="text-2xl font-bold text-gray-800">
+                    Código de verificación
+                  </h1>
                   <p className="text-sm text-gray-500 mt-1">
                     Enviamos un código al{" "}
                     <span className="font-semibold text-gray-700">{phone}</span>
@@ -253,7 +290,9 @@ export default function LoginCliente() {
                 </>
               )}
               {step === "LOADING" && (
-                <h1 className="text-2xl font-bold text-gray-800">Verificando...</h1>
+                <h1 className="text-2xl font-bold text-gray-800">
+                  Verificando...
+                </h1>
               )}
             </div>
 
@@ -289,7 +328,10 @@ export default function LoginCliente() {
                 </button>
 
                 <button
-                  onClick={() => { setStep("SMS_PHONE"); setError(null); }}
+                  onClick={() => {
+                    setStep("SMS_PHONE");
+                    setError(null);
+                  }}
                   className="
                     group flex items-center justify-center gap-3
                     w-full py-3.5 px-6 rounded-2xl border-2 border-gray-200
@@ -370,7 +412,9 @@ export default function LoginCliente() {
                   {resendCooldown > 0 ? (
                     <span>
                       Podés reenviar el código en{" "}
-                      <span className="font-semibold text-orange-500">{resendCooldown}s</span>
+                      <span className="font-semibold text-orange-500">
+                        {resendCooldown}s
+                      </span>
                     </span>
                   ) : (
                     <button
@@ -388,14 +432,14 @@ export default function LoginCliente() {
             {step === "LOADING" && (
               <div className="flex flex-col items-center gap-4 py-6">
                 <div className="w-12 h-12 rounded-full border-4 border-orange-200 border-t-orange-500 animate-spin" />
-                <p className="text-sm text-gray-400">Verificando tus datos...</p>
+                <p className="text-sm text-gray-400">
+                  Verificando tus datos...
+                </p>
               </div>
             )}
-
           </div>
         </div>
       </main>
     </>
   );
 }
-

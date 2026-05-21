@@ -1,5 +1,6 @@
 import { useRef } from "react";
 
+// Hacerlo reutilizavle para el registrar restaurante y admin
 export default function OTPInput({
   value,
   onChange,
@@ -8,22 +9,39 @@ export default function OTPInput({
   onChange: (v: string) => void;
 }) {
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
-  const digits = value.padEnd(6, "").split("").slice(0, 6);
+  
+  // array de 6 posiciones basado puramente en el string 'value'
+  const digits = Array.from({ length: 6 }, (_, i) => value[i] || "");
 
   function handleChange(i: number, char: string) {
-    const only = char.replace(/\D/g, "").slice(-1);
-    const next = [...digits];
-    next[i] = only;
-    onChange(next.join(""));
-    if (only && i < 5) inputs.current[i + 1]?.focus();
+    // Nos quedamos solo con números y con el último dígito ingresado
+    const onlyDigit = char.replace(/\D/g, "").slice(-1);
+    
+    // Clonamos los dígitos actuales
+    const nextDigits = [...digits];
+    nextDigits[i] = onlyDigit;
+
+    // Unimos todo el array en un string limpio y se lo mandamos al componente padre
+    const newValue = nextDigits.join("");
+    onChange(newValue);
+
+    // Si escribió un número y no estamos en el último casillero, pasamos el foco al siguiente
+    if (onlyDigit && i < 5) {
+      setTimeout(() => inputs.current[i + 1]?.focus(), 10);
+    }
   }
 
   function handleKeyDown(i: number, e: React.KeyboardEvent) {
+    // Si presiona Borrar (Backspace) y el casillero actual está vacío, volvemos al de atrás
     if (e.key === "Backspace" && !digits[i] && i > 0) {
+      const nextDigits = [...digits];
+      nextDigits[i - 1] = ""; // Vaciamos el anterior
+      onChange(nextDigits.join(""));
       inputs.current[i - 1]?.focus();
     }
   }
 
+  // por si pega el codigo
   function handlePaste(e: React.ClipboardEvent) {
     const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
     if (pasted.length === 6) {
