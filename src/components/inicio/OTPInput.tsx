@@ -4,19 +4,21 @@ import { useRef } from "react";
 export default function OTPInput({
   value,
   onChange,
+  variant = "cliente",
 }: {
   value: string;
   onChange: (v: string) => void;
+  variant?: "cliente" | "restaurante" | "admin";
 }) {
   const inputs = useRef<Array<HTMLInputElement | null>>([]);
-  
+
   // array de 6 posiciones basado puramente en el string 'value'
   const digits = Array.from({ length: 6 }, (_, i) => value[i] || "");
 
   function handleChange(i: number, char: string) {
     // Nos quedamos solo con números y con el último dígito ingresado
     const onlyDigit = char.replace(/\D/g, "").slice(-1);
-    
+
     // Clonamos los dígitos actuales
     const nextDigits = [...digits];
     nextDigits[i] = onlyDigit;
@@ -43,7 +45,10 @@ export default function OTPInput({
 
   // por si pega el codigo
   function handlePaste(e: React.ClipboardEvent) {
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/\D/g, "")
+      .slice(0, 6);
     if (pasted.length === 6) {
       onChange(pasted);
       inputs.current[5]?.focus();
@@ -51,12 +56,31 @@ export default function OTPInput({
     e.preventDefault();
   }
 
+  const colorStyles = {
+    cliente: {
+      active:
+        "border-trego-orange text-trego-orange shadow-sm shadow-orange-200",
+      empty: "border-gray-200 text-gray-800 focus:border-trego-orange",
+    },
+    restaurante: {
+      active:
+        "border-trego-restaurante text-trego-restaurante shadow-sm shadow-emerald-200",
+      empty: "border-gray-200 text-gray-800 focus:border-trego-restaurante",
+    },
+    admin: {
+      active: "border-trego-admin text-trego-admin shadow-sm shadow-blue-200",
+      empty: "border-gray-200 text-gray-800 focus:border-trego-admin",
+    },
+  };
+
   return (
     <div className="flex gap-3 justify-center" onPaste={handlePaste}>
       {digits.map((d, i) => (
         <input
           key={i}
-          ref={(el) => { inputs.current[i] = el; }}
+          ref={(el) => {
+            inputs.current[i] = el;
+          }}
           type="text"
           inputMode="numeric"
           maxLength={1}
@@ -66,10 +90,7 @@ export default function OTPInput({
           className={`
             w-11 h-14 text-center text-xl font-bold rounded-xl border-2 outline-none
             transition-all duration-200 bg-white
-            ${d
-              ? "border-orange-500 text-orange-600 shadow-sm shadow-orange-200"
-              : "border-gray-200 text-gray-800 focus:border-orange-400"
-            }
+            ${d ? colorStyles[variant].active : colorStyles[variant].empty}
           `}
         />
       ))}

@@ -1,5 +1,7 @@
 import React from "react";
-import tregoLogo from "../assets/tregoicon.png";
+import tregoLogo from "../assets/tregoicon.svg";
+import tregoRestaurante from "../assets/tregoIconRestaurante.svg";
+import tregoAdmin from "../assets/tregoAdminCircular.svg";
 import { IconCart, IconMenu, IconSearch, IconUser } from "./icons.jsx";
 import { useNavigate } from "react-router";
 
@@ -9,6 +11,7 @@ interface HeaderProps {
   onBuscar?: () => void;
   onAbrirFiltros?: () => void;
   abrirPerfil?: boolean;
+  tipoUser?: "Cliente" | "Restaurante" | "Administrador" 
 }
 
 export default function Header(props: HeaderProps) {
@@ -20,6 +23,7 @@ export default function Header(props: HeaderProps) {
     onBuscar,
     onAbrirFiltros,
     abrirPerfil, // Esto es momentaneo, despues cuandp tengammos lo de perfil cambiamos por lo que convenga
+    tipoUser = "Cliente"
   } = props;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -30,11 +34,11 @@ export default function Header(props: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-white">
       <div className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6">
-        <button onClick={() => navigate("/")} className="shrink-0  cursor-pointer hover:scale-105 transition-transform">
+        <button onClick={() => navigate("/")} className="shrink-0  cursor-pointer hover:scale-120 transition-transform">
           <img
-            src={tregoLogo}
+            src={tipoUser == "Cliente" ? tregoLogo : tipoUser == "Restaurante" ? tregoRestaurante : tregoAdmin}
             alt="Trego"
-            className="h-12 w-12 sm:h-14 sm:w-14"
+            className="h-13 w-13 sm:h-15 sm:w-15 scale-120"
           />
         </button>
 
@@ -93,7 +97,8 @@ export default function Header(props: HeaderProps) {
           )}
         </div>
       </div>
-      <div className="h-0.5 bg-trego-orange" />
+      <div className={`h-0.5 ${tipoUser == "Cliente" ? "bg-trego-orange" : `${tipoUser == "Restaurante" ? "bg-trego-restaurante" : "bg-trego-admin"}`}`}
+ />
     </header>
   );
 }
