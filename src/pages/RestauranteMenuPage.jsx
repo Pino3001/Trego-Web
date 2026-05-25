@@ -1,11 +1,11 @@
 import { Link, useParams } from 'react-router'
-import Header from '../components/Header'
 import RestauranteBanner from '../components/menu/RestauranteBanner'
 import MenuSidebar from '../components/menu/MenuSidebar'
 import OfertaCard from '../components/menu/OfertaCard'
 import ProductoMenuCard from '../components/menu/ProductoMenuCard'
 import { IconBack, IconTag } from '../components/icons'
 import { useMenuRestaurante } from '../hooks/useMenuRestaurante'
+import Header from '../components/body/Header.js'
 
 export default function RestauranteMenuPage() {
   const { id } = useParams()

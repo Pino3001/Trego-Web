@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import Header from '../components/Header'
 import FiltersModal from '../components/FiltersModal'
 import LocationPrompt from '../components/LocationPrompt'
 import EmptyState from '../components/EmptyState'
@@ -10,6 +9,7 @@ import { IconRefresh } from '../components/icons'
 import { useGeolocation } from '../hooks/useGeolocation'
 import { useRestaurantes } from '../hooks/useRestaurantes'
 import { mockPlatosDestacados } from '../data/mockRestaurantes'
+import Header from '../components/body/Header.js'
 
 export default function HomePage() {
   const geo = useGeolocation(false)

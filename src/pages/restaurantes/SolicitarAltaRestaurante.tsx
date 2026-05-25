@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
-import Header from "../../components/Header.js";
+import Header from "../../components/body/Header.js";
 import { TextInput } from "../../components/TextInput.js";
-import Sidebar from "../../components/Sidebar.js";
+import Sidebar from "../../components/body/Sidebar.js";
 import type { ImageField } from "../../components/typos/ImageField.js";
 import ImageUploadField from "../../components/ImagenUploadField.js";
 
@@ -183,7 +183,7 @@ export default function SolicitarAltaRestaurante() {
 
   return (
     <>
-      <Header tipoUser="Restaurante" />
+      <Header abrirPerfil tipoUser="Restaurante" />
 
       <div className="flex min-h-[calc(100vh-64px)] bg-gray-50">
         {/* Sidebar */}
