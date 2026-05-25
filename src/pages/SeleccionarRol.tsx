@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import Header from "../components/Header.js";
+import Header from "../components/body/Header.js";
 import trego from "../assets/tregoCliente.svg"
 import tregoRestaurante from "../assets/tregoRestaurante.svg"
 import tregoAdmin from "../assets/tregoAdminy.svg"

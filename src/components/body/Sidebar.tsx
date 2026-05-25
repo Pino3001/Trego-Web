@@ -1,4 +1,4 @@
-import TextoDivider from "./TextoDivider.js";
+import TextoDivider from "../TextoDivider.js";
 
 interface SidebarProps{
 

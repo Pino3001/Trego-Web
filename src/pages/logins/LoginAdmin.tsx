@@ -1,4 +1,4 @@
-import Header from "../../components/Header.js";
+import Header from "../../components/body/Header.js";
 import logo from "../../assets/tregoAdminy.svg";
 import { useState } from "react";
 import { useNavigate } from "react-router";

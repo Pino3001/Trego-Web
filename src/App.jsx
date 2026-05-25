@@ -6,6 +6,7 @@ import SeleccionarRol from './pages/SeleccionarRol.js'
 import LoginRestaurante from './pages/restaurantes/LoginRestaurante.js'
 import LoginAdmin from './pages/logins/LoginAdmin.js'
 import SolicitarAltaRestaurante from './pages/restaurantes/SolicitarAltaRestaurante.js'
+import RegistrarRestaurante from './pages/restaurantes/RegistrarRestaurante.js'
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
         <Route path="/restaurante/:id" element={<RestauranteMenuPage />} />
         <Route path="/restaurantes" element={<HomePage />} />
         <Route path="/restaurantes/solicitarAlta" element={<SolicitarAltaRestaurante />} />
+        <Route path="/restaurantes/registrarRestaurante" element={<RegistrarRestaurante />} />
+
       </Routes>
     </BrowserRouter>
   )

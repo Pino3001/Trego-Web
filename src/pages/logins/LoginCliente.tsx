@@ -9,11 +9,11 @@ import {
   RecaptchaVerifier,
 } from "firebase/auth";
 import type { ConfirmationResult } from "firebase/auth";
-import Header from "../../components/Header.js";
+import Header from "../../components/body/Header.js";
 import logo from "../../assets/bolsa-trego.svg";
 import OTPInput from "../../components/inicio/OTPInput.js";
 import { GoogleIcon, SMSIcon } from "../../components/icons.jsx";
-import { apiService } from "../../api/api.js";
+import { apiAuth } from "../../api/apiAuth.js";
 import TextoDivider from "../../components/TextoDivider.js";
 
 // ─── Tipos de estados del inicio ───────────────────────────────────────────────
@@ -77,7 +77,7 @@ export default function LoginCliente() {
       const result = await signInWithPopup(auth, googleProvider);
       const idToken = await result.user.getIdToken();
 
-      const data = await apiService.loginConGoogle(idToken);
+      const data = await apiAuth.loginConGoogle(idToken);
 
       // Guardar el token que te devolvió Spring Boot para tus futuras peticiones
       localStorage.setItem("jwtToken", data.token);
@@ -169,7 +169,7 @@ export default function LoginCliente() {
       const idToken = await user.getIdToken();
 
       // Enviamos el token a nuestro backend usando el apiService
-      const data = await apiService.loginConSMS(idToken);
+      const data = await apiAuth.loginConSMS(idToken);
 
       // Guardamos el JWT de Spring Boot (EL DEL BACKEND) en el navegador
       localStorage.setItem("jwtToken", data.token);
