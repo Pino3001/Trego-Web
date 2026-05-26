@@ -5,8 +5,9 @@ import type { Ingrediente } from "../../data/DTOIngrediente.js";
 import AltaPlato, {
   SUBCATEGORIAS,
   type SubcategoriaItem,
-} from "./componentes/AltaPlaro.js";
+} from "./componentes/AltaPlato.js";
 import type { ImageField } from "../../components/typos/ImageField.js";
+import AltaArticulo from "./componentes/AltaArticulo.js";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -59,97 +60,6 @@ interface ImageUploadFieldProps {
   label: string;
   field: ImageField;
   onChange: (file: File | null) => void;
-}
-
-function ImageUploadField({ label, field, onChange }: ImageUploadFieldProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleFile = (file: File) => {
-    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowed.includes(file.type)) {
-      onChange(null);
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      onChange(null);
-      return;
-    }
-    onChange(file);
-  };
-
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  }, []);
-
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className="text-sm font-semibold text-gray-700">{label}</span>
-      <div
-        onClick={() => inputRef.current?.click()}
-        onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}
-        className={`
-          relative w-36 h-36 rounded-2xl border-2 border-dashed cursor-pointer
-          flex flex-col items-center justify-center overflow-hidden
-          transition-all duration-200
-          ${
-            field.error
-              ? "border-red-400 bg-red-50"
-              : field.preview
-                ? "border-trego-restaurante"
-                : "border-gray-300 bg-gray-50 hover:border-trego-restaurante hover:bg-green-50"
-          }
-        `}
-      >
-        {field.preview ? (
-          <>
-            <img
-              src={field.preview}
-              alt="preview"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-black/30 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-              <span className="text-white text-xs font-semibold">Cambiar</span>
-            </div>
-          </>
-        ) : (
-          <>
-            <svg
-              className="w-8 h-8 text-gray-400 mb-1"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 20.25h18M3.75 3h16.5A.75.75 0 0121 3.75v12a.75.75 0 01-.75.75H3.75A.75.75 0 013 15.75v-12A.75.75 0 013.75 3z"
-              />
-            </svg>
-            <span className="text-xs text-gray-400 text-center px-2">
-              Subir imagen
-            </span>
-          </>
-        )}
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) handleFile(f);
-          }}
-        />
-      </div>
-      {field.error && (
-        <span className="text-xs text-red-500">{field.error}</span>
-      )}
-    </div>
-  );
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -244,12 +154,12 @@ export default function AltaProducto() {
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
     if (!nombre.trim()) errs.nombre = "El nombre es obligatorio.";
-    if (!precio.trim() || isNaN(Number(precio)))
+    if (!precio || isNaN(Number(precio)))
       errs.precio = "El precio debe ser un número válido.";
     if (!foto.file) errs.foto = "La imagen del producto es obligatoria.";
 
     if (tipo === "con-ingredientes") {
-      if (!tiempoPreparacion.trim())
+      if (!tiempoPreparacion)
         errs.tiempoPreparacion = "El tiempo de preparación es obligatorio.";
     }
     if (tipo === "combo" && productosCombo.length === 0) {
@@ -382,6 +292,20 @@ export default function AltaProducto() {
               tiempoPreparacion={tiempoPreparacion}
             />
 
+            <AltaArticulo
+              descripcion=""
+              error={errors}
+              foto={foto}
+              nombrePlato=""
+              onChangeDescripcion={setDescripcion}
+              onChangeImage={setFoto}
+              onChangeNombrePlato={setNombre}
+              onChangePrecio={setPrecio}
+              onChangeSubCategoria={setSubcategoria}
+              precio={precio}
+              subcategoria={subcategoria}
+            />
+
             {/* ── FORM ── */}
             {step === "FORM" && (
               <div className="bg-white rounded-3xl shadow-lg shadow-green-50 p-8 flex flex-col gap-6">
@@ -421,11 +345,7 @@ export default function AltaProducto() {
                 <div className="flex flex-col md:flex-row gap-6">
                   {/* Image */}
                   <div className="flex flex-col gap-1.5 items-start">
-                    <ImageUploadField
-                      label="Imagen Del Producto"
-                      field={foto}
-                      onChange={handleImageChange}
-                    />
+
                     {errors.foto && (
                       <span className="text-xs text-red-500">
                         {errors.foto}
