@@ -7,6 +7,7 @@ import LoginRestaurante from './pages/restaurantes/LoginRestaurante.js'
 import LoginAdmin from './pages/logins/LoginAdmin.js'
 import SolicitarAltaRestaurante from './pages/restaurantes/SolicitarAltaRestaurante.js'
 import RegistrarRestaurante from './pages/restaurantes/RegistrarRestaurante.js'
+import AltaProducto from './pages/restaurantes/AltaProducto.js'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/restaurantes" element={<HomePage />} />
         <Route path="/restaurantes/solicitarAlta" element={<SolicitarAltaRestaurante />} />
         <Route path="/restaurantes/registrarRestaurante" element={<RegistrarRestaurante />} />
+        <Route path="/restaurantes/altaProducto" element={<AltaProducto />} />
 
       </Routes>
     </BrowserRouter>
