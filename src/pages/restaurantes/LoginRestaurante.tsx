@@ -67,6 +67,7 @@ export default function LoginRestaurante() {
 
       // Guardar el token que te devolvió Spring Boot para tus futuras peticiones
       localStorage.setItem("jwtToken", data.token);
+      window.dispatchEvent(new Event("trego-sesion-iniciada"));
 
       /*Ver esto con mas detalle tenemos que usar un dato que google no pueda obtener de firebase*/
       // Dependiendo del tipo de inicio se dirije

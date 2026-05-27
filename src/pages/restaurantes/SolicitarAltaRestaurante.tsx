@@ -134,8 +134,8 @@ export default function SolicitarAltaRestaurante() {
     setStep("LOADING");
 
     try {
-      // remplazar con la api real
-      // await fetch("/api/restaurante/solicitud", {
+      // falta endpoint backend
+      // await fetch(ENDPOINTS.SOLICITUD_ALTA_RESTAURANTE, {
       //   method: "POST",
       //   headers: { "Content-Type": "application/json" },
       //   body: JSON.stringify({

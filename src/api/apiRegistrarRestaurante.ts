@@ -1,7 +1,7 @@
 import type { DTOLoginRegistro } from "../data/DTOLoginRegistro.js";
 import type { LoginResponseDTO } from "../data/LoginResponseDTO.js";
 
-const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "";
 
 export interface RespuestaRegistro {
   success: boolean;
@@ -13,7 +13,7 @@ export const apiRegistrarRestaurante = {
 
 registrarRestaurante: async (registro: DTOLoginRegistro): Promise<RespuestaRegistro> => {
     try {
-      const response = await fetch(`${BASE_URL}/usuarios/registrar-restaurante/solicitar`, {
+      const response = await fetch(`${BASE_URL}/api/usuarios/registrar-restaurante/solicitar`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -52,7 +52,7 @@ registrarRestaurante: async (registro: DTOLoginRegistro): Promise<RespuestaRegis
   confirmarRegistro: async (email: string, codigo: string): Promise<RespuestaRegistro> => {
     try {
       // Como usa @RequestParam, construimos la URL con los parámetros
-      const url = new URL(`${BASE_URL}/usuarios/registrar-restaurante/confirmar`);
+      const url = new URL(`${BASE_URL}/api/usuarios/registrar-restaurante/confirmar`, window.location.origin);
       url.searchParams.append("email", email);
       url.searchParams.append("codigo", codigo);
 
@@ -88,7 +88,7 @@ registrarRestaurante: async (registro: DTOLoginRegistro): Promise<RespuestaRegis
   // POST: /registrar-restaurante/reenviar-codigo
   reenviarCodigo: async (email: string): Promise<RespuestaRegistro> => {
     try {
-      const url = new URL(`${BASE_URL}/usuarios/registrar-restaurante/reenviar-codigo`);
+      const url = new URL(`${BASE_URL}/api/usuarios/registrar-restaurante/reenviar-codigo`, window.location.origin);
       url.searchParams.append("email", email);
 
       const response = await fetch(url.toString(), {
