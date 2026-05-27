@@ -10,6 +10,7 @@ import {
   distanciaKm,
   filtrarRestaurantesZona,
 } from '../utils/restaurantes'
+import { mapearRestaurante } from './mapeadores'
 
 const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
 
@@ -45,6 +46,15 @@ function reparteEnZonaMock(r, lat, lng) {
   return km <= (r.radioEntregaKm ?? 5)
 }
 
+async function listarDesdeBackend(nombre) {
+  const params = nombre?.trim() ? { nombre: nombre.trim() } : undefined
+  // falta endpoint backend: para zona usar ENDPOINTS.RESTAURANTES_ZONA (hoy se filtra en cliente)
+  const { data } = await api.get(ENDPOINTS.RESTAURANTES, { params })
+  const lista = Array.isArray(data) ? data : data.restaurantes ?? []
+  return lista.map(mapearRestaurante).filter(Boolean)
+}
+
+/** GET con filtro por zona/coords — falta endpoint backend (hoy usa GET /api/restaurantes + filtro en cliente). */
 export async function obtenerRestaurantesZona(params) {
   if (USE_MOCK) {
     await delay(400)
@@ -52,10 +62,15 @@ export async function obtenerRestaurantesZona(params) {
   }
 
   try {
-    const { data } = await api.get(ENDPOINTS.RESTAURANTES_ZONA, { params })
-    return Array.isArray(data) ? data : data.restaurantes ?? []
+    const lista = await listarDesdeBackend()
+    const { latitud, longitud, ...filtros } = params
+    const lat = latitud ?? MOCK_CLIENTE_COORDS.latitud
+    const lng = longitud ?? MOCK_CLIENTE_COORDS.longitud
+    let filtrada = filtrarRestaurantesZona(lista, lat, lng)
+    filtrada = aplicaFiltros(filtrada, filtros)
+    return filtrada
   } catch {
-    console.warn('[Trego] API zona no disponible, usando mock')
+    console.warn('[Trego] API restaurantes no disponible, usando mock')
     return mockZona(params)
   }
 }
@@ -67,8 +82,14 @@ export async function buscarRestaurantes(params) {
   }
 
   try {
-    const { data } = await api.get(ENDPOINTS.RESTAURANTES_BUSCAR, { params })
-    return Array.isArray(data) ? data : data.restaurantes ?? []
+    const lista = await listarDesdeBackend(params.nombre)
+    const { latitud, longitud } = params
+    const lat = latitud ?? MOCK_CLIENTE_COORDS.latitud
+    const lng = longitud ?? MOCK_CLIENTE_COORDS.longitud
+    return lista.map((r) => ({
+      ...r,
+      reparteEnZona: r.reparteEnZona ?? reparteEnZonaMock(r, lat, lng),
+    }))
   } catch {
     console.warn('[Trego] API buscar no disponible, usando mock')
     return mockBuscar(params)

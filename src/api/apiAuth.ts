@@ -1,14 +1,13 @@
 import type { DTOLoginRegistro } from "../data/DTOLoginRegistro.js";
 import type { LoginResponseDTO } from "../data/LoginResponseDTO.js";
 import { fetchConAuth } from "./header/fetchConAuth.js";
-
-const BASE_URL = "http://localhost:8080/api";
+import { ENDPOINTS } from "./endpoints.js";
 
 //Creamos un objeto con las funciones de comunicación
 export const apiAuth = {
   // Función centralizada para enviar el token de Firebase
   loginConGoogle: async (idToken: string): Promise<LoginResponseDTO> => {
-    const response = await fetch(`${BASE_URL}/auth/google`, {
+    const response = await fetch(ENDPOINTS.AUTH_GOOGLE, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -18,33 +17,51 @@ export const apiAuth = {
     });
 
     if (!response.ok) {
-      // Manejo básico de errores HTTP que lanzará al catch del componente
       if (response.status === 403) throw new Error("CUENTA_DESHABILITADA");
+      if (response.status === 401) throw new Error("TOKEN_INVALIDO");
       throw new Error("ERROR_SERVIDOR");
     }
 
-    return response.json();
+    const data = await response.json();
+    return {
+      token: data.jwtToken ?? data.token,
+      rol: data.rol,
+      nombre: data.nombre,
+      email: data.email,
+    };
   },
 
   loginConSMS: async (idToken: string): Promise<LoginResponseDTO> => {
-    const response = await fetch(`${BASE_URL}/auth/sms`, {
+    const response = await fetch(ENDPOINTS.AUTH_SMS, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ idToken }),
+      body: JSON.stringify({ firebaseToken: idToken }),
     });
 
     if (!response.ok) {
       if (response.status === 403) throw new Error("CUENTA_DESHABILITADA");
+      if (response.status === 401) throw new Error("TOKEN_INVALIDO");
       throw new Error("ERROR_SERVIDOR");
     }
 
-    return response.json();
+    const data = await response.json();
+    return {
+      token: data.jwtToken ?? data.token,
+      rol: data.rol,
+      nombre: data.nombre,
+      email: data.email,
+    };
+  },
+
+  /** falta endpoint backend */
+  loginAdminConOtp: async (_email: string, _otp: string): Promise<LoginResponseDTO> => {
+    throw new Error("loginAdminConOtp: falta endpoint backend");
   },
 
   loginRestaurante: async (login: DTOLoginRegistro) => {
-    const response = await fetch(`${BASE_URL}/auth/login/admin`, {
+    const response = await fetch(ENDPOINTS.AUTH_LOGIN_ADMIN, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -64,12 +81,18 @@ export const apiAuth = {
       }
     }
 
-    return response.json();
+    const data = await response.json();
+    return {
+      token: data.jwtToken ?? data.token,
+      rol: data.rol,
+      nombre: data.nombre,
+      email: data.email,
+    };
   },
 
   cerrarSesion: async (): Promise<void> => {
     // La funcion fetchConAuth manda el token de sesion al backend
-    const response = await fetchConAuth("/cerrarSesion", {
+    const response = await fetchConAuth(ENDPOINTS.AUTH_CERRAR_SESION, {
       method: "POST",
     });
 

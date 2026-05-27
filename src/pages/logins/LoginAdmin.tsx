@@ -109,6 +109,7 @@ export default function LoginAdmin() {
                   colorStyle="trego-admin"
                 />
 
+                {/* falta endpoint backend: POST /api/auth/admin/verificar-otp (y login admin con OTP) */}
                 <button
                   onClick={() => setStep("VERI_CODE")}
                   className="
@@ -129,6 +130,7 @@ export default function LoginAdmin() {
               <div className="flex flex-col gap-5">
                 <OTPInput variant="admin" value={otp} onChange={setOtp} />
 
+                {/* falta endpoint backend */}
                 <button
                   //onClick={handleVerifyCode}
                   disabled={otp.length !== 6}

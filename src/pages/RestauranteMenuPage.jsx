@@ -1,4 +1,5 @@
 import { Link, useParams } from 'react-router'
+import { useEffect } from 'react'
 import RestauranteBanner from '../components/menu/RestauranteBanner'
 import MenuSidebar from '../components/menu/MenuSidebar'
 import OfertaCard from '../components/menu/OfertaCard'
@@ -6,9 +7,11 @@ import ProductoMenuCard from '../components/menu/ProductoMenuCard'
 import { IconBack, IconTag } from '../components/icons'
 import { useMenuRestaurante } from '../hooks/useMenuRestaurante'
 import Header from '../components/body/Header.js'
+import { useCarrito } from '../context/CarritoContext.jsx'
 
 export default function RestauranteMenuPage() {
   const { id } = useParams()
+  const { abrirDetalleProducto, validarRestauranteAbierto } = useCarrito()
 
   const {
     menu,
@@ -24,8 +27,15 @@ export default function RestauranteMenuPage() {
     sinProductosEnCategoria,
   } = useMenuRestaurante(id)
 
+  useEffect(() => {
+    if (menu?.restaurante) {
+      validarRestauranteAbierto(menu.restaurante.abierto)
+    }
+  }, [menu?.restaurante?.abierto, menu?.restaurante, validarRestauranteAbierto])
+
   const handleAgregar = (producto) => {
-    console.log('Agregar al carrito:', producto.idProducto)
+    // Paso 2 del CU: muestra detalle, cantidad, ingredientes y comentarios
+    abrirDetalleProducto(producto, menu?.restaurante)
   }
 
   if (cargando) {

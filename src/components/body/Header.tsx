@@ -5,6 +5,7 @@ import tregoAdmin from "../../assets/tregoAdminCircular.svg";
 import { IconCart, IconMenu, IconSearch, IconUser } from "../icons.jsx";
 import { useNavigate } from "react-router";
 import { apiAuth } from "../../api/apiAuth.js";
+import { useCarrito } from "../../context/CarritoContext.jsx";
 
 interface HeaderProps {
   busqueda?: string;
@@ -20,6 +21,7 @@ interface HeaderProps {
 export default function Header(props: HeaderProps) {
   const navigate = useNavigate();
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const { abrirCarrito, cantidadTotal } = useCarrito();
 
   const {
     busqueda,
@@ -106,10 +108,16 @@ export default function Header(props: HeaderProps) {
           {onAbrirFiltros && (
             <button
               type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-trego-cart shadow-sm sm:h-11 sm:w-11"
+              onClick={abrirCarrito}
+              className="relative flex h-10 w-10 items-center justify-center rounded-full bg-trego-cart shadow-sm sm:h-11 sm:w-11"
               aria-label="Carrito"
             >
               <IconCart className="h-5 w-5 text-white" />
+              {cantidadTotal > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-extrabold text-white">
+                  {cantidadTotal}
+                </span>
+              )}
             </button>
           )}
           {/**Aca podemos colocar el boton que quieramos, ejemplo el de registrar usuario, etc */}

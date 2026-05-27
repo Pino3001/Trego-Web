@@ -81,6 +81,7 @@ export default function LoginCliente() {
 
       // Guardar el token que te devolvió Spring Boot para tus futuras peticiones
       localStorage.setItem("jwtToken", data.token);
+      window.dispatchEvent(new Event("trego-sesion-iniciada"));
 
       /*Ver esto con mas detalle tenemos que usar un dato que google no pueda obtener de firebase*/
       // Dependiendo del tipo de inicio se dirije
@@ -94,6 +95,15 @@ export default function LoginCliente() {
           "Acceso denegado. Su cuenta se encuentra deshabilitada. Contacte al soporte.",
         );
         await auth.signOut();
+      } else if (err instanceof Error && err.message === "TOKEN_INVALIDO") {
+        setError(
+          "Google inició sesión, pero el backend no pudo validar el token. Verificá que el proyecto Firebase del front (firebase.config.js) coincida con firebase-service-account.json del backend.",
+        );
+        await auth.signOut();
+      } else if (err instanceof TypeError) {
+        setError(
+          "No se pudo conectar con el servidor de Trego. ¿Está levantado el backend en el puerto 8080?",
+        );
       } else {
         setError("No se pudo conectar con el servidor de Trego.");
       }
@@ -173,6 +183,7 @@ export default function LoginCliente() {
 
       // Guardamos el JWT de Spring Boot (EL DEL BACKEND) en el navegador
       localStorage.setItem("jwtToken", data.token);
+      window.dispatchEvent(new Event("trego-sesion-iniciada"));
 
       // Evaluamos si es un usuario nuevo (Lo mismo que antes, tenemos que ver cual va a ser la condicion de comparacion)
       const isNewUser = !data.nombre || data.nombre === "";
