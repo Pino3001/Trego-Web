@@ -254,7 +254,7 @@ export default function SolicitarAltaRestaurante() {
 
       <div className="flex min-h-[calc(100vh-64px)] bg-gray-50">
         {/* Sidebar */}
-        <Sidebar />
+        <Sidebar habilitado={false}/>
 
         {/* Main */}
         <main className="flex-1 flex flex-col items-center justify-start px-4 py-6 w-full">

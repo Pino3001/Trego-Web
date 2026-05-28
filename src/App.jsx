@@ -8,6 +8,7 @@ import LoginAdmin from './pages/logins/LoginAdmin.js'
 import SolicitarAltaRestaurante from './pages/restaurantes/SolicitarAltaRestaurante.js'
 import RegistrarRestaurante from './pages/restaurantes/RegistrarRestaurante.js'
 import CarritoUIRoot from './components/carrito/CarritoUIRoot.jsx'
+import AltaProducto from './pages/restaurantes/AltaProducto.js'
 
 function App() {
   return (
