@@ -55,12 +55,7 @@ export const apiAuth = {
     };
   },
 
-  /** falta endpoint backend */
-  loginAdminConOtp: async (_email: string, _otp: string): Promise<LoginResponseDTO> => {
-    throw new Error("loginAdminConOtp: falta endpoint backend");
-  },
-
-  loginRestaurante: async (login: DTOLoginRegistro) => {
+  login: async (login: DTOLoginRegistro) => {
     const response = await fetch(ENDPOINTS.AUTH_LOGIN_ADMIN, {
       method: "POST",
       headers: {

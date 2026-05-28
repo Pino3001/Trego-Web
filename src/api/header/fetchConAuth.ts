@@ -1,6 +1,7 @@
-const BASE_URL = import.meta.env.VITE_API_URL ?? "";
-
-export const fetchConAuth = async (endpoint: string, options: RequestInit = {}) => {
+export const fetchConAuth = async (
+  endpoint: string,
+  options: RequestInit = {},
+) => {
   const token = localStorage.getItem("jwtToken");
 
   const headers = new Headers(options.headers || {});
@@ -13,7 +14,7 @@ export const fetchConAuth = async (endpoint: string, options: RequestInit = {}) 
     headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const url = endpoint.startsWith("http") ? endpoint : `${BASE_URL}${endpoint}`;
+  const url = endpoint;
 
   const response = await fetch(url, {
     ...options,
