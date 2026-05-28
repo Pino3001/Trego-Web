@@ -5,21 +5,104 @@ import { useNavigate } from "react-router";
 import OTPInput from "../../components/inicio/OTPInput.js";
 import { TextInput } from "../../components/TextInput.js";
 import TextoDivider from "../../components/TextoDivider.js";
+import { apiAuth } from "../../api/apiAuth.js";
+import type { DTOLoginRegistro } from "../../data/DTOLoginRegistro.js";
 
-type AuthStep = "INGRESO" | "VERI_CODE" | "LOADING";
+type AuthStep = "INGRESO" | "LOADING";
 
 export default function LoginAdmin() {
   const navigate = useNavigate();
 
   const [step, setStep] = useState<AuthStep>("INGRESO");
-  const [otp, setOtp] = useState("");
 
   const [error, setError] = useState<string | null>(null);
-  const [resendCooldown, setResendCooldown] = useState(0);
 
   const [email, setEmail] = useState<string>("");
   const [contrasenia, setContrasenia] = useState<string>("");
 
+  const solicitarInicio = () => {
+    // Validar campo vacío
+    if (!email.trim()) {
+      setError("Ingresá tu correo electrónico.");
+      return;
+    }
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Ingresá un correo electrónico válido.");
+      return;
+    }
+
+    if (!contrasenia) {
+      setError("Ingresá tu contraseña.");
+      return;
+    }
+
+    iniciarSesion();
+  };
+
+  const iniciarSesion = async () => {
+    setError(null);
+    setStep("LOADING");
+    try {
+      const loginResponse: DTOLoginRegistro = {
+        email: email,
+        password: contrasenia,
+      };
+
+      const data = await apiAuth.login(loginResponse);
+
+      // Guardar el token que te devolvió Spring Boot para tus futuras peticiones
+      localStorage.setItem("jwtToken", data.token);
+      window.dispatchEvent(new Event("trego-sesion-iniciada"));
+
+      /*Ver esto con mas detalle tenemos que usar un dato que google no pueda obtener de firebase*/
+      // Dependiendo del tipo de inicio se dirije
+      const isNewUser = !data.nombre || data.nombre === "";
+      if (data.rol == "Administrador") {
+        if (isNewUser) {
+          navigate("/restaurantes"); // Cuando implementemos modificar perfil aca cambiamos la redireccion
+        } else {
+          navigate("/restaurantes/solicitarAlta");
+        }
+      } else {
+        setStep("INGRESO");
+        setError("El correo ingresado no pertenece a un Administrador.");
+      }
+    } catch (err: unknown) {
+      setStep("INGRESO");
+
+      if (err instanceof Error) {
+        switch (err.message) {
+          case "CREDENCIALES_INVALIDAS":
+            setError("Usuario o contraseña incorrectos.");
+            break;
+
+          case "CUENTA_DESHABILITADA":
+            setError(
+              "Acceso denegado. Su cuenta se encuentra deshabilitada. Contacte al soporte.",
+            );
+            /**Mandar a solicitar alta y negar el ingreso a los componente de restaurante habilitado */
+            break;
+
+          case "ERROR_SERVIDOR":
+            setError(
+              "Error interno del servidor. Intente nuevamente más tarde.",
+            );
+            break;
+
+          default:
+            // Fallo de red u otro error inesperado
+            setError("No se pudo conectar con el servidor de Trego.");
+            break;
+        }
+      } else {
+        // err no es instancia de Error (caso muy raro)
+        setError("Ocurrió un error inesperado.");
+      }
+    }
+  };
   return (
     <>
       {/* Anchor invisible para reCAPTCHA */}
@@ -40,9 +123,9 @@ export default function LoginAdmin() {
           </div>
 
           {/* Panel derecho — formulario */}
-          <div className="flex-1 flex flex-col justify-start px-8 md:px-14 py-12 gap-10">
+          <div className="flex-1 flex flex-col justify-start md:px-14 py-8 gap-5">
             {/* Encabezado dinámico */}
-            <div className="mb-5">
+            <div className="">
               {step === "INGRESO" && (
                 <>
                   <h1 className="text-4xl font-bold text-center text-gray-800">
@@ -51,42 +134,19 @@ export default function LoginAdmin() {
                   <h2 className="text-2xl mt-5 font-bold text-center text-gray-600">
                     Inicio Administradores
                   </h2>
+                  {/* Error */}
+                  {error ? (
+                    <div className="mt-5 h-11 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 justify-center flex gap-2">
+                      <span className="mt-0.5 shrink-0">⚠</span>
+                      <span>{error}</span>
+                    </div>
+                  ) : (
+                    <div className="mt-5 h-11" />
+                  )}
                 </>
               )}
-              {step === "VERI_CODE" && (
-                <>
-                  <button
-                    onClick={() => {
-                      setStep("INGRESO");
-                      setError(null);
-                      setOtp("");
-                    }}
-                    className="text-trego-admin text-sm font-medium mb-3 flex items-center gap-1 hover:underline"
-                  >
-                    ← Volver
-                  </button>
-                  <h1 className="text-2xl font-bold text-gray-800">
-                    Código de verificación
-                  </h1>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Revisa tu correo electrónico
-                  </p>
-                </>
-              )}
-              {step === "LOADING" && (
-                <h1 className="text-2xl font-bold text-gray-800">
-                  Verificando...
-                </h1>
-              )}
-            </div>
 
-            {/* Error */}
-            {error && (
-              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 flex items-start gap-2">
-                <span className="mt-0.5 shrink-0">⚠</span>
-                <span>{error}</span>
-              </div>
-            )}
+            </div>
 
             {/* ── Selección de método ── */}
             {step === "INGRESO" && (
@@ -111,7 +171,7 @@ export default function LoginAdmin() {
 
                 {/* falta endpoint backend: POST /api/auth/admin/verificar-otp (y login admin con OTP) */}
                 <button
-                  onClick={() => setStep("VERI_CODE")}
+                  onClick={solicitarInicio}
                   className="
                     group flex items-center justify-center gap-3
                     w-full py-3.5 px-6 rounded-3xl
@@ -125,50 +185,10 @@ export default function LoginAdmin() {
               </div>
             )}
 
-            {/* ── Ingreso de código OTP ── */}
-            {step === "VERI_CODE" && (
-              <div className="flex flex-col gap-5">
-                <OTPInput variant="admin" value={otp} onChange={setOtp} />
-
-                {/* falta endpoint backend */}
-                <button
-                  //onClick={handleVerifyCode}
-                  disabled={otp.length !== 6}
-                  className="
-                    group flex items-center justify-center gap-3
-                    w-full py-3.5 px-6 rounded-3xl
-                    bg-trego-admin hover:bg-blue-700
-                    transition-all duration-200 text-gray-100 text-lg font-bold
-                    shadow-md hover:shadow-md hover:shadow-green-100
-                  "
-                >
-                  Verificar código
-                </button>
-
-                <div className="text-center text-sm text-gray-500">
-                  {resendCooldown > 0 ? (
-                    <span>
-                      Podés reenviar el código en{" "}
-                      <span className="font-semibold text-orange-500">
-                        {resendCooldown}s
-                      </span>
-                    </span>
-                  ) : (
-                    <button
-                      //onClick={handleResend}
-                      className="text-trego-admin font-semibold hover:underline"
-                    >
-                      Volver a pedir el código
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* ── Loading ── */}
             {step === "LOADING" && (
               <div className="flex flex-col items-center gap-4 py-6">
-                <div className="w-12 h-12 rounded-full border-4 border-orange-200 border-t-orange-500 animate-spin" />
+                <div className="w-12 h-12 rounded-full border-4 border-blue-200 border-t-trego-admin animate-spin" />
                 <p className="text-sm text-gray-400">
                   Verificando tus datos...
                 </p>
