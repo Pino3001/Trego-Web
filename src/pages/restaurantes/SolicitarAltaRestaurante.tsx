@@ -4,14 +4,12 @@ import { TextInput } from "../../components/TextInput.js";
 import Sidebar from "../../components/body/Sidebar.js";
 import type { ImageField } from "../../components/typos/ImageField.js";
 import ImageUploadField from "../../components/ImagenUploadField.js";
-import type { DTORestaurante } from "../../data/DTORestaurante.js";
 import {
-  enviarSolicitudAltaRestaurante,
+  enviarSolicitudAlta,
   obtenerFirmaCloudinary,
 } from "../../api/apiSolicitudAltaRestaurante.js";
 import AddressAutocomplete from "../../components/DireccionAutocomplete.js";
 import type { DireccionGeoapify } from "../../data/DireccionGeoapify.js";
-import type { DTODireccion } from "../../data/DTODireccion.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -156,8 +154,11 @@ export default function SolicitarAltaRestaurante() {
     }
     if (!form.descripcion.trim())
       newErrors.descripcion = "La descripción es requerida";
-    if (!direccionSeleccionada)
+    if (!form.direccion.trim()) {
       newErrors.direccion = "La dirección es requerida";
+    } else if (!direccionSeleccionada) {
+      newErrors.direccion = "Seleccioná una dirección válida de la lista";
+    }
 
     const imgErrors = {
       perfil: !imagePerfil.cloudUrl && imagePerfil.uploadState !== "done",
@@ -181,42 +182,27 @@ export default function SolicitarAltaRestaurante() {
 
     setStep("LOADING");
 
-    try {
-      const dir: DTODireccion = {
-        apartamento: 0,
-        calle: direccionSeleccionada?.calle || "",
-        esquina: direccionSeleccionada?.esquina || "",
-        latitud: direccionSeleccionada?.latitud || 0,
-        longitud: direccionSeleccionada?.longitud || 0,
-        numero: direccionSeleccionada?.numero || 0,
-      };
-      const resto: DTORestaurante = {
-        nombre: form.nombre,
-        razonSocial: form.razonSocial,
-        rut: form.rut,
-        telefono: form.telefono,
-        descripcion: form.descripcion,
-        direccion: dir,
-      };
+    const resultado = await enviarSolicitudAlta({
+      ...form,
+      direccion: direccionSeleccionada!,
+      imagenPerfil: imagePerfil.cloudUrl!,
+      imagenPortada: imagePortada.cloudUrl!,
+    });
 
-      if (imagePerfil.cloudUrl) {
-        resto.fotoPerfil = imagePerfil.cloudUrl;
+    if (!resultado.success) {
+      if (resultado.errorCampo) {
+        setErrors((prev) => ({
+          ...prev,
+          [resultado.errorCampo!]:
+            "Este dato ya está registrado en el sistema",
+        }));
       }
-
-      if (imagePortada.cloudUrl) {
-        resto.fotoPortada = imagePortada.cloudUrl;
-      }
-
-      const response = await enviarSolicitudAltaRestaurante(resto);
-      setStep("SUCCESS");
-    } catch (error) {
-      console.error("Error al enviar solicitud:", error);
-
-      setApiError(
-        "Ocurrió un error al enviar la solicitud. Intentá nuevamente.",
-      );
+      setApiError(resultado.message);
       setStep("FORM");
+      return;
     }
+
+    setStep("SUCCESS");
   };
 
   // ------Cancelar-------
@@ -231,6 +217,7 @@ export default function SolicitarAltaRestaurante() {
       descripcion: "",
       direccion: "",
     });
+    setDireccionSeleccionada(null);
     setErrors({});
     setImagePerfil({
       file: null,
@@ -342,6 +329,11 @@ export default function SolicitarAltaRestaurante() {
                         className="peer w-full border border-gray-400 rounded-3xl p-5 outline-none
                      focus:border-trego-restaurante focus:ring-1 focus:ring-trego-restaurante"
                       />
+                      {errors.descripcion && (
+                        <p className="text-red-500 text-xs px-5 mt-1">
+                          {errors.descripcion}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -357,6 +349,11 @@ export default function SolicitarAltaRestaurante() {
                           colorStyle="trego-restaurante"
                           label={false}
                         />
+                        {errors.nombre && (
+                          <p className="text-red-500 text-xs px-5 mt-1">
+                            {errors.nombre}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <h1 className="text-sm font-semibold px-5">
@@ -369,6 +366,11 @@ export default function SolicitarAltaRestaurante() {
                           colorStyle="trego-restaurante"
                           label={false}
                         />
+                        {errors.razonSocial && (
+                          <p className="text-red-500 text-xs px-5 mt-1">
+                            {errors.razonSocial}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <h1 className="text-sm font-semibold px-5">RUT</h1>
@@ -379,6 +381,11 @@ export default function SolicitarAltaRestaurante() {
                           colorStyle="trego-restaurante"
                           label={false}
                         />
+                        {errors.rut && (
+                          <p className="text-red-500 text-xs px-5 mt-1">
+                            {errors.rut}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <h1 className="text-sm font-semibold px-5">
@@ -391,6 +398,11 @@ export default function SolicitarAltaRestaurante() {
                           colorStyle="trego-restaurante"
                           label={false}
                         />
+                        {errors.telefono && (
+                          <p className="text-red-500 text-xs px-5 mt-1">
+                            {errors.telefono}
+                          </p>
+                        )}
                       </div>
                       <div>
                         <AddressAutocomplete
@@ -428,7 +440,7 @@ export default function SolicitarAltaRestaurante() {
                       shadow-md hover:shadow-green-200
                     "
                   >
-                    Confirmar Solicitud
+                    Enviar Solicitud
                   </button>
                   <button
                     onClick={handleCancel}

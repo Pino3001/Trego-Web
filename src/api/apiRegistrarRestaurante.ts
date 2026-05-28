@@ -3,6 +3,8 @@ import type { LoginResponseDTO } from "../data/LoginResponseDTO.js";
 import { ENDPOINTS } from "./endpoints.js";
 import { fetchSinAuth } from "./header/fetchSinAuth.js";
 
+const USE_MOCK = import.meta.env.VITE_USE_MOCK !== "false";
+
 export interface RespuestaRegistro {
   success: boolean;
   message: string;
@@ -13,6 +15,16 @@ export const apiRegistrarRestaurante = {
   registrarRestaurante: async (
     registro: DTOLoginRegistro,
   ): Promise<RespuestaRegistro> => {
+    // ── MOCK (revertir: borrar este bloque cuando el back esté disponible) ──
+    if (USE_MOCK) {
+      await delay(600);
+      return {
+        success: true,
+        message: "Mock: código de verificación enviado al correo",
+      };
+    }
+    // ── fin mock ──
+
     try {
       const response = await fetchSinAuth(ENDPOINTS.REGISTRAR_RESTAURANTE, {
         method: "POST",
@@ -56,6 +68,25 @@ export const apiRegistrarRestaurante = {
     email: string,
     codigo: string,
   ): Promise<RespuestaRegistro> => {
+    // ── MOCK (revertir: borrar este bloque cuando el back esté disponible) ──
+    if (USE_MOCK) {
+      await delay(800);
+      if (codigo !== "123456") {
+        return { success: false, message: "Código inválido o expirado." };
+      }
+      return {
+        success: true,
+        message: "Registro exitoso",
+        login: {
+          token: "mock-jwt-token-restaurante",
+          rol: "RESTAURANTE",
+          nombre: "Restaurante Mock",
+          email: email,
+        },
+      };
+    }
+    // ── fin mock ──
+
     try {
       // Construimos la ruta relativa con los query params (el backend espera @RequestParam)
       const url = `${ENDPOINTS.CONFIRMAR_REGISTRO}?email=${encodeURIComponent(email)}&codigo=${encodeURIComponent(codigo)}`;
@@ -89,6 +120,13 @@ export const apiRegistrarRestaurante = {
 
   // POST: /registrar-restaurante/reenviar-codigo
   reenviarCodigo: async (email: string): Promise<RespuestaRegistro> => {
+    // ── MOCK (revertir: borrar este bloque cuando el back esté disponible) ──
+    if (USE_MOCK) {
+      await delay(500);
+      return { success: true, message: "Mock: se reenvió el código al correo" };
+    }
+    // ── fin mock ──
+
     try {
       const url = `${ENDPOINTS.REENVIAR_CODIGO}?email=${encodeURIComponent(email)}`;
 
@@ -117,3 +155,7 @@ export const apiRegistrarRestaurante = {
     }
   },
 };
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}

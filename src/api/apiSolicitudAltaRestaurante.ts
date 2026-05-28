@@ -1,27 +1,87 @@
 import type { DTOFirma } from "../data/DTOFirma.js";
-import type { DTORestaurante } from "../data/DTORestaurante.js";
+import type { DireccionGeoapify } from "../data/DireccionGeoapify.js";
 import { ENDPOINTS } from "./endpoints.js";
 import { fetchConAuth } from "./header/fetchConAuth.js";
 
-/** falta endpoint backend */
-export async function enviarSolicitudAltaRestaurante(
-  resto: Partial<DTORestaurante>,
-) {
-  const response = await fetchConAuth(ENDPOINTS.SOLICITUD_ALTA_RESTAURANTE, {
-    method: "PATCH",
-    body: JSON.stringify(resto),
-  });
-  if (!response.ok) {
-    throw new Error("No se pudo enviar la solicitud de alta");
+/** POST solicitud de alta — endpoint definido en el CU (endpoints.js no se modifica por regla del proyecto). */
+const ENDPOINT_SOLICITUD_ALTA = "/api/restaurante/solicitud";
+
+export interface PayloadSolicitudAlta {
+  nombre: string;
+  razonSocial: string;
+  rut: string;
+  telefono: string;
+  descripcion: string;
+  direccion: DireccionGeoapify;
+  imagenPerfil: string;
+  imagenPortada: string;
+}
+
+export interface RespuestaSolicitudAlta {
+  success: boolean;
+  message: string;
+  errorCampo?: "rut" | "razonSocial" | "telefono" | null;
+}
+
+export async function enviarSolicitudAlta(
+  payload: PayloadSolicitudAlta,
+): Promise<RespuestaSolicitudAlta> {
+  try {
+    const response = await fetchConAuth(ENDPOINT_SOLICITUD_ALTA, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    if (response.status === 201) {
+      const data = (await response.json().catch(() => ({}))) as {
+        message?: string;
+      };
+      return {
+        success: true,
+        message: data.message ?? "Solicitud enviada correctamente",
+      };
+    }
+
+    if (response.status === 409) {
+      const data = (await response.json().catch(() => ({}))) as {
+        message?: string;
+        errorCampo?: "rut" | "razonSocial" | "telefono";
+      };
+      return {
+        success: false,
+        message:
+          data.message ?? "Este dato ya está registrado en el sistema",
+        errorCampo: data.errorCampo ?? null,
+      };
+    }
+
+    if (response.status === 400) {
+      const data = (await response.json().catch(() => ({}))) as {
+        message?: string;
+      };
+      return {
+        success: false,
+        message: data.message ?? "Datos inválidos. Revisá el formulario.",
+      };
+    }
+
+    return {
+      success: false,
+      message:
+        "Ocurrió un error al enviar la solicitud. Intentá nuevamente.",
+    };
+  } catch {
+    return {
+      success: false,
+      message: "No se pudo conectar con el servidor. Intentá nuevamente.",
+    };
   }
-  return response.json();
 }
 
 export async function obtenerFirmaCloudinary(
   nombreArchivo: string,
   tipo: "image" | "video" | "raw" = "image",
 ): Promise<DTOFirma> {
-  // Limpiamos el nombre de espacios o caracteres raros por las dudas
   const nombreLimpio = encodeURIComponent(nombreArchivo.trim());
   const url = `${ENDPOINTS.FIRMA_IMAGEN}/${nombreLimpio},${tipo}`;
 
