@@ -19,18 +19,9 @@ export default function LoginRestaurante() {
   const [step, setStep] = useState<AuthStep>("INGRESO");
 
   const [error, setError] = useState<string | null>(null);
-  const [resendCooldown, setResendCooldown] = useState(0);
 
   const [email, setEmail] = useState<string>("");
   const [contrasenia, setContrasenia] = useState<string>("");
-
-  function handlePostLogin(isNewUser: boolean) {
-    if (isNewUser) {
-      navigate("/completar-perfil"); // Cuando implementemos modificar perfil aca cambiamos la redireccion
-    } else {
-      navigate("/restaurantes");
-    }
-  }
 
   const solicitarInicio = () => {
     // Validar campo vacío
@@ -63,7 +54,7 @@ export default function LoginRestaurante() {
         password: contrasenia,
       };
 
-      const data = await apiAuth.loginRestaurante(loginResponse);
+      const data = await apiAuth.login(loginResponse);
 
       // Guardar el token que te devolvió Spring Boot para tus futuras peticiones
       localStorage.setItem("jwtToken", data.token);
@@ -72,7 +63,17 @@ export default function LoginRestaurante() {
       /*Ver esto con mas detalle tenemos que usar un dato que google no pueda obtener de firebase*/
       // Dependiendo del tipo de inicio se dirije
       const isNewUser = !data.nombre || data.nombre === "";
-      handlePostLogin(isNewUser);
+
+      if (data.rol == "Restaurante") {
+        if (isNewUser) {
+          navigate("/restaurantes/solicitarAlta"); // Cuando implementemos modificar perfil aca cambiamos la redireccion
+        } else {
+          navigate("/restaurantes/solicitarAlta");
+        }
+      } else {
+        setStep("INGRESO");
+        setError("El correo ingresado no pertenece a un Restaurante.");
+      }
     } catch (err: unknown) {
       setStep("INGRESO");
 

@@ -1,9 +1,17 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Header from "../../components/body/Header.js";
 import { TextInput } from "../../components/TextInput.js";
 import Sidebar from "../../components/body/Sidebar.js";
 import type { ImageField } from "../../components/typos/ImageField.js";
 import ImageUploadField from "../../components/ImagenUploadField.js";
+import type { DTORestaurante } from "../../data/DTORestaurante.js";
+import {
+  enviarSolicitudAltaRestaurante,
+  obtenerFirmaCloudinary,
+} from "../../api/apiSolicitudAltaRestaurante.js";
+import AddressAutocomplete from "../../components/DireccionAutocomplete.js";
+import type { DireccionGeoapify } from "../../data/DireccionGeoapify.js";
+import type { DTODireccion } from "../../data/DTODireccion.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -42,9 +50,12 @@ export default function SolicitarAltaRestaurante() {
     direccion: "",
   });
 
-  const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>(
-    {},
-  );
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof FormData, string | undefined>>
+  >({});
+
+  const [direccionSeleccionada, setDireccionSeleccionada] =
+    useState<DireccionGeoapify | null>(null);
 
   const [imagePerfil, setImagePerfil] = useState<ImageField>({
     file: null,
@@ -65,22 +76,59 @@ export default function SolicitarAltaRestaurante() {
 
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // ── Image handling ────────────────────────────────────────────────────────
-  const handleImageChange = (field: "perfil" | "portada", file: File) => {
+  const handleImageChange = async (field: "perfil" | "portada", file: File) => {
+    const estadoAnterior = field === "perfil" ? imagePerfil : imagePortada;
+    if (estadoAnterior.previewUrl) {
+      // Liberamos la memoria de la imagen anterior antes de pisarla
+      URL.revokeObjectURL(estadoAnterior.previewUrl);
+    }
+
+    //CREAR LA NUEVA URL
     const previewUrl = URL.createObjectURL(file);
     const setter = field === "perfil" ? setImagePerfil : setImagePortada;
 
     setter({ file, previewUrl, uploadState: "uploading", cloudUrl: null });
     setImageErrors((p) => ({ ...p, [field]: false }));
 
-    // Simulate upload + sign + store (replace with real API call)
-    setTimeout(() => {
+    try {
+      const nombreSinExtension =
+        file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
+
+      //Llamamos a tu función externa
+      const datosBack = await obtenerFirmaCloudinary(
+        nombreSinExtension,
+        "image",
+      );
+
+      //Cargamos el FormData con los nombres exactos que pide Cloudinary
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("api_key", datosBack.apiKey);
+      formData.append("timestamp", datosBack.timestamp.toString());
+      formData.append("signature", datosBack.firma); // 'firma' mapea a 'signature'
+      formData.append("public_id", datosBack.publicId); // 'publicId' mapea a 'public_id'
+
+      //Subida directa usando la URL exacta
+      const cloudinaryRes = await fetch(datosBack.uploadUrl, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!cloudinaryRes.ok) throw new Error("Cloudinary rechazó la imagen");
+
+      const cloudinaryData = await cloudinaryRes.json();
+
+      //Guardamos la URL segura final en tu estado
       setter((prev) => ({
         ...prev,
         uploadState: "done",
-        cloudUrl: `https://cdn.trego.com/uploads/${field}-${Date.now()}.jpg`,
+        cloudUrl: cloudinaryData.secure_url, // Esta URL es la que mandamos al backend en el submit
       }));
-    }, 1800);
+    } catch (error) {
+      console.error("Error en el proceso de imagen:", error);
+      setter({ file, previewUrl, uploadState: "idle", cloudUrl: null });
+      setImageErrors((p) => ({ ...p, [field]: true }));
+    }
   };
 
   // ── Field change ──────────────────────────────────────────────────────────
@@ -108,7 +156,7 @@ export default function SolicitarAltaRestaurante() {
     }
     if (!form.descripcion.trim())
       newErrors.descripcion = "La descripción es requerida";
-    if (!form.direccion.trim())
+    if (!direccionSeleccionada)
       newErrors.direccion = "La dirección es requerida";
 
     const imgErrors = {
@@ -134,19 +182,36 @@ export default function SolicitarAltaRestaurante() {
     setStep("LOADING");
 
     try {
-      // falta endpoint backend
-      // await fetch(ENDPOINTS.SOLICITUD_ALTA_RESTAURANTE, {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify({
-      //     ...form,
-      //     imagenPerfil: imagePerfil.cloudUrl,
-      //     imagenPortada: imagePortada.cloudUrl,
-      //   }),
-      // });
-      await new Promise((r) => setTimeout(r, 2000));
+      const dir: DTODireccion = {
+        apartamento: 0,
+        calle: direccionSeleccionada?.calle || "",
+        esquina: direccionSeleccionada?.esquina || "",
+        latitud: direccionSeleccionada?.latitud || 0,
+        longitud: direccionSeleccionada?.longitud || 0,
+        numero: direccionSeleccionada?.numero || 0,
+      };
+      const resto: DTORestaurante = {
+        nombre: form.nombre,
+        razonSocial: form.razonSocial,
+        rut: form.rut,
+        telefono: form.telefono,
+        descripcion: form.descripcion,
+        direccion: dir,
+      };
+
+      if (imagePerfil.cloudUrl) {
+        resto.fotoPerfil = imagePerfil.cloudUrl;
+      }
+
+      if (imagePortada.cloudUrl) {
+        resto.fotoPortada = imagePortada.cloudUrl;
+      }
+
+      const response = await enviarSolicitudAltaRestaurante(resto);
       setStep("SUCCESS");
-    } catch {
+    } catch (error) {
+      console.error("Error al enviar solicitud:", error);
+
       setApiError(
         "Ocurrió un error al enviar la solicitud. Intentá nuevamente.",
       );
@@ -156,6 +221,8 @@ export default function SolicitarAltaRestaurante() {
 
   // ------Cancelar-------
   const handleCancel = () => {
+    if (imagePerfil.previewUrl) URL.revokeObjectURL(imagePerfil.previewUrl);
+    if (imagePortada.previewUrl) URL.revokeObjectURL(imagePortada.previewUrl);
     setForm({
       nombre: "",
       razonSocial: "",
@@ -282,9 +349,7 @@ export default function SolicitarAltaRestaurante() {
                   <div className="flex-1 flex w-full justify-center">
                     <div className="flex w-110 flex-col gap-4">
                       <div>
-                        <h1 className="text-sm font-semibold px-5">
-                          Nombre
-                        </h1>
+                        <h1 className="text-sm font-semibold px-5">Nombre</h1>
                         <TextInput
                           value={form.nombre}
                           onChange={set("nombre")}
@@ -306,9 +371,7 @@ export default function SolicitarAltaRestaurante() {
                         />
                       </div>
                       <div>
-                        <h1 className="text-sm font-semibold px-5">
-                          RUT
-                        </h1>
+                        <h1 className="text-sm font-semibold px-5">RUT</h1>
                         <TextInput
                           value={form.rut}
                           onChange={set("rut")}
@@ -330,15 +393,23 @@ export default function SolicitarAltaRestaurante() {
                         />
                       </div>
                       <div>
-                        <h1 className="text-sm font-semibold px-5">
-                          Dirección
-                        </h1>
-                        <TextInput
+                        <AddressAutocomplete
+                          label="Dirección"
                           value={form.direccion}
-                          onChange={set("direccion")}
-                          placeholder="Av 8 de Octubre 2020"
-                          colorStyle="trego-restaurante"
-                          label={false}
+                          error={errors.direccion} // Si validaste que exista, le pasas el error aquí
+                          onChangeText={(texto) => {
+                            // Si el usuario edita a mano, guardamos el texto y borramos el objeto validado
+                            setForm((prev) => ({ ...prev, direccion: texto }));
+                            setDireccionSeleccionada(null);
+                            setErrors((prev) => ({
+                              ...prev,
+                              direccion: undefined,
+                            }));
+                          }}
+                          onSelectAddress={(dirCompletada) => {
+                            // Cuando hace clic en una opción, guardamos el objeto validado
+                            setDireccionSeleccionada(dirCompletada);
+                          }}
                         />
                       </div>
                     </div>
