@@ -46,6 +46,7 @@ export default function RegistrarRestaurante() {
         const token = result.login?.token;
         if (token) {
           localStorage.setItem("jwtToken", token);
+          window.dispatchEvent(new Event("trego-sesion-iniciada"));
         }
         navigate("/restaurantes/solicitarAlta");
         return;

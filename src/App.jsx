@@ -7,7 +7,7 @@ import LoginRestaurante from './pages/restaurantes/LoginRestaurante.js'
 import LoginAdmin from './pages/logins/LoginAdmin.js'
 import SolicitarAltaRestaurante from './pages/restaurantes/SolicitarAltaRestaurante.js'
 import RegistrarRestaurante from './pages/restaurantes/RegistrarRestaurante.js'
-import AltaProducto from './pages/restaurantes/AltaProducto.js'
+import CarritoUIRoot from './components/carrito/CarritoUIRoot.jsx'
 
 function App() {
   return (
@@ -24,6 +24,7 @@ function App() {
         <Route path="/restaurantes/altaProducto" element={<AltaProducto />} />
 
       </Routes>
+      <CarritoUIRoot />
     </BrowserRouter>
   )
 }
