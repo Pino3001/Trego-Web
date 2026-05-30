@@ -1,3 +1,7 @@
+import { reverseGeocodeGeoapify } from './apiGeoapify'
+import { reverseGeocodeNominatim } from './nominatim'
+import { precioConDescuento } from '../utils/productos'
+
 /** Convierte respuestas del backend al formato que usa el front. */
 
 function formatearHora(hora) {
@@ -67,7 +71,7 @@ export function mapearProducto(dto) {
 
 export function mapearMenuRespuesta(data) {
   if (!data) return null
-  if (data.mensaje && !data.idRestaurante && !data.productos) {
+  if (data.mensaje && !data.idRestaurante && !data.idUsuario && !data.productos) {
     return {
       restaurante: null,
       productos: [],
@@ -97,13 +101,131 @@ export function mapearCarritoDtoAItems(carritoDto) {
   return carritoDto.productos.map(mapearLineaCarritoAItem)
 }
 
+/** Texto corto para UI: "Calle 1234" */
+export function nombreDireccionDesdeCampos(calle, numero) {
+  const c = String(calle ?? '').trim()
+  if (!c) return null
+  const n = numero != null && String(numero).trim() !== '' ? String(numero).trim() : ''
+  return n ? `${c} ${n}` : c
+}
+
+function armarResultadoDireccion({ nombre, calle, numero, esquina, latitud, longitud }) {
+  return {
+    nombre,
+    datos: {
+      calle: calle || nombre,
+      numero: Number(numero) || 0,
+      apartamento: 0,
+      esquina: esquina ?? '',
+      latitud,
+      longitud,
+    },
+  }
+}
+
+function direccionDesdeNominatim(data, latitud, longitud) {
+  const addr = data.address ?? {}
+  const calleRaw =
+    addr.road ||
+    addr.pedestrian ||
+    addr.footway ||
+    addr.residential ||
+    addr.cycleway ||
+    addr.path ||
+    ''
+  const barrio = addr.suburb || addr.neighbourhood || addr.quarter || addr.city_district || ''
+  const ciudad = addr.city || addr.town || addr.village || 'Montevideo'
+  const numero = addr.house_number ?? ''
+
+  let calle = calleRaw.trim()
+  if (!calle && barrio) calle = barrio
+
+  let nombre =
+    nombreDireccionDesdeCampos(calle, numero) ||
+    (calle ? calle : '') ||
+    (barrio ? `${barrio}, ${ciudad}` : '')
+
+  if (!nombre && data.display_name) {
+    const partes = data.display_name
+      .split(',')
+      .map((p) => p.trim())
+      .filter(Boolean)
+    nombre = partes.length >= 2 ? `${partes[0]}, ${partes[1]}` : partes[0] || `Cerca de ${ciudad}`
+    if (!calle && partes[0]) calle = partes[0]
+  }
+
+  if (!nombre) nombre = `Cerca de ${ciudad}`
+
+  return armarResultadoDireccion({
+    nombre,
+    calle: calle || nombre.split(',')[0].trim(),
+    numero,
+    esquina: '',
+    latitud,
+    longitud,
+  })
+}
+
+function direccionDesdeGeoapify(geo, latitud, longitud) {
+  const nombre =
+    nombreDireccionDesdeCampos(geo.calle, geo.numero) ||
+    geo.direccionCompleta?.trim() ||
+    'Ubicación actual'
+  return armarResultadoDireccion({
+    nombre,
+    calle: geo.calle?.trim() || nombre,
+    numero: geo.numero,
+    esquina: geo.esquina ?? '',
+    latitud,
+    longitud,
+  })
+}
+
+/** ¿El label guardado es solo coordenadas crudas? */
+export function esLabelSoloCoordenadas(nombre) {
+  if (!nombre) return false
+  return /^Lat\s-?\d/i.test(nombre) || /^-?\d+\.\d+,\s*-?\d+\.\d+/.test(nombre)
+}
+
+/** Resuelve coords GPS → nombre + DTO (Geoapify → Nominatim → texto genérico). */
+export async function resolverDireccionDesdeCoords(coords) {
+  const latitud = Number(coords?.latitud)
+  const longitud = Number(coords?.longitud)
+  if (!Number.isFinite(latitud) || !Number.isFinite(longitud)) {
+    return armarResultadoDireccion({
+      nombre: 'Ubicación actual',
+      calle: 'Ubicación actual',
+      numero: 0,
+      esquina: '',
+      latitud: 0,
+      longitud: 0,
+    })
+  }
+
+  const geo = await reverseGeocodeGeoapify(latitud, longitud)
+  if (geo?.calle || geo?.direccionCompleta) {
+    return direccionDesdeGeoapify(geo, latitud, longitud)
+  }
+
+  const nominatim = await reverseGeocodeNominatim(latitud, longitud)
+  if (nominatim && (nominatim.address || nominatim.display_name)) {
+    return direccionDesdeNominatim(nominatim, latitud, longitud)
+  }
+
+  return armarResultadoDireccion({
+    nombre: 'Tu ubicación en Montevideo',
+    calle: 'Ubicación actual',
+    numero: 0,
+    esquina: '',
+    latitud,
+    longitud,
+  })
+}
+
 export function mapearDireccionUi(direccion, indice) {
   const calle = direccion.calle ?? ''
   const numero = direccion.numero ?? ''
-  const nombre =
-    calle.trim() !== ''
-      ? `${calle}${numero ? ` ${numero}` : ''}`
-      : `Dirección ${indice + 1}`
+  const nombre = nombreDireccionDesdeCampos(calle, numero) ?? `Dirección ${indice + 1}`
   const descripcion =
     direccion.esquina?.trim() ||
     `Lat ${Number(direccion.latitud).toFixed(4)}, Lng ${Number(direccion.longitud).toFixed(4)}`
@@ -113,6 +235,27 @@ export function mapearDireccionUi(direccion, indice) {
     nombre,
     descripcion,
     datos: direccion,
+  }
+}
+
+/** Precio que enviamos al carrito (con descuento si hay oferta activa). */
+export function precioProductoParaApi(producto) {
+  if (!producto) return 0
+  const base = Number(producto.precio) || 0
+  const descuento =
+    producto.ofertaActiva && producto.oferta
+      ? (producto.oferta.descuentoPorcentaje ?? 0)
+      : 0
+  return precioConDescuento(base, descuento)
+}
+
+/** Objeto producto mínimo para DTOProductoPedido (el back exige precio en el JSON). */
+export function productoMinimoParaCarrito(producto, idRestaurante) {
+  return {
+    idProducto: producto.idProducto,
+    idRestaurante: idRestaurante ?? producto.idRestaurante,
+    precio: precioProductoParaApi(producto),
+    nombre: producto.nombre,
   }
 }
 
@@ -126,10 +269,7 @@ export function armarProductoPedidoRequest({
   return {
     cantidad: cantidad ?? 1,
     observaciones: comentarios ?? '',
-    producto: {
-      idProducto: producto.idProducto,
-      idRestaurante: idRestaurante ?? producto.idRestaurante,
-    },
+    producto: productoMinimoParaCarrito(producto, idRestaurante),
   }
 }
 
