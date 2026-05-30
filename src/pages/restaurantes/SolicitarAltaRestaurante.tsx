@@ -5,16 +5,19 @@ import Sidebar from "../../components/body/Sidebar.js";
 import type { ImageField } from "../../components/typos/ImageField.js";
 import ImageUploadField from "../../components/ImagenUploadField.js";
 import type { DTORestaurante } from "../../data/DTORestaurante.js";
-
+import {
+  enviarSolicitudAltaRestaurante,
+  obtenerFirmaCloudinary,
+} from "../../api/apiSolicitudAltaRestaurante.js";
 import AddressAutocomplete from "../../components/DireccionAutocomplete.js";
 import type { DireccionGeoapify } from "../../data/DireccionGeoapify.js";
 import type { DTODireccion } from "../../data/DTODireccion.js";
-import { enviarSolicitudAltaRestaurante, obtenerFirmaCloudinary } from "../../api/apiRestaurante.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface FormData {
   nombre: string;
+  razonSocial: string;
   rut: string;
   telefono: string;
   descripcion: string;
@@ -40,6 +43,7 @@ export default function SolicitarAltaRestaurante() {
 
   const [form, setForm] = useState<FormData>({
     nombre: "",
+    razonSocial: "",
     rut: "",
     telefono: "",
     descripcion: "",
@@ -138,6 +142,8 @@ export default function SolicitarAltaRestaurante() {
     const newErrors: typeof errors = {};
 
     if (!form.nombre.trim()) newErrors.nombre = "El nombre es requerido";
+    if (!form.razonSocial.trim())
+      newErrors.razonSocial = "La razón social es requerida";
     if (!form.rut.trim()) {
       newErrors.rut = "El RUT es requerido";
     } else if (!validateRUT(form.rut)) {
@@ -186,6 +192,7 @@ export default function SolicitarAltaRestaurante() {
       };
       const resto: DTORestaurante = {
         nombre: form.nombre,
+        razonSocial: form.razonSocial,
         rut: form.rut,
         telefono: form.telefono,
         descripcion: form.descripcion,
@@ -218,6 +225,7 @@ export default function SolicitarAltaRestaurante() {
     if (imagePortada.previewUrl) URL.revokeObjectURL(imagePortada.previewUrl);
     setForm({
       nombre: "",
+      razonSocial: "",
       rut: "",
       telefono: "",
       descripcion: "",
@@ -242,7 +250,14 @@ export default function SolicitarAltaRestaurante() {
 
   return (
     <>
-        <div className="flex-1 flex flex-col items-center justify-start px-4 py-6 w-full">
+      <Header abrirPerfil tipoUser="Restaurante" />
+
+      <div className="flex min-h-[calc(100vh-64px)] bg-gray-50">
+        {/* Sidebar */}
+        <Sidebar />
+
+        {/* Main */}
+        <main className="flex-1 flex flex-col items-center justify-start px-4 py-6 w-full">
           <div className="w-full max-w-6xl">
             <h1 className="text-3xl font-bold text-trego-restaurante text-center mb-4 tracking-tight">
               Alta Restaurante
@@ -315,7 +330,7 @@ export default function SolicitarAltaRestaurante() {
                     </div>
 
                     {/* Descripcion */}
-                    <div className="w-120 max-w-full -mt-5 mx-auto">
+                    <div className="w-120 max-w-full mx-auto">
                       <h1 className="text-sm font-semibold px-5">
                         Descripción
                       </h1>
@@ -332,7 +347,7 @@ export default function SolicitarAltaRestaurante() {
 
                   {/* Nombre + Razon Social + RUT + tel + dir*/}
                   <div className="flex-1 flex w-full justify-center">
-                    <div className="flex w-110 flex-col gap-6">
+                    <div className="flex w-110 flex-col gap-4">
                       <div>
                         <h1 className="text-sm font-semibold px-5">Nombre</h1>
                         <TextInput
@@ -343,7 +358,18 @@ export default function SolicitarAltaRestaurante() {
                           label={false}
                         />
                       </div>
-
+                      <div>
+                        <h1 className="text-sm font-semibold px-5">
+                          Razón Social
+                        </h1>
+                        <TextInput
+                          value={form.razonSocial}
+                          onChange={set("razonSocial")}
+                          placeholder="Restaurante S.A"
+                          colorStyle="trego-restaurante"
+                          label={false}
+                        />
+                      </div>
                       <div>
                         <h1 className="text-sm font-semibold px-5">RUT</h1>
                         <TextInput
@@ -419,7 +445,8 @@ export default function SolicitarAltaRestaurante() {
               </div>
             )}
           </div>
-        </div>
+        </main>
+      </div>
     </>
   );
 }

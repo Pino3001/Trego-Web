@@ -183,7 +183,7 @@ export default function RegistrarRestaurante() {
               <img src={logo} />
             </div>
             <p className="text-white text-4xl font-bold tracking-tight text-center leading-tight">
-              Lo Pedís, Trego
+              Lo Pedís, Terego
             </p>
           </div>
 

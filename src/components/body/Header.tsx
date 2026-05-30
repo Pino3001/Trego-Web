@@ -31,7 +31,7 @@ export default function Header(props: HeaderProps) {
     abrirPerfil, // Esto es momentaneo, despues cuandp tengammos lo de perfil cambiamos por lo que convenga
     tipoUser = "Cliente",
     botonRegistrar,
-    children,
+    children
   } = props;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -53,24 +53,22 @@ export default function Header(props: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-white">
       <div className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6">
-        <div className="w-64 pr-12 items-center justify-center flex">
-          <button
-            onClick={() => navigate("/")}
-            className="shrink-0  cursor-pointer hover:scale-120 transition-transform"
-          >
-            <img
-              src={
-                tipoUser == "Cliente"
-                  ? tregoLogo
-                  : tipoUser == "Restaurante"
-                    ? tregoRestaurante
-                    : tregoAdmin
-              }
-              alt="Trego"
-              className="h-13 w-13 sm:h-15 sm:w-15 scale-120"
-            />
-          </button>
-        </div>
+        <button
+          onClick={() => navigate("/")}
+          className="shrink-0  cursor-pointer hover:scale-120 transition-transform"
+        >
+          <img
+            src={
+              tipoUser == "Cliente"
+                ? tregoLogo
+                : tipoUser == "Restaurante"
+                  ? tregoRestaurante
+                  : tregoAdmin
+            }
+            alt="Trego"
+            className="h-13 w-13 sm:h-15 sm:w-15 scale-120"
+          />
+        </button>
 
         {onBuscar && ( // Para poder reutilizar el header en otro componente ponemos como opcional todo el
           // formulario que no necesitamos en iniciar sesion por ejemplo

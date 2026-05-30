@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import FiltersModal from '../components/FiltersModal'
 import LocationPrompt from '../components/LocationPrompt'
 import EmptyState from '../components/EmptyState'
 import SectionRow from '../components/SectionRow'
 import RestaurantCard from '../components/RestaurantCard'
-import ProductCard from '../components/ProductCard'
 import { IconRefresh } from '../components/icons'
-import { useGeolocation } from '../hooks/useGeolocation'
+import {
+  leerPrefUbicacion,
+  ubicacionPromptYaRespondido,
+  useGeolocation,
+} from '../hooks/useGeolocation'
 import { useRestaurantes } from '../hooks/useRestaurantes'
-import { mockPlatosDestacados } from '../data/mockRestaurantes'
 import Header from '../components/body/Header.js'
 
 export default function HomePage() {
@@ -28,8 +30,20 @@ export default function HomePage() {
 
   const [busqueda, setBusqueda] = useState('')
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false)
-  const [mostrarPromptUbicacion, setMostrarPromptUbicacion] = useState(true)
-  const [ubicacionCancelada, setUbicacionCancelada] = useState(false)
+  const [mostrarPromptUbicacion, setMostrarPromptUbicacion] = useState(
+    () => !ubicacionPromptYaRespondido(),
+  )
+  const [ubicacionCancelada, setUbicacionCancelada] = useState(
+    () => !!leerPrefUbicacion()?.rechazado,
+  )
+
+  const destacados = useMemo(
+    () =>
+      [...restaurantes]
+        .sort((a, b) => (b.calificacionProm ?? 0) - (a.calificacionProm ?? 0))
+        .slice(0, 4),
+    [restaurantes],
+  )
 
   const iniciarCarga = useCallback(() => {
     if (geo.tieneUbicacion) {
@@ -38,19 +52,15 @@ export default function HomePage() {
   }, [geo.tieneUbicacion, geo.coords, cargarZona])
 
   useEffect(() => {
-    if (geo.estado === 'idle') {
-      setMostrarPromptUbicacion(true)
-      return
-    }
-    if (geo.ubicacionDenegada) {
-      setMostrarPromptUbicacion(false)
-      return
-    }
     if (geo.tieneUbicacion) {
       setMostrarPromptUbicacion(false)
       iniciarCarga()
+      return
     }
-  }, [geo.estado, geo.ubicacionDenegada, geo.tieneUbicacion, iniciarCarga])
+    if (geo.ubicacionDenegada || ubicacionCancelada || ubicacionPromptYaRespondido()) {
+      setMostrarPromptUbicacion(false)
+    }
+  }, [geo.ubicacionDenegada, geo.tieneUbicacion, iniciarCarga, ubicacionCancelada])
 
   const handleActivarUbicacion = () => {
     setMostrarPromptUbicacion(false)
@@ -60,6 +70,7 @@ export default function HomePage() {
   const handleCancelarUbicacion = () => {
     setMostrarPromptUbicacion(false)
     setUbicacionCancelada(true)
+    geo.marcarPromptRechazado()
   }
 
   const handleBuscar = () => {
@@ -114,11 +125,17 @@ export default function HomePage() {
               </SectionRow>
             )}
 
-            <SectionRow titulo="Descubre los Mejores Platos" accion={<LinkMas />}>
-              {mockPlatosDestacados.map((p) => (
-                <ProductCard key={p.idProducto} plato={p} />
-              ))}
-            </SectionRow>
+            {destacados.length > 0 && (
+              <SectionRow titulo="Descubre los Mejores Platos" accion={<LinkMas />}>
+                {destacados.map((r) => (
+                  <RestaurantCard
+                    key={`destacado-${r.idUsuario}`}
+                    restaurante={r}
+                    modoBusqueda={modoBusqueda}
+                  />
+                ))}
+              </SectionRow>
+            )}
 
             <section>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3 px-1">
