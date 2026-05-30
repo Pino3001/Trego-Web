@@ -1,6 +1,6 @@
 import { ENDPOINTS } from './endpoints'
 import { fetchConAuth } from './header/fetchConAuth'
-import { armarProductoPedidoRequest, precioProductoParaApi } from './mapeadores'
+import { armarProductoPedidoRequest } from './mapeadores'
 
 async function leerJson(response) {
   const text = await response.text()
@@ -35,18 +35,12 @@ export async function agregarProductoAlCarrito({ producto, cantidad, comentarios
   return leerJson(response)
 }
 
-export async function modificarProductoEnCarrito({
-  producto,
-  cantidad,
-  comentarios,
-  idRestaurante,
-}) {
-  const body = armarProductoPedidoRequest({
-    producto,
+export async function modificarProductoEnCarrito({ idProducto, cantidad, comentarios }) {
+  const body = {
     cantidad,
-    comentarios,
-    idRestaurante,
-  })
+    observaciones: comentarios ?? '',
+    producto: { idProducto },
+  }
   const response = await fetchConAuth(ENDPOINTS.CARRITO_PRODUCTOS, {
     method: 'PATCH',
     body: JSON.stringify(body),
@@ -56,14 +50,8 @@ export async function modificarProductoEnCarrito({
   return leerJson(response)
 }
 
-export async function eliminarProductoDelCarrito(idProducto, producto) {
-  const body = {
-    producto: {
-      idProducto,
-      precio: producto ? precioProductoParaApi(producto) : 0,
-      nombre: producto?.nombre,
-    },
-  }
+export async function eliminarProductoDelCarrito(idProducto) {
+  const body = { producto: { idProducto } }
   const response = await fetchConAuth(ENDPOINTS.CARRITO_PRODUCTOS, {
     method: 'DELETE',
     body: JSON.stringify(body),

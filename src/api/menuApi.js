@@ -1,62 +1,48 @@
 import { ENDPOINTS } from './endpoints'
-import { mapearMenuRespuesta, mapearRestaurante, ordenFrontABackend } from './mapeadores'
+import { obtenerMockMenu } from '../data/mockMenu'
+import { mapearMenuRespuesta, ordenFrontABackend } from './mapeadores'
 import { fetchConAuth } from './header/fetchConAuth'
 
-export class MenuApiError extends Error {
-  constructor(message, status) {
-    super(message)
-    this.name = 'MenuApiError'
-    this.status = status
-  }
-}
-
-async function obtenerCabeceraRestaurante(idRestaurante) {
-  const path = ENDPOINTS.RESTAURANTE_POR_ID.replace(':id', String(idRestaurante))
-  const response = await fetchConAuth(path)
-  if (response.status === 404) {
-    throw new MenuApiError('El restaurante no existe o no está disponible', 404)
-  }
-  if (!response.ok) {
-    throw new MenuApiError('Error al cargar datos del restaurante', response.status)
-  }
-  const data = await response.json()
-  return mapearRestaurante(data)
-}
+const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
 
 export async function obtenerMenuRestaurante(idRestaurante, opciones = {}) {
   const { categoria, ordenPrecio } = opciones
-  const path = ENDPOINTS.MENU_RESTAURANTE.replace(':id', String(idRestaurante))
-  const params = new URLSearchParams()
-  if (categoria) params.set('categoria', categoria)
-  const orden = ordenFrontABackend(ordenPrecio)
-  if (orden) params.set('orden', orden)
 
-  const query = params.toString()
-  const url = query ? `${path}?${query}` : path
-
-  const response = await fetchConAuth(url)
-
-  if (response.status === 404) {
-    throw new MenuApiError('El restaurante no existe o no está disponible', 404)
-  }
-  if (!response.ok) {
-    throw new MenuApiError('Error al cargar el menú', response.status)
+  if (USE_MOCK) {
+    await delay(350)
+    return obtenerMockMenu(idRestaurante)
   }
 
-  const data = await response.json()
-  const menu = mapearMenuRespuesta(data)
-  if (!menu) {
-    throw new MenuApiError('Respuesta de menú inválida', 500)
-  }
+  try {
+    const path = ENDPOINTS.MENU_RESTAURANTE.replace(':id', String(idRestaurante))
+    const params = new URLSearchParams()
+    if (categoria) params.set('categoria', categoria)
+    const orden = ordenFrontABackend(ordenPrecio)
+    if (orden) params.set('orden', orden)
 
-  let restaurante = menu.restaurante
-  if (!restaurante) {
-    restaurante = await obtenerCabeceraRestaurante(idRestaurante)
-  }
+    const query = params.toString()
+    const url = query ? `${path}?${query}` : path
 
-  return {
-    restaurante,
-    productos: menu.productos ?? [],
-    mensaje: menu.mensaje,
+    const response = await fetchConAuth(url)
+    if (!response.ok) throw new Error('Error al cargar menú')
+
+    const data = await response.json()
+    const menu = mapearMenuRespuesta(data)
+
+    if (menu?.mensaje && (!menu.productos || menu.productos.length === 0)) {
+      return {
+        restaurante: menu.restaurante ?? { idUsuario: Number(idRestaurante), habilitado: true, abierto: true },
+        productos: [],
+      }
+    }
+
+    return menu
+  } catch (err) {
+    console.warn('[Trego] API menú no disponible, usando mock', err)
+    return obtenerMockMenu(idRestaurante)
   }
+}
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }

@@ -38,37 +38,3 @@ export async function buscarDireccionesGeoapify(texto: string): Promise<Direccio
     return [];
   }
 }
-
-/**
- * Convierte coordenadas en dirección (calle, número, etc.) vía Geoapify Reverse Geocoding.
- */
-export async function reverseGeocodeGeoapify(
-  latitud: number,
-  longitud: number,
-): Promise<DireccionGeoapify | null> {
-  if (!GEOAPIFY_KEY) return null
-
-  const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${latitud}&lon=${longitud}&lang=es&apiKey=${GEOAPIFY_KEY}`
-
-  try {
-    const response = await fetch(url)
-    if (!response.ok) throw new Error("Error al consultar Geoapify reverse")
-
-    const data = await response.json()
-    const feature = data.features?.[0]
-    if (!feature) return null
-
-    const props = feature.properties
-    return {
-      direccionCompleta: props.formatted || "",
-      calle: props.street || props.name || props.address_line1 || "",
-      numero: props.housenumber ? Number(props.housenumber) || 0 : 0,
-      esquina: props.street_junction || "",
-      latitud: feature.geometry.coordinates[1],
-      longitud: feature.geometry.coordinates[0],
-    }
-  } catch (error) {
-    console.error("Error en Geoapify reverse:", error)
-    return null
-  }
-}

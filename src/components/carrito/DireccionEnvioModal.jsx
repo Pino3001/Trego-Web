@@ -1,8 +1,13 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import ModalBase, { Z_MODAL } from './ModalBase'
 import { useCarrito } from '../../context/CarritoContext'
 import { useGeolocation } from '../../hooks/useGeolocation'
-import { resolverDireccionDesdeCoords } from '../../api/mapeadores'
+
+function formatearDireccionActual(coords) {
+  if (!coords) return 'Ubicación actual'
+  const { latitud, longitud } = coords
+  return `Lat ${latitud.toFixed(4)}, Lng ${longitud.toFixed(4)}`
+}
 
 export default function DireccionEnvioModal() {
   const {
@@ -10,42 +15,13 @@ export default function DireccionEnvioModal() {
     cerrarModalDireccion,
     direcciones,
     setDireccionSeleccionada,
-    setMensajeCarrito,
     modalSuperior,
   } = useCarrito()
 
-  const { coords, cargandoUbicacion, tieneUbicacion, solicitar, ubicacionDenegada } =
-    useGeolocation(false)
-  const [tab, setTab] = useState('guardadas')
-  const [esperandoUbicacionParaEnvio, setEsperandoUbicacionParaEnvio] = useState(false)
-  const [resolviendoDireccion, setResolviendoDireccion] = useState(false)
-  const [etiquetaUbicacion, setEtiquetaUbicacion] = useState(null)
+  const { coords, cargandoUbicacion, tieneUbicacion, solicitar, ubicacionDenegada } = useGeolocation(false)
+  const [tab, setTab] = useState('guardadas') // guardadas | actual
 
   const direccionesUi = useMemo(() => direcciones ?? [], [direcciones])
-
-  function confirmarSeleccion(mensaje) {
-    setMensajeCarrito(mensaje)
-    cerrarModalDireccion()
-  }
-
-  const aplicarUbicacionActual = useCallback(
-    async (coordsActuales) => {
-      setResolviendoDireccion(true)
-      try {
-        const resuelta = await resolverDireccionDesdeCoords(coordsActuales)
-        setDireccionSeleccionada({
-          tipo: 'actual',
-          coords: coordsActuales,
-          nombre: resuelta.nombre,
-          datos: resuelta.datos,
-        })
-        confirmarSeleccion(`Dirección seleccionada: ${resuelta.nombre}`)
-      } finally {
-        setResolviendoDireccion(false)
-      }
-    },
-    [setDireccionSeleccionada, setMensajeCarrito, cerrarModalDireccion],
-  )
 
   function seleccionarGuardada(d) {
     setDireccionSeleccionada({
@@ -55,50 +31,17 @@ export default function DireccionEnvioModal() {
       descripcion: d.descripcion,
       datos: d.datos,
     })
-    confirmarSeleccion(`Dirección seleccionada: ${d.nombre}`)
+    cerrarModalDireccion()
   }
 
   function seleccionarActual() {
-    if (!tieneUbicacion || !coords) {
-      setEsperandoUbicacionParaEnvio(true)
+    if (!tieneUbicacion) {
       solicitar()
       return
     }
-    aplicarUbicacionActual(coords)
+    setDireccionSeleccionada({ tipo: 'actual', coords })
+    cerrarModalDireccion()
   }
-
-  useEffect(() => {
-    if (!esperandoUbicacionParaEnvio || !tieneUbicacion || !coords) return
-    setEsperandoUbicacionParaEnvio(false)
-    aplicarUbicacionActual(coords)
-  }, [esperandoUbicacionParaEnvio, tieneUbicacion, coords, aplicarUbicacionActual])
-
-  useEffect(() => {
-    if (!direccionModalAbierto) {
-      setEsperandoUbicacionParaEnvio(false)
-      setResolviendoDireccion(false)
-    }
-  }, [direccionModalAbierto])
-
-  useEffect(() => {
-    if (!tieneUbicacion || !coords) {
-      setEtiquetaUbicacion(null)
-      return
-    }
-    let cancelado = false
-    resolverDireccionDesdeCoords(coords).then((resuelta) => {
-      if (!cancelado) setEtiquetaUbicacion(resuelta.nombre)
-    })
-    return () => {
-      cancelado = true
-    }
-  }, [tieneUbicacion, coords])
-
-  const textoUbicacionDetectada =
-    etiquetaUbicacion ??
-    (resolviendoDireccion || cargandoUbicacion
-      ? 'Buscando dirección…'
-      : 'Tu ubicación en Montevideo')
 
   return (
     <ModalBase
@@ -174,7 +117,7 @@ export default function DireccionEnvioModal() {
               {tieneUbicacion ? (
                 <>
                   Ubicación detectada:{' '}
-                  <span className="font-extrabold text-gray-900">{textoUbicacionDetectada}</span>
+                  <span className="font-extrabold text-gray-900">{formatearDireccionActual(coords)}</span>
                 </>
               ) : ubicacionDenegada ? (
                 'No se pudo acceder a tu ubicación. Habilitá permisos del navegador.'
@@ -187,11 +130,9 @@ export default function DireccionEnvioModal() {
               type="button"
               onClick={seleccionarActual}
               className="mt-4 w-full rounded-full bg-trego-orange px-6 py-3 text-[13px] font-extrabold text-white shadow-md hover:bg-orange-600 active:scale-[0.99] disabled:opacity-50"
-              disabled={cargandoUbicacion || resolviendoDireccion}
+              disabled={cargandoUbicacion}
             >
-              {cargandoUbicacion || resolviendoDireccion
-                ? 'Obteniendo dirección…'
-                : 'Usar ubicación actual'}
+              {cargandoUbicacion ? 'Obteniendo ubicación…' : 'Usar ubicación actual'}
             </button>
           </div>
         )}
@@ -199,3 +140,4 @@ export default function DireccionEnvioModal() {
     </ModalBase>
   )
 }
+

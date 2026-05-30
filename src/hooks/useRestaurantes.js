@@ -20,16 +20,29 @@ export function useRestaurantes() {
   const [error, setError] = useState(null)
 
   const cargarZona = useCallback(
-    async (coords) => {
+    async (coords, filtrosActuales = filtros) => {
       if (!coords) return
       setCargando(true)
       setError(null)
       setModoBusqueda(false)
       try {
-        const data = await obtenerRestaurantesZona({
+        const params = {
           latitud: coords.latitud,
           longitud: coords.longitud,
-        })
+          ...(filtrosActuales.categoria && {
+            categoria: filtrosActuales.categoria,
+          }),
+          ...(filtrosActuales.calificacionMin > 0 && {
+            calificacionMin: filtrosActuales.calificacionMin,
+          }),
+          ...(filtrosActuales.horarioDesde && {
+            horarioDesde: filtrosActuales.horarioDesde,
+          }),
+          ...(filtrosActuales.horarioHasta && {
+            horarioHasta: filtrosActuales.horarioHasta,
+          }),
+        }
+        const data = await obtenerRestaurantesZona(params)
         setRestaurantes(data)
       } catch (e) {
         setError(e.message ?? 'Error al cargar restaurantes')
@@ -38,7 +51,7 @@ export function useRestaurantes() {
         setCargando(false)
       }
     },
-    [],
+    [filtros],
   )
 
   const buscar = useCallback(async (coords, nombre) => {
@@ -65,7 +78,7 @@ export function useRestaurantes() {
   const aplicarFiltros = useCallback(
     async (coords, nuevosFiltros) => {
       setFiltros(nuevosFiltros)
-      await cargarZona(coords)
+      await cargarZona(coords, nuevosFiltros)
     },
     [cargarZona],
   )
@@ -74,7 +87,7 @@ export function useRestaurantes() {
     async (coords) => {
       const vacios = { ...FILTROS_INICIALES }
       setFiltros(vacios)
-      await cargarZona(coords)
+      await cargarZona(coords, vacios)
     },
     [cargarZona],
   )

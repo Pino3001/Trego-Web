@@ -1,11 +1,7 @@
 import { IconPlus } from '../icons'
-import { precioConDescuento } from '../../utils/productos'
 
 export default function ProductoMenuCard({ producto, onAgregar }) {
-  const { nombre, descripcion, precio, fotoPlato, ofertaActiva, oferta } = producto
-  const descuento = ofertaActiva && oferta ? (oferta.descuentoPorcentaje ?? 0) : 0
-  const precioFinal = precioConDescuento(precio, descuento)
-  const tieneOferta = descuento > 0
+  const { nombre, descripcion, precio, fotoPlato } = producto
 
   return (
     <article className="flex items-center gap-4 rounded-2xl border border-gray-200/80 bg-[#ececec] p-3 sm:p-4">
@@ -18,16 +14,7 @@ export default function ProductoMenuCard({ producto, onAgregar }) {
       <div className="min-w-0 flex-1">
         <h3 className="text-[15px] font-bold text-gray-900">{nombre}</h3>
         <p className="mt-1 line-clamp-2 text-[12px] text-gray-600">{descripcion}</p>
-        <p className="mt-2 flex items-baseline gap-2">
-          {tieneOferta ? (
-            <>
-              <span className="text-[14px] text-gray-400 line-through">{precio}$</span>
-              <span className="text-[16px] font-bold text-red-600">{precioFinal}$</span>
-            </>
-          ) : (
-            <span className="text-[16px] font-bold text-trego-brown">{precio}$</span>
-          )}
-        </p>
+        <p className="mt-2 text-[16px] font-bold text-trego-brown">{precio}$</p>
       </div>
       <button
         type="button"

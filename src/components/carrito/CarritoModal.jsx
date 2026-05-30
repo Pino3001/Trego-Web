@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import ModalBase, { Z_MODAL } from './ModalBase'
 import { useCarrito } from '../../context/CarritoContext'
-import { esLabelSoloCoordenadas, resolverDireccionDesdeCoords } from '../../api/mapeadores'
 
 function formatearMoneda(n) {
   const num = Number(n) || 0
@@ -39,7 +38,6 @@ export default function CarritoModal({ restauranteAbierto }) {
     items,
     total,
     direccionSeleccionada,
-    setDireccionSeleccionada,
     abrirModalDireccion,
     abrirModalPago,
     eliminarProducto,
@@ -61,31 +59,9 @@ export default function CarritoModal({ restauranteAbierto }) {
 
   const direccionLabel = useMemo(() => {
     if (!direccionSeleccionada) return null
-    return direccionSeleccionada.nombre ?? 'Ubicación actual'
+    if (direccionSeleccionada.tipo === 'guardada') return direccionSeleccionada.nombre
+    return 'Ubicación actual'
   }, [direccionSeleccionada])
-
-  useEffect(() => {
-    if (
-      !carritoAbierto ||
-      direccionSeleccionada?.tipo !== 'actual' ||
-      !direccionSeleccionada?.coords ||
-      !esLabelSoloCoordenadas(direccionSeleccionada.nombre)
-    ) {
-      return
-    }
-    let cancelado = false
-    resolverDireccionDesdeCoords(direccionSeleccionada.coords).then((resuelta) => {
-      if (cancelado) return
-      setDireccionSeleccionada({
-        ...direccionSeleccionada,
-        nombre: resuelta.nombre,
-        datos: resuelta.datos,
-      })
-    })
-    return () => {
-      cancelado = true
-    }
-  }, [carritoAbierto, direccionSeleccionada, setDireccionSeleccionada])
 
   function cerrar() {
     setMensajeCarrito(null)
@@ -151,13 +127,7 @@ export default function CarritoModal({ restauranteAbierto }) {
         </div>
 
         {mensajeCarrito && (
-          <div
-            className={`mt-4 rounded-2xl border px-4 py-3 text-[13px] font-bold ${
-              mensajeCarrito.includes('seleccionad') || mensajeCarrito.includes('correctamente')
-                ? 'border-green-200 bg-green-50 text-green-800'
-                : 'border-orange-200 bg-orange-50 text-orange-800'
-            }`}
-          >
+          <div className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-[13px] font-bold text-orange-800">
             {mensajeCarrito}
           </div>
         )}

@@ -1,24 +1,26 @@
+import type { CategoriaRestaurante } from "./CategoriaRestaurante.js";
 import type { DTODireccion } from "./DTODireccion.js";
+import type { DTOIngrediente } from "./DTOIngrediente.js";
 import type { DTOProducto } from "./DTOProducto.js";
 
 export interface DTORestaurante {
-  idRestaurante?: number;
-  nombre: string;
-  razonSocial?: string;
+  idRestaurante?: number | null;
+  nombre?: string;
   email?: string;
   password?: string;
   rut?: string;
   telefono?: string;
   fotoPerfil?: string;
   fotoPortada?: string;
-  direccion?: DTODireccion;
+  direccion?: DTODireccion | null;
   descripcion?: string;
-  categoria?: "CATEGORIA_A" | "CATEGORIA_B"; // Reemplaza con los valores de tu Enum
-  calificacionProm?: number;
+  categoria?: CategoriaRestaurante | null;
+  calificacionProm?: number | null;
   radioEntrega?: number;
   habilitado?: boolean;
   abierto?: boolean;
-  horaApertura?: string;
-  horaCierre?: string;
+  horaApertura?: string | null;  // Formato "HH:mm:ss"
+  horaCierre?: string | null;    // Formato "HH:mm:ss"
   productos?: DTOProducto[];
+  ingredientesDisponibles?: DTOIngrediente[];
 }

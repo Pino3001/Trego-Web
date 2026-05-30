@@ -1,6 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { MenuApiError, obtenerMenuRestaurante } from '../api/menuApi'
-import { productosConOferta } from '../utils/productos'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { obtenerMenuRestaurante } from '../api/menuApi'
+import {
+  filtrarPorCategoria,
+  ordenarPorPrecio,
+  productosConOferta,
+} from '../utils/productos'
 
 export function useMenuRestaurante(idRestaurante) {
   const [menu, setMenu] = useState(null)
@@ -8,47 +12,41 @@ export function useMenuRestaurante(idRestaurante) {
   const [error, setError] = useState(null)
   const [categoria, setCategoria] = useState('')
   const [ordenPrecio, setOrdenPrecio] = useState('')
-  const restauranteRef = useRef(null)
 
   const cargar = useCallback(async () => {
     if (!idRestaurante) return
     setCargando(true)
     setError(null)
     try {
-      const data = await obtenerMenuRestaurante(idRestaurante, {
-        categoria,
-        ordenPrecio,
-      })
-      if (data.restaurante) {
-        restauranteRef.current = data.restaurante
-      }
-      setMenu({
-        restaurante: data.restaurante ?? restauranteRef.current,
-        productos: data.productos,
-        mensaje: data.mensaje,
-      })
+      const data = await obtenerMenuRestaurante(idRestaurante)
+      setMenu(data)
     } catch (e) {
-      if (e instanceof MenuApiError && e.status === 404) {
-        setError('El restaurante no existe o no está disponible')
-      } else {
-        setError(e.message ?? 'Error al cargar el menú')
-      }
+      setError(e.message ?? 'Error al cargar el menú')
       setMenu(null)
     } finally {
       setCargando(false)
     }
-  }, [idRestaurante, categoria, ordenPrecio])
+  }, [idRestaurante])
 
   useEffect(() => {
     cargar()
   }, [cargar])
 
-  const productos = menu?.productos ?? []
+  const productosFiltrados = useMemo(() => {
+    if (!menu?.productos) return []
+    let lista = filtrarPorCategoria(menu.productos, categoria)
+    lista = ordenarPorPrecio(lista, ordenPrecio)
+    return lista
+  }, [menu, categoria, ordenPrecio])
 
-  const ofertas = useMemo(() => productosConOferta(productos), [productos])
+  const ofertas = useMemo(() => {
+    if (!menu?.productos) return []
+    return productosConOferta(menu.productos)
+  }, [menu])
 
-  const sinProductos = !!menu?.restaurante && !categoria && productos.length === 0
-  const sinProductosEnCategoria = !!categoria && productos.length === 0 && !!menu?.restaurante
+  const sinProductos = menu && menu.productos.length === 0
+  const sinProductosEnCategoria =
+    menu && menu.productos.length > 0 && productosFiltrados.length === 0 && !!categoria
 
   return {
     menu,
@@ -58,7 +56,7 @@ export function useMenuRestaurante(idRestaurante) {
     setCategoria,
     ordenPrecio,
     setOrdenPrecio,
-    productosFiltrados: productos,
+    productosFiltrados,
     ofertas,
     sinProductos,
     sinProductosEnCategoria,

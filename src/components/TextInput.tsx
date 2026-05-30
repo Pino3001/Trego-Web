@@ -11,6 +11,7 @@ interface InputProps {
   label?: boolean;
   showStrength?: boolean;
   onChangeSeguridad?: (value: SeguridadPassword) => void;
+  error?: string;
 }
 export type SeguridadPassword = "Debil" | "Regular" | "Buena" | "Fuerte";
 
@@ -37,7 +38,8 @@ function getPasswordStrength(password: string): {
   }
 
   if (score <= 1) return { level: 1, label: "Debil", color: "text-red-500" };
-  if (score <= 2) return { level: 2, label: "Regular", color: "text-amber-500" };
+  if (score <= 2)
+    return { level: 2, label: "Regular", color: "text-amber-500" };
   if (score <= 3) return { level: 3, label: "Buena", color: "text-purple-500" };
   return { level: 4, label: "Fuerte", color: "text-emerald-600" };
 }
@@ -59,6 +61,7 @@ export const TextInput = ({
   label = true,
   showStrength = false,
   onChangeSeguridad,
+  error,
 }: InputProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -86,19 +89,28 @@ export const TextInput = ({
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className={`peer w-full h-13 border border-gray-400 rounded-full px-5 outline-none
-         focus:border-${colorStyle} focus:ring-1 focus:ring-${colorStyle} transition-all 
-         duration-200 placeholder-transparent ${className}`}
+        className={`peer w-full h-13 border rounded-full px-5 outline-none
+                    focus:ring-1 transition-all duration-200 placeholder-transparent
+                    ${
+                      error
+                        ? "border-red-400 focus:border-red-400 focus:ring-red-300 bg-red-50"
+                        : `border-gray-400 focus:border-${colorStyle} focus:ring-${colorStyle} bg-white`
+                    }
+                    ${className}`}
         placeholder={placeholder}
       />
       {label ? (
         <label
           className={`absolute left-5 transition-all duration-200 pointer-events-none 
-          ${
-            isFloating
-              ? `-top-2 text-xs text-${colorStyle}  bg-white px-1`
-              : "top-3.5 text-base text-gray-500"
-          } ${className}`}
+                    ${
+                      isFloating
+                        ? `-top-2 text-xs px-1 ${
+                            error
+                              ? "text-red-500 bg-red-50"
+                              : `text-${colorStyle} bg-white`
+                          }`
+                        : "top-3.5 text-base text-gray-500"
+                    } ${className}`}
         >
           {placeholder}
         </label>
@@ -147,6 +159,7 @@ export const TextInput = ({
           </div>
         </div>
       )}
+      {error && <p className="text-xs text-red-500 mt-1 px-5">{error}</p>}
     </div>
   );
 };

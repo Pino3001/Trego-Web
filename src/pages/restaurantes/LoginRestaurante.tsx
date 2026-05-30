@@ -10,6 +10,7 @@ import {
 import TextoDivider from "../../components/TextoDivider.js";
 import { apiAuth } from "../../api/apiAuth.js";
 import type { DTOLoginRegistro } from "../../data/DTOLoginRegistro.js";
+import { obtenerActual } from "../../api/apiRestaurante.js";
 
 type AuthStep = "INGRESO" | "LOADING";
 
@@ -58,22 +59,26 @@ export default function LoginRestaurante() {
 
       // Guardar el token que te devolvió Spring Boot para tus futuras peticiones
       localStorage.setItem("jwtToken", data.token);
+
+      const response = await obtenerActual()
+      // Asumimos que el backend te devuelve este dato (o lo sacas de isNewUser)
+      localStorage.setItem(
+        "restauranteHabilitado",
+        response.habilitado ? "true" : "false",
+      );
       window.dispatchEvent(new Event("trego-sesion-iniciada"));
 
-      /*Ver esto con mas detalle tenemos que usar un dato que google no pueda obtener de firebase*/
-      // Dependiendo del tipo de inicio se dirije
-      const isNewUser = !data.nombre || data.nombre === "";
-
-      if (data.rol == "Restaurante") {
-        if (isNewUser) {
-          navigate("/restaurantes/solicitarAlta"); // Cuando implementemos modificar perfil aca cambiamos la redireccion
+      if (data.rol === "Restaurante") {
+        if (response.habilitado) {
+          navigate("/ListarPedidosSinConfirmar"); // Va directo a trabajar
         } else {
-          navigate("/restaurantes/solicitarAlta");
+          navigate("/restaurantes/solicitarAlta"); // Va a llenar los papeles
         }
-      } else {
+      }else {
         setStep("INGRESO");
         setError("El correo ingresado no pertenece a un Restaurante.");
       }
+
     } catch (err: unknown) {
       setStep("INGRESO");
 
