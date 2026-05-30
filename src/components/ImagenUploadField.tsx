@@ -6,13 +6,11 @@ export default function ImageUploadField({
   imageField,
   onImageChange,
   hasError,
-  className
 }: {
   label: string;
   imageField: ImageField;
   onImageChange: (file: File) => void;
   hasError: boolean;
-  className?: string
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -34,7 +32,7 @@ export default function ImageUploadField({
           flex flex-col items-center justify-center gap-2
           border-2 border-dashed transition-all duration-200
           ${hasError ? "border-red-400 bg-red-50" : "border-gray-300 bg-gray-50 hover:border-trego-restaurante hover:bg-green-50"}
-          ${imageField.uploadState === "uploading" ? "opacity-60 pointer-events-none" : ""} ${className}
+          ${imageField.uploadState === "uploading" ? "opacity-60 pointer-events-none" : ""}
         `}
       >
         {imageField.previewUrl ? (

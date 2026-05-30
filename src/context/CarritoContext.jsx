@@ -280,7 +280,8 @@ export function CarritoProvider({ children }) {
   async function eliminarProducto(idProducto) {
     if (tieneSesion()) {
       try {
-        const dto = await carritoApi.eliminarProductoDelCarrito(idProducto)
+        const item = items.find((i) => i.idProducto === idProducto)
+        const dto = await carritoApi.eliminarProductoDelCarrito(idProducto, item)
         aplicarCarritoDto(dto)
       } catch (err) {
         setMensajeCarrito(err.message ?? 'No se pudo eliminar el producto')
@@ -294,11 +295,13 @@ export function CarritoProvider({ children }) {
     const cantidad = Math.max(0, Number(nuevaCantidad) || 0)
 
     if (tieneSesion()) {
+      const item = items.find((i) => i.idProducto === idProducto)
       try {
         await carritoApi.modificarProductoEnCarrito({
-          idProducto,
+          producto: item ?? { idProducto, precio: 0 },
           cantidad,
-          comentarios: items.find((i) => i.idProducto === idProducto)?.comentarios,
+          comentarios: item?.comentarios,
+          idRestaurante: restaurante?.idUsuario ?? carritoDto?.idRestaurante,
         })
         await cargarCarritoDesdeApi()
       } catch (err) {
@@ -319,9 +322,10 @@ export function CarritoProvider({ children }) {
       const item = items.find((i) => i.idProducto === idProducto)
       try {
         await carritoApi.modificarProductoEnCarrito({
-          idProducto,
+          producto: item ?? { idProducto, precio: 0 },
           cantidad: item?.cantidad ?? 1,
           comentarios,
+          idRestaurante: restaurante?.idUsuario ?? carritoDto?.idRestaurante,
         })
         await cargarCarritoDesdeApi()
       } catch (err) {
@@ -345,6 +349,9 @@ export function CarritoProvider({ children }) {
   function direccionParaBackend() {
     if (!direccionSeleccionada) return null
     if (direccionSeleccionada.tipo === 'guardada') {
+      return direccionSeleccionada.datos
+    }
+    if (direccionSeleccionada.datos) {
       return direccionSeleccionada.datos
     }
     const { latitud, longitud } = direccionSeleccionada.coords ?? {}
