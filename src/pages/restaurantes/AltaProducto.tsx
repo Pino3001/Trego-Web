@@ -165,164 +165,158 @@ export default function AltaProducto() {
 
   return (
     <>
-      <Header abrirPerfil tipoUser="Restaurante" />
-      <div className="flex min-h-screen bg-gray-50">
-        <Sidebar habilitado itemActivo="Alta Producto"/>
-        <main className="flex-1 flex flex-col items-center justify-start px-4 py-8">
-          <div className="w-full max-w-4xl">
-            <h1 className="text-3xl font-bold text-trego-restaurante text-center mb-6">
-              Alta Producto
-            </h1>
+      <div className="w-full max-w-5xl mx-auto px-10 py-8 min-h-screen bg-gray-50">
+        <h1 className="text-3xl font-bold text-center mb-2">
+          Alta Producto
+        </h1>
 
-            {/* SUCCESS */}
-            {step === "SUCCESS" && (
-              <div className="flex flex-col items-center gap-6 py-20">
-                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
-                  <svg
-                    className="w-10 h-10 text-trego-restaurante"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                </div>
-                <h2 className="text-2xl font-bold text-gray-800">
-                  ¡Producto agregado!
-                </h2>
-                <p className="text-gray-500 text-center max-w-sm">
-                  El producto ya está disponible en tu menú.
-                </p>
-                <button
-                  onClick={() => {
-                    resetForm();
-                    setStep("FORM");
-                  }}
-                  className="mt-2 px-8 py-3 rounded-3xl bg-trego-restaurante text-white font-bold hover:bg-green-700 transition-colors"
-                >
-                  Agregar otro producto
-                </button>
-              </div>
-            )}
-
-            {/* LOADING */}
-            {step === "LOADING" && (
-              <div className="flex flex-col items-center gap-4 py-20">
-                <div className="w-12 h-12 rounded-full border-4 border-green-200 border-t-trego-restaurante animate-spin" />
-                <p className="text-sm text-gray-400">Guardando producto...</p>
-              </div>
-            )}
-
-            {/* FORM */}
-            {step === "FORM" && (
-              <div className="bg-white rounded-3xl shadow-lg shadow-green-50 p-8 flex flex-col gap-1">
-                {/* Selector de tipo */}
-                <div className="w-full max-w-md m-auto">
-                  <TextSelector
-                    items={TIPOS_PRODUCTO}
-                    selected={tipo}
-                    onSelect={setTipo}
-                    placeholder="Tipo de producto"
-                    mapToItem={(t) => ({ id: t.id, label: t.label })}
-                  />
-                </div>
-
-                {/* Renderizado condicional según tipo.id */}
-                {tipo?.id === 1 && (
-                  <AltaPlato
-                    nombre={nombre}
-                    descripcion={descripcion}
-                    precio={precio}
-                    subcategoria={subcategoria}
-                    tiempoPreparacion={tiempoPreparacion}
-                    foto={foto}
-                    ingredientesDisponibles={INGREDIENTES_DISPONIBLES}
-                    onChangeNombre={setNombre}
-                    onChangeDescripcion={setDescripcion}
-                    onChangePrecio={setPrecio}
-                    onChangeSubCategoria={setSubcategoria}
-                    onChangeTiempoPrep={setTiempoPreparacion}
-                    onChangeImage={handleImageChange}
-                    ingredienteSeleccionado={ingredienteSeleccionado}
-                    onChangeIngrediente={setIngredienteSeleccionado} // actualiza el input del buscador
-                    listaDeIngredientes={setListaIngredientes}
-                    error={errors}
-                  />
-                )}
-
-                {tipo?.id === 2 && (
-                  <AltaArticulo
-                    nombre={nombre}
-                    descripcion={descripcion}
-                    precio={precio}
-                    subcategoria={subcategoria}
-                    foto={foto}
-                    onChangeNombre={setNombre}
-                    onChangeDescripcion={setDescripcion}
-                    onChangePrecio={setPrecio}
-                    onChangeSubCategoria={setSubcategoria}
-                    onChangeImage={handleImageChange}
-                    error={errors}
-                  />
-                )}
-
-                {tipo?.id === 3 && (
-                  <AltaCombo
-                    nombre={nombre}
-                    descripcion={descripcion}
-                    precio={precio}
-                    subcategoria={subcategoria}
-                    foto={foto}
-                    onChangeNombre={setNombre}
-                    onChangeDescripcion={setDescripcion}
-                    onChangePrecio={setPrecio}
-                    onChangeSubCategoria={setSubcategoria}
-                    onChangeImage={handleImageChange}
-                    productosSeleccionados={productosCombo}
-                    onChangeListaProd={setProductosCombo}
-                    error={errors}
-                  />
-                )}
-
-                {/* API Error */}
-                {apiError && (
-                  <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 flex items-start gap-2">
-                    <span>⚠</span> {apiError}
-                  </div>
-                )}
-
-                {/* Errores de validación generales */}
-                {Object.keys(errors).length > 0 && (
-                  <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
-                    ⚠ Faltan campos por completar. Revisá los campos marcados en
-                    rojo.
-                  </div>
-                )}
-
-                {/* Botones */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                  <button
-                    onClick={handleSubmit}
-                    className="flex-1 py-3.5 px-6 rounded-3xl bg-trego-restaurante hover:bg-green-700 text-white text-base font-bold transition-all duration-200 shadow-md"
-                  >
-                    Confirmar Producto
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    className="flex-1 py-3.5 px-6 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-base font-semibold transition-all duration-200"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              </div>
-            )}
+        {/* SUCCESS */}
+        {step === "SUCCESS" && (
+          <div className="flex flex-col items-center gap-6 py-20">
+            <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
+              <svg
+                className="w-10 h-10 text-trego-restaurante"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2.5}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              ¡Producto agregado!
+            </h2>
+            <p className="text-gray-500 text-center max-w-sm">
+              El producto ya está disponible en tu menú.
+            </p>
+            <button
+              onClick={() => {
+                resetForm();
+                setStep("FORM");
+              }}
+              className="mt-2 px-8 py-3 rounded-3xl bg-trego-restaurante text-white font-bold hover:bg-green-700 transition-colors"
+            >
+              Agregar otro producto
+            </button>
           </div>
-        </main>
+        )}
+
+        {/* LOADING */}
+        {step === "LOADING" && (
+          <div className="flex flex-col items-center gap-4 py-20">
+            <div className="w-12 h-12 rounded-full border-4 border-green-200 border-t-trego-restaurante animate-spin" />
+            <p className="text-sm text-gray-400">Guardando producto...</p>
+          </div>
+        )}
+
+        {/* FORM */}
+        {step === "FORM" && (
+          <div className="bg-white rounded-3xl shadow-lg shadow-green-50 p-8 flex flex-col gap-1">
+            {/* Selector de tipo */}
+            <div className="w-full max-w-md m-auto">
+              <TextSelector
+                items={TIPOS_PRODUCTO}
+                selected={tipo}
+                onSelect={setTipo}
+                placeholder="Tipo de producto"
+                mapToItem={(t) => ({ id: t.id, label: t.label })}
+              />
+            </div>
+
+            {/* Renderizado condicional según tipo.id */}
+            {tipo?.id === 1 && (
+              <AltaPlato
+                nombre={nombre}
+                descripcion={descripcion}
+                precio={precio}
+                subcategoria={subcategoria}
+                tiempoPreparacion={tiempoPreparacion}
+                foto={foto}
+                ingredientesDisponibles={INGREDIENTES_DISPONIBLES}
+                onChangeNombre={setNombre}
+                onChangeDescripcion={setDescripcion}
+                onChangePrecio={setPrecio}
+                onChangeSubCategoria={setSubcategoria}
+                onChangeTiempoPrep={setTiempoPreparacion}
+                onChangeImage={handleImageChange}
+                ingredienteSeleccionado={ingredienteSeleccionado}
+                onChangeIngrediente={setIngredienteSeleccionado} // actualiza el input del buscador
+                listaDeIngredientes={setListaIngredientes}
+                error={errors}
+              />
+            )}
+
+            {tipo?.id === 2 && (
+              <AltaArticulo
+                nombre={nombre}
+                descripcion={descripcion}
+                precio={precio}
+                subcategoria={subcategoria}
+                foto={foto}
+                onChangeNombre={setNombre}
+                onChangeDescripcion={setDescripcion}
+                onChangePrecio={setPrecio}
+                onChangeSubCategoria={setSubcategoria}
+                onChangeImage={handleImageChange}
+                error={errors}
+              />
+            )}
+
+            {tipo?.id === 3 && (
+              <AltaCombo
+                nombre={nombre}
+                descripcion={descripcion}
+                precio={precio}
+                subcategoria={subcategoria}
+                foto={foto}
+                onChangeNombre={setNombre}
+                onChangeDescripcion={setDescripcion}
+                onChangePrecio={setPrecio}
+                onChangeSubCategoria={setSubcategoria}
+                onChangeImage={handleImageChange}
+                productosSeleccionados={productosCombo}
+                onChangeListaProd={setProductosCombo}
+                error={errors}
+              />
+            )}
+
+            {/* API Error */}
+            {apiError && (
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 flex items-start gap-2">
+                <span>⚠</span> {apiError}
+              </div>
+            )}
+
+            {/* Errores de validación generales */}
+            {Object.keys(errors).length > 0 && (
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+                ⚠ Faltan campos por completar. Revisá los campos marcados en
+                rojo.
+              </div>
+            )}
+
+            {/* Botones */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-2">
+              <button
+                onClick={handleSubmit}
+                className="flex-1 py-3.5 px-6 rounded-3xl bg-trego-restaurante hover:bg-green-700 text-white text-base font-bold transition-all duration-200 shadow-md"
+              >
+                Confirmar Producto
+              </button>
+              <button
+                onClick={handleCancel}
+                className="flex-1 py-3.5 px-6 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-base font-semibold transition-all duration-200"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );

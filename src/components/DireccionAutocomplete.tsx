@@ -64,7 +64,7 @@ export default function AddressAutocomplete({
       } finally {
         setIsSearching(false);
       }
-    }, 400);
+    }, 200);
   };
 
   const handleSelect = (sug: DireccionGeoapify) => {
