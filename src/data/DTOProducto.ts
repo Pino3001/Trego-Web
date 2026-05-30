@@ -8,10 +8,10 @@ export interface DTOProducto {
   precio: number;
   urlImagen?: string;
   categoria: string; // O un Union Type: 'PIZZA' | 'BEBIDA' | ...
-  disponible?: boolean;
+  disponible: boolean;
   idRestaurante?: number;
   cantidadDisponible?: number;
-  ingredientes?: DTOIngrediente[];
+  ingredientes: DTOIngrediente[];
   tipo: string; // O un Union Type
   oferta?: DTOOferta;
   //plato?: DTOPlato;

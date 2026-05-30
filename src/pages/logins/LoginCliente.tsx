@@ -95,17 +95,27 @@ export default function LoginCliente() {
           "Acceso denegado. Su cuenta se encuentra deshabilitada. Contacte al soporte.",
         );
         await auth.signOut();
-      } else if (err instanceof Error && err.message === "TOKEN_INVALIDO") {
+      } else if (
+        err instanceof Error &&
+        (err.message === "TOKEN_INVALIDO" || err.message === "ERROR_SERVIDOR")
+      ) {
         setError(
-          "Google inició sesión, pero el backend no pudo validar el token. Verificá que el proyecto Firebase del front (firebase.config.js) coincida con firebase-service-account.json del backend.",
+          "Google inició sesión, pero el backend no pudo validar el token. Colocá el archivo firebase-service-account.json (proyecto trego-615dc) en Trego-Backend-master/src/main/resources/ y reiniciá el backend.",
         );
         await auth.signOut();
       } else if (err instanceof TypeError) {
         setError(
-          "No se pudo conectar con el servidor de Trego. ¿Está levantado el backend en el puerto 8080?",
+          "No se pudo conectar con el servidor de Trego. ¿Están levantados el backend (8080) y el front (npm run dev)?",
         );
+      } else if (err instanceof Error && err.message === "ERROR_AUTH") {
+        setError("No se pudo completar el inicio de sesión. Intentá de nuevo.");
+        await auth.signOut();
       } else {
-        setError("No se pudo conectar con el servidor de Trego.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "No se pudo conectar con el servidor de Trego.",
+        );
       }
     }
   }

@@ -7,7 +7,12 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/api': 'http://localhost:8080' // Con esto se evita poner el localhost en cada llamada, basta solo con el /api/loQueSea
+      '/api': 'http://localhost:8080',
+      '/nominatim': {
+        target: 'https://nominatim.openstreetmap.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/nominatim/, ''),
+      },
     }
   }
 })
