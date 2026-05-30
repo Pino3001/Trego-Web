@@ -119,7 +119,7 @@ export default function SeleccionarRol() {
 
           {/* Footer */}
           <p className="text-xs text-gray-400">
-            © {new Date().getFullYear()} Trego — Lo pedís, Terego
+            © {new Date().getFullYear()} Trego — Lo pedís, Trego
           </p>
 
         </div>
