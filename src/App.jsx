@@ -11,6 +11,7 @@ import CarritoUIRoot from "./components/carrito/CarritoUIRoot.jsx";
 import AltaProducto from "./pages/restaurantes/AltaProducto.js";
 import ListarSinConfirmar from "./pages/restaurantes/ListarSinConfirmar.js";
 import RestauranteLayout from "./pages/restaurantes/RestauranteLayout.js";
+import GestionRestaurantesPage from "./pages/admin/GestionRestaurantesPage.js";
 
 export default function AppRouter() {
   return (
@@ -41,6 +42,18 @@ export default function AppRouter() {
             element={<ListarSinConfirmar />}
           />
         </Route>
+        <Route
+          path="/restaurantes/solicitarAlta"
+          element={<SolicitarAltaRestaurante />}
+        />
+        <Route
+          path="/restaurantes/registrarRestaurante"
+          element={<RegistrarRestaurante />}
+        />
+        <Route
+          path="/admin/restaurantes"
+          element={<GestionRestaurantesPage />}
+        />
       </Routes>
       <CarritoUIRoot />
     </BrowserRouter>

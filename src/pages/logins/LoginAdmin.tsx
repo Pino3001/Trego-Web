@@ -56,16 +56,21 @@ export default function LoginAdmin() {
       // Guardar el token que te devolvió Spring Boot para tus futuras peticiones
       localStorage.setItem("jwtToken", data.token);
       window.dispatchEvent(new Event("trego-sesion-iniciada"));
-
-      /*Ver esto con mas detalle tenemos que usar un dato que google no pueda obtener de firebase*/
-      // Dependiendo del tipo de inicio se dirije
-      const isNewUser = !data.nombre || data.nombre === "";
+      //       /*Ver esto con mas detalle tenemos que usar un dato que google no pueda obtener de firebase*/
+      // // Dependiendo del tipo de inicio se dirije
+      // const isNewUser = !data.nombre || data.nombre === "";
+      // if (data.rol == "Administrador") {
+      //   if (isNewUser) {
+      //     navigate("/restaurantes"); // Cuando implementemos modificar perfil aca cambiamos la redireccion
+      //   } else {
+      //     navigate("/restaurantes/solicitarAlta");
+      //   }
+      // } else {
+      //   setStep("INGRESO");
+      //   setError("El correo ingresado no pertenece a un Administrador.");
+      // }
       if (data.rol == "Administrador") {
-        if (isNewUser) {
-          navigate("/restaurantes"); // Cuando implementemos modificar perfil aca cambiamos la redireccion
-        } else {
-          navigate("/restaurantes/solicitarAlta");
-        }
+        navigate("/admin/restaurantes");
       } else {
         setStep("INGRESO");
         setError("El correo ingresado no pertenece a un Administrador.");
@@ -118,7 +123,7 @@ export default function LoginAdmin() {
               <img src={logo} />
             </div>
             <p className="text-white text-4xl font-bold tracking-tight text-center leading-tight">
-              Lo Pedís, Terego
+              Lo Pedís, Trego
             </p>
           </div>
 
