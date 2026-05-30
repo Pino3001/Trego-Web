@@ -22,6 +22,31 @@ function App() {
         <Route path="/restaurantes/solicitarAlta" element={<SolicitarAltaRestaurante />} />
         <Route path="/restaurantes/registrarRestaurante" element={<RegistrarRestaurante />} />
 
+        {/* --- RUTAS PRIVADAS (ENVUELTAS EN EL LAYOUT) --- */}
+        {/* Este Route padre inyecta el Header y Sidebar. Los hijos se renderizan en el <Outlet /> todo lo que lleve la barra lateral de restaurante debe ir dentro de este Route*/}
+        <Route element={<RestauranteLayout />}>
+          <Route
+            path="/restaurantes/solicitarAlta"
+            element={<SolicitarAltaRestaurante />}
+          />
+          <Route path="/restaurantes/altaProducto" element={<AltaProducto />} />
+          <Route
+            path="/ListarPedidosSinConfirmar"
+            element={<ListarSinConfirmar />}
+          />
+        </Route>
+        <Route
+          path="/restaurantes/solicitarAlta"
+          element={<SolicitarAltaRestaurante />}
+        />
+        <Route
+          path="/restaurantes/registrarRestaurante"
+          element={<RegistrarRestaurante />}
+        />
+        <Route
+          path="/admin/restaurantes"
+          element={<GestionRestaurantesPage />}
+        />
       </Routes>
       <CarritoUIRoot />
     </BrowserRouter>

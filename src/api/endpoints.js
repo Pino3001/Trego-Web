@@ -37,4 +37,9 @@ export const ENDPOINTS = {
   REGISTRAR_RESTAURANTE: `/api/usuarios/registrar-restaurante/solicitar`,
   CONFIRMAR_REGISTRO: `/api/usuarios/registrar-restaurante/confirmar`,
   REENVIAR_CODIGO: `/api/usuarios/registrar-restaurante/reenviar-codigo`,
+
+  // Administrador — gestión de altas de restaurantes
+  ADMIN_RESTAURANTES_LISTA: '/api/administradores/restaurantes/lista',
+  ADMIN_RESTAURANTE_HABILITAR: '/api/administradores/restaurantes/:id/habilitar',
+  ADMIN_RESTAURANTE_NO_HABILITAR: '/api/administradores/restaurantes/:id/noHabilitar/:motivo',
 }
