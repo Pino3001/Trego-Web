@@ -1,0 +1,323 @@
+import { useState } from "react";
+import type { DTOIngrediente } from "../../data/DTOIngrediente.js";
+import type { ImageField } from "../../components/typos/ImageField.js";
+import type { DTOProducto } from "../../data/DTOProducto.js";
+import Header from "../../components/body/Header.js";
+import Sidebar from "../../components/body/Sidebar.js";
+import { TextSelector } from "../../components/TextSelector.js";
+import AltaPlato from "./componentes/AltaPlato.js";
+import AltaArticulo from "./componentes/AltaArticulo.js";
+import AltaCombo from "./componentes/AltaCombo.js";
+
+// ─── Tipos ─────────────────────────────────────────────────────
+interface TipoProducto {
+  id: number;
+  label: string;
+}
+
+const TIPOS_PRODUCTO: TipoProducto[] = [
+  { id: 1, label: "Plato" },
+  { id: 2, label: "Artículo" },
+  { id: 3, label: "Combo" },
+];
+
+type StepState = "FORM" | "LOADING" | "SUCCESS";
+
+// Mock de ingredientes
+const INGREDIENTES_DISPONIBLES: DTOIngrediente[] = [
+  { idIngrediente: 1, nombre: "Harina", idRestaurante: 1 },
+  { idIngrediente: 2, nombre: "Azúcar", idRestaurante: 1 },
+  { idIngrediente: 3, nombre: "Huevo", idRestaurante: 1 },
+  { idIngrediente: 4, nombre: "Mantequilla", idRestaurante: 1 },
+  { idIngrediente: 5, nombre: "Leche", idRestaurante: 1 },
+  { idIngrediente: 6, nombre: "Sal", idRestaurante: 1 },
+  { idIngrediente: 7, nombre: "Aceite de Oliva", idRestaurante: 1 },
+  { idIngrediente: 8, nombre: "Ajo", idRestaurante: 1 },
+];
+
+export interface SubcategoriaItem {
+  id: string;
+  label: string;
+}
+
+export const SUBCATEGORIAS: SubcategoriaItem[] = [
+  { id: "sin_subcategoria", label: "Sin subcategoría" },
+  { id: "helados", label: "Helados" },
+  { id: "tartas", label: "Tartas" },
+  { id: "mousses", label: "Mousses" },
+  { id: "tortas", label: "Tortas" },
+  { id: "sopas", label: "Sopas" },
+  { id: "pastas", label: "Pastas" },
+  { id: "arroces", label: "Arroces" },
+];
+
+// ─── Componente principal ──────────────────────────────────────
+export default function AltaProducto() {
+  const [step, setStep] = useState<StepState>("FORM");
+  const [tipo, setTipo] = useState<TipoProducto | undefined>(TIPOS_PRODUCTO[0]);
+  const [apiError, setApiError] = useState<string | null>(null);
+
+  // Estados compartidos
+  const [nombre, setNombre] = useState("");
+  const [precio, setPrecio] = useState(0);
+  const [foto, setFoto] = useState<ImageField>({
+    file: null,
+    previewUrl: null,
+    cloudUrl: null,
+    uploadState: "idle",
+  });
+  const [descripcion, setDescripcion] = useState("");
+  const [subcategoria, setSubcategoria] = useState<
+    SubcategoriaItem | undefined
+  >(SUBCATEGORIAS[0]);
+
+  // Estados para Plato (con ingredientes)
+  const [tiempoPreparacion, setTiempoPreparacion] = useState(0);
+  const [ingredienteSeleccionado, setIngredienteSeleccionado] = useState<
+    DTOIngrediente | undefined
+  >(INGREDIENTES_DISPONIBLES[0]);
+  const [listaIngredientes, setListaIngredientes] = useState<DTOIngrediente[]>(
+    [],
+  );
+
+  // Estados para Combo
+  const [productosCombo, setProductosCombo] = useState<DTOProducto[]>([]);
+
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Manejador de imagen
+  const handleImageChange = (file: File | null) => {
+    if (!file) {
+      setFoto({
+        file: null,
+        previewUrl: null,
+        cloudUrl: null,
+        uploadState: "idle",
+      });
+    } else {
+      const reader = new FileReader();
+      reader.onload = (e) =>
+        setFoto({
+          file,
+          previewUrl: e.target?.result as string,
+          uploadState: "uploading",
+          cloudUrl: null,
+        });
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Validación
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!nombre.trim()) errs.nombre = "El nombre es obligatorio.";
+    if (precio < 0 || isNaN(precio)) errs.precio = "Ingrese un precio válido.";
+    if (!foto.file) errs.foto = "La imagen es obligatoria.";
+
+    if (tipo?.id === 1) {
+      // Plato con ingredientes
+      if (!tiempoPreparacion || tiempoPreparacion < 0)
+        errs.tiempoPreparacion = "Ingrese un tiempo válido.";
+    }
+    if (tipo?.id === 3 && productosCombo.length === 0) {
+      errs.combo = "Seleccione al menos un producto para el combo.";
+    }
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    setApiError(null);
+    if (!validate()) return;
+    setStep("LOADING");
+    try {
+      await new Promise((res) => setTimeout(res, 1800)); // Simulación
+      setStep("SUCCESS");
+    } catch {
+      setApiError("Error al guardar el producto.");
+      setStep("FORM");
+    }
+  };
+
+  const resetForm = () => {
+    setNombre("");
+    setPrecio(0);
+    setDescripcion("");
+    setSubcategoria(SUBCATEGORIAS[0]);
+    setTiempoPreparacion(0);
+    setListaIngredientes([]);
+    setProductosCombo([]);
+    setFoto({
+      file: null,
+      previewUrl: null,
+      cloudUrl: null,
+      uploadState: "idle",
+    });
+    setErrors({});
+    setApiError(null);
+  };
+
+  const handleCancel = () => {
+    resetForm();
+    setTipo(TIPOS_PRODUCTO[0]); // vuelve al primer tipo
+    setStep("FORM");
+  };
+
+  return (
+    <>
+      <div className="w-full max-w-5xl mx-auto px-10 py-8 min-h-screen bg-gray-50">
+        <h1 className="text-3xl font-bold text-center mb-2">
+          Alta Producto
+        </h1>
+
+        {/* SUCCESS */}
+        {step === "SUCCESS" && (
+          <div className="flex flex-col items-center gap-6 py-20">
+            <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
+              <svg
+                className="w-10 h-10 text-trego-restaurante"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2.5}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              ¡Producto agregado!
+            </h2>
+            <p className="text-gray-500 text-center max-w-sm">
+              El producto ya está disponible en tu menú.
+            </p>
+            <button
+              onClick={() => {
+                resetForm();
+                setStep("FORM");
+              }}
+              className="mt-2 px-8 py-3 rounded-3xl bg-trego-restaurante text-white font-bold hover:bg-green-700 transition-colors"
+            >
+              Agregar otro producto
+            </button>
+          </div>
+        )}
+
+        {/* LOADING */}
+        {step === "LOADING" && (
+          <div className="flex flex-col items-center gap-4 py-20">
+            <div className="w-12 h-12 rounded-full border-4 border-green-200 border-t-trego-restaurante animate-spin" />
+            <p className="text-sm text-gray-400">Guardando producto...</p>
+          </div>
+        )}
+
+        {/* FORM */}
+        {step === "FORM" && (
+          <div className="bg-white rounded-3xl shadow-lg shadow-green-50 p-8 flex flex-col gap-1">
+            {/* Selector de tipo */}
+            <div className="w-full max-w-md m-auto">
+              <TextSelector
+                items={TIPOS_PRODUCTO}
+                selected={tipo}
+                onSelect={setTipo}
+                placeholder="Tipo de producto"
+                mapToItem={(t) => ({ id: t.id, label: t.label })}
+              />
+            </div>
+
+            {/* Renderizado condicional según tipo.id */}
+            {tipo?.id === 1 && (
+              <AltaPlato
+                nombre={nombre}
+                descripcion={descripcion}
+                precio={precio}
+                subcategoria={subcategoria}
+                tiempoPreparacion={tiempoPreparacion}
+                foto={foto}
+                ingredientesDisponibles={INGREDIENTES_DISPONIBLES}
+                onChangeNombre={setNombre}
+                onChangeDescripcion={setDescripcion}
+                onChangePrecio={setPrecio}
+                onChangeSubCategoria={setSubcategoria}
+                onChangeTiempoPrep={setTiempoPreparacion}
+                onChangeImage={handleImageChange}
+                ingredienteSeleccionado={ingredienteSeleccionado}
+                onChangeIngrediente={setIngredienteSeleccionado} // actualiza el input del buscador
+                listaDeIngredientes={setListaIngredientes}
+                error={errors}
+              />
+            )}
+
+            {tipo?.id === 2 && (
+              <AltaArticulo
+                nombre={nombre}
+                descripcion={descripcion}
+                precio={precio}
+                subcategoria={subcategoria}
+                foto={foto}
+                onChangeNombre={setNombre}
+                onChangeDescripcion={setDescripcion}
+                onChangePrecio={setPrecio}
+                onChangeSubCategoria={setSubcategoria}
+                onChangeImage={handleImageChange}
+                error={errors}
+              />
+            )}
+
+            {tipo?.id === 3 && (
+              <AltaCombo
+                nombre={nombre}
+                descripcion={descripcion}
+                precio={precio}
+                subcategoria={subcategoria}
+                foto={foto}
+                onChangeNombre={setNombre}
+                onChangeDescripcion={setDescripcion}
+                onChangePrecio={setPrecio}
+                onChangeSubCategoria={setSubcategoria}
+                onChangeImage={handleImageChange}
+                productosSeleccionados={productosCombo}
+                onChangeListaProd={setProductosCombo}
+                error={errors}
+              />
+            )}
+
+            {/* API Error */}
+            {apiError && (
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 flex items-start gap-2">
+                <span>⚠</span> {apiError}
+              </div>
+            )}
+
+            {/* Errores de validación generales */}
+            {Object.keys(errors).length > 0 && (
+              <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+                ⚠ Faltan campos por completar. Revisá los campos marcados en
+                rojo.
+              </div>
+            )}
+
+            {/* Botones */}
+            <div className="flex flex-col sm:flex-row gap-4 pt-2">
+              <button
+                onClick={handleSubmit}
+                className="flex-1 py-3.5 px-6 rounded-3xl bg-trego-restaurante hover:bg-green-700 text-white text-base font-bold transition-all duration-200 shadow-md"
+              >
+                Confirmar Producto
+              </button>
+              <button
+                onClick={handleCancel}
+                className="flex-1 py-3.5 px-6 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-base font-semibold transition-all duration-200"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}

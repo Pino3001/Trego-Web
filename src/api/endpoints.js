@@ -32,6 +32,7 @@ export const ENDPOINTS = {
   // Restaurante — alta de local (formulario completo)
   SOLICITUD_ALTA_RESTAURANTE: '/api/restaurantes/actualizar', // falta endpoint backend
   FIRMA_IMAGEN: `/api/restaurantes/imagenF/firma`,
+  OBTENER_RESTAURANTE_ACTUAL: `/api/restaurantes/actual`,
 
   //Registro
   REGISTRAR_RESTAURANTE: `/api/usuarios/registrar-restaurante/solicitar`,
