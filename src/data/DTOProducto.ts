@@ -1,5 +1,9 @@
+import type { DTOArticulo } from "./DTOArticulo.js";
+import type { DTOCombo } from "./DTOCombo.js";
 import type { DTOIngrediente } from "./DTOIngrediente.js";
 import type { DTOOferta } from "./DTOOferta.js";
+import type { DTOPlato } from "./DTOPato.js";
+import type { DTSubcategoria } from "./DTOSubcategoria.js";
 
 export interface DTOProducto {
   idProducto?: number;
@@ -14,7 +18,9 @@ export interface DTOProducto {
   ingredientes?: DTOIngrediente[];
   tipo: string; // O un Union Type
   oferta?: DTOOferta;
-  //plato?: DTOPlato;
-  //articulo?: DTOArticulo;
- // combo?: DTOCombo;
+  plato?: DTOPlato;
+  articulo?: DTOArticulo;
+  combo?: DTOCombo;
+  idSubCategoria?: number;
+  subCategoria?: DTSubcategoria;
 }

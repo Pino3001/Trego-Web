@@ -13,8 +13,8 @@ function formatearHora(hora?: string): string | null {
 }
 
 function formatearHorario(restaurante: DTORestaurante): string {
-  const apertura = formatearHora(restaurante.horaApertura);
-  const cierre = formatearHora(restaurante.horaCierre);
+const apertura = formatearHora(restaurante.horaApertura ?? undefined);
+const cierre = formatearHora(restaurante.horaCierre ?? undefined);
   if (apertura && cierre) return `${apertura} - ${cierre}`;
   return "—";
 }
@@ -169,7 +169,7 @@ export default function GestionRestaurantesPage() {
             <p className="text-sm text-gray-400">Cargando solicitudes...</p>
           </div>
         ) : restaurantes.length === 0 ? (
-          <EmptyState mensaje="No hay solicitudes pendientes" />
+          <EmptyState mensaje="No hay solicitudes pendientes" onLimpiarFiltros={undefined} />
         ) : (
           <ul className="grid gap-4 sm:grid-cols-2">
             {restaurantes.map((restaurante) => (
@@ -187,11 +187,6 @@ export default function GestionRestaurantesPage() {
                   <p className="truncate text-lg font-semibold text-gray-900">
                     {restaurante.nombre}
                   </p>
-                  {restaurante.razonSocial && (
-                    <p className="mt-1 truncate text-sm text-gray-500">
-                      {restaurante.razonSocial}
-                    </p>
-                  )}
                   {restaurante.categoria && (
                     <span className="mt-2 inline-block rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-600">
                       {restaurante.categoria}
@@ -233,9 +228,6 @@ export default function GestionRestaurantesPage() {
                   <h2 className="text-2xl font-bold text-gray-900">
                     {seleccionado.nombre}
                   </h2>
-                  {seleccionado.razonSocial && (
-                    <p className="text-gray-500">{seleccionado.razonSocial}</p>
-                  )}
                 </div>
                 <button
                   type="button"
@@ -257,10 +249,7 @@ export default function GestionRestaurantesPage() {
               {vistaModal === "detalle" ? (
                 <>
                   <dl className="grid gap-4 sm:grid-cols-2">
-                    <CampoDetalle
-                      etiqueta="Razón social"
-                      valor={seleccionado.razonSocial ?? "—"}
-                    />
+
                     <CampoDetalle
                       etiqueta="RUT"
                       valor={seleccionado.rut ?? "—"}

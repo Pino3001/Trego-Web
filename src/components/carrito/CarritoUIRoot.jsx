@@ -1,4 +1,3 @@
-import React from 'react'
 import CarritoModal from './CarritoModal'
 import DireccionEnvioModal from './DireccionEnvioModal'
 import DetalleProductoModal from './DetalleProductoModal'
@@ -14,4 +13,3 @@ export default function CarritoUIRoot({ restauranteAbierto }) {
     </>
   )
 }
-

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import{ useEffect, useState } from 'react'
 import ModalBase, { Z_MODAL } from './ModalBase'
 import { useCarrito } from '../../context/CarritoContext'
 
@@ -16,6 +16,7 @@ export default function PagoModal() {
 
   useEffect(() => {
     if (!pagoModalAbierto) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setEstado('esperando')
       setErrorMsg(null)
       return

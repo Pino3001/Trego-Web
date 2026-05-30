@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const Z_MODAL = {
   detalle: 60,
   carrito: 70,
@@ -57,7 +58,7 @@ export default function ModalBase({
         aria-modal="true"
         aria-label={ariaLabel}
         onMouseDown={(e) => e.stopPropagation()}
-        className={`w-full max-w-[540px] rounded-3xl border border-gray-200 bg-white shadow-2xl ${className}`}
+        className={`w-full max-w-135 rounded-3xl border border-gray-200 bg-white shadow-2xl ${className}`}
       >
         {children}
       </div>

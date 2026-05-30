@@ -5,6 +5,7 @@ export default function FiltersModal({ abierto, filtros, onCerrar, onAplicar }) 
   const [local, setLocal] = useState(filtros)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (abierto) setLocal(filtros)
   }, [abierto, filtros])
 

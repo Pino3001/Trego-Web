@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import ModalBase, { Z_MODAL } from './ModalBase'
 import { useCarrito } from '../../context/CarritoContext'
 
@@ -157,4 +157,3 @@ export default function DetalleProductoModal() {
     </ModalBase>
   )
 }
-

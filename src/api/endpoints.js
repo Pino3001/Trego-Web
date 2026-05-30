@@ -1,7 +1,7 @@
 export const ENDPOINTS = {
   // Restaurantes (cliente)
   RESTAURANTES: '/api/restaurantes',
-  RESTAURANTES_ZONA: '/api/restaurantes/zona', // falta endpoint backend
+  RESTAURANTES_ZONA: '/api/restaurantes/listarXdirreccion', // falta endpoint backend
   RESTAURANTE_POR_ID: '/api/restaurantes/:id',
 
   // Menú y pedidos
@@ -33,6 +33,7 @@ export const ENDPOINTS = {
   SOLICITUD_ALTA_RESTAURANTE: '/api/restaurantes/actualizar', // falta endpoint backend
   FIRMA_IMAGEN: `/api/restaurantes/imagenF/firma`,
   OBTENER_RESTAURANTE_ACTUAL: `/api/restaurantes/actual`,
+  AGREGAR_PRODUCTO: "/api/productos/agregarProducto",
 
   //Registro
   REGISTRAR_RESTAURANTE: `/api/usuarios/registrar-restaurante/solicitar`,

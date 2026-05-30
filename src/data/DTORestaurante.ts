@@ -12,7 +12,7 @@ export interface DTORestaurante {
   telefono?: string;
   fotoPerfil?: string;
   fotoPortada?: string;
-  direccion?: DTODireccion | null;
+  direccion?: DTODireccion;
   descripcion?: string;
   categoria?: CategoriaRestaurante | null;
   calificacionProm?: number | null;

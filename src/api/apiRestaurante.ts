@@ -1,4 +1,5 @@
 import type { DTOFirma } from "../data/DTOFirma.js";
+import type { DTOProducto } from "../data/DTOProducto.js";
 import type { DTORestaurante } from "../data/DTORestaurante.js";
 import { ENDPOINTS } from "./endpoints.js";
 import { fetchConAuth } from "./header/fetchConAuth.js";
@@ -49,4 +50,16 @@ export async function obtenerActual(): Promise<DTORestaurante> {
   }
 
   return response.json();
+}
+
+export async function agregarProducto(producto: DTOProducto): Promise<void> {
+  const response = await fetchConAuth(ENDPOINTS.AGREGAR_PRODUCTO, {
+    method: 'POST',
+    body: JSON.stringify(producto),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => 'Error desconocido');
+    throw new Error(errorText || 'No se pudo agregar el producto.');
+  }
 }
