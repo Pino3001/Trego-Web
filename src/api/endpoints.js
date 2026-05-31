@@ -35,6 +35,11 @@ export const ENDPOINTS = {
   FIRMA_IMAGEN: `/api/restaurantes/imagenF/firma`,
   OBTENER_RESTAURANTE_ACTUAL: `/api/restaurantes/actual`,
   AGREGAR_PRODUCTO: "/api/productos/agregarProducto",
+  LISTAR_INGREDIENTES: "/api/productos/listarIngredientes",
+  AGREGAR_INGREDIENTE: `/api/productos/agregarIngrediente`,
+  LISTAR_PRODUCTOS: '/api/productos/listarProductos',
+  LISTAR_PEDIDOS: `/api/pedido/listarPedidos`,
+  LISTAR_SUBCATEGORIAS: `/api/subcategorias/listar`,
 
   //Registro
   REGISTRAR_RESTAURANTE: `/api/usuarios/registrar-restaurante/solicitar`,

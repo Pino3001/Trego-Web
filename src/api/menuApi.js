@@ -1,6 +1,6 @@
-import { ENDPOINTS } from './endpoints'
 import { mapearMenuRespuesta, mapearRestaurante, ordenFrontABackend } from './mapeadores'
 import { fetchConAuth } from './header/fetchConAuth'
+import { ENDPOINTS } from './endpoints.js'
 
 export class MenuApiError extends Error {
   constructor(message, status) {

@@ -1,24 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { Search, User, CheckCircle, AlertCircle } from "lucide-react"; // Asumiendo que usas lucide-react para los íconos
+import { Search, CheckCircle, AlertCircle } from "lucide-react";
 import CardPedidoAconfirmar from "./componentes/CardPedidoAconfirmar.js";
-
-// --- Tipos e Interfaces ---
-export interface ProductoDTO {
-  cantidad: number;
-  nombre: string;
-  notas?: string; // Crucial: "Sin cebolla", "Bien cocido", etc.
-}
-
-export interface PedidoDTO {
-  id: string;
-  cliente: string;
-  direccion: string;
-  productos: ProductoDTO[];
-  tiempoEspera: number;
-  tipoEntrega: "DELIVERY" | "TAKE_AWAY";
-  total: number;
-  estaPagado: boolean;
-}
+import type { DTOPedido } from "../../data/DTOPedido.js";
+import { EnumEstadoPedido } from "../../data/EnumEstadoPedido.js";
+import { listarPedidos } from "../../api/apiRestaurante.js";
+import type { PedidoListado } from "./types/PedidoListado.js";
 
 interface NotificationState {
   show: boolean;
@@ -26,8 +12,44 @@ interface NotificationState {
   type: "success" | "error";
 }
 
+// Helper para formatear dirección a string (asumí campos típicos de DTODireccion; ajustá según tu definición)
+function formatearDireccion(direccion: any): string {
+  if (!direccion) return "Dirección no disponible";
+  const partes = [
+    direccion.calle,
+    direccion.numero,
+    direccion.apartamento,
+  ].filter(Boolean);
+  return partes.join(" ") || "Dirección no disponible";
+}
+
+// Helper para mapear DTOPedido a PedidoDTO
+function mapearPedido(pedido: DTOPedido): PedidoListado | null {
+  // Si no hay productos, devolvemos null para indicar error
+  if (!pedido.productos || pedido.productos.length === 0) {
+    return null;
+  }
+
+  // Calcular tiempo de espera en minutos (diferencia desde fechaCreacion hasta ahora)
+  let tiempoEspera = 0;
+  if (pedido.fechaCreacion) {
+    const creado = new Date(pedido.fechaCreacion).getTime();
+    const ahora = Date.now();
+    tiempoEspera = Math.max(0, Math.floor((ahora - creado) / 60000)); // en minutos
+  }
+
+  return {
+    id: String(pedido.idPedido ?? ""),
+    cliente: `Cliente #${pedido.nombreCliente ?? "?"}`, // ← idealmente aquí pondrías el nombre real cuando lo tengas
+    direccion: formatearDireccion(pedido.direccionEntrega),
+    productos: pedido.productos,
+    tiempoEspera,
+    total: pedido.total ?? 0,
+  };
+}
+
 export default function ListarSinConfirmar() {
-  const [pedidos, setPedidos] = useState<PedidoDTO[]>([]);
+  const [pedidos, setPedidos] = useState<PedidoListado[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState<NotificationState>({
@@ -36,177 +58,52 @@ export default function ListarSinConfirmar() {
     type: "success",
   });
 
-  // --- Simulación de Fetch Inicial (Paso 1 y 2 del Flujo Principal) ---
+  // Obtener pedidos con estado "Solicitado"
   useEffect(() => {
+    let cancelado = false;
     const fetchPedidos = async () => {
       try {
-        // En producción: const response = await fetch('/api/pedidos?estado=pendiente');
-        // const data = await response.json();
+        const data = await listarPedidos({
+          estado: EnumEstadoPedido.Pagado,
+        });
+        console.log(data)
+        if (cancelado) return;
 
-        // Datos mockeados basados en tu imagen para propósitos de la demo
-        const MOCK_PEDIDOS: PedidoDTO[] = [
-          {
-            id: "3401",
-            cliente: "Roberto Florez",
-            direccion: "Av. Rivera 3601",
-            productos: [
-              { cantidad: 1, nombre: "HAMBURGUESA CON QUESO" },
-              { cantidad: 1, nombre: "PAPAS FRITAS" },
-            ],
-            tiempoEspera: 3,
-            tipoEntrega: "DELIVERY",
-            total: 580,
-            estaPagado: true,
-          },
-          {
-            id: "3402",
-            cliente: "Gimena Rodriguez",
-            direccion: "Av. 8 de Octubre 1516",
-            productos: [
-              { cantidad: 1, nombre: "PIZZA MUZZARELLA" },
-              { cantidad: 1, nombre: "COCA COLA 1.5L" },
-              { cantidad: 1, nombre: "PIZZA MUZZARELLA" },
-              { cantidad: 1, nombre: "COCA COLA 1.5L" },
-              { cantidad: 1, nombre: "PIZZA MUZZARELLA" },
-              { cantidad: 1, nombre: "COCA COLA 1.5L" },
-              { cantidad: 1, nombre: "PIZZA MUZZARELLA" },
-              { cantidad: 1, nombre: "COCA COLA 1.5L" },
-              { cantidad: 1, nombre: "PIZZA MUZZARELLA" },
-              { cantidad: 1, nombre: "COCA COLA 1.5L" },
-            ],
-            tiempoEspera: 12, // Activará la alerta crítica (> 8 min)
-            tipoEntrega: "DELIVERY",
-            total: 620,
-            estaPagado: false,
-          },
-          {
-            id: "3403",
-            cliente: "Sebastian Lopez",
-            direccion: "Av. 18 de Julio 2203",
-            productos: [
-              {
-                cantidad: 1,
-                nombre: "MILANESA AL PAN",
-                notas: "Con extra mayonesa",
-              },
-            ],
-            tiempoEspera: 5,
-            tipoEntrega: "TAKE_AWAY",
-            total: 450,
-            estaPagado: true,
-          },
-          {
-            id: "3404",
-            cliente: "Maxi Cruz",
-            direccion: "Bv. Artigas 1120",
-            productos: [
-              {
-                cantidad: 2,
-                nombre: "HAMBURGUESA CON QUESO",
-                notas: "SIN CEBOLLA",
-              },
-              { cantidad: 1, nombre: "PAPAS FRITAS" },
-            ],
-            tiempoEspera: 2,
-            tipoEntrega: "DELIVERY",
-            total: 980,
-            estaPagado: false,
-          },
-          {
-            id: "3405",
-            cliente: "Valentina Silva",
-            direccion: "Av. Italia 4230",
-            productos: [
-              {
-                cantidad: 1,
-                nombre: "CHIVITO COMPLETO",
-                notas: "Huevo bien cocido",
-              },
-              { cantidad: 1, nombre: "AGUA COCO" },
-            ],
-            tiempoEspera: 9, // Activará la alerta crítica
-            tipoEntrega: "DELIVERY",
-            total: 710,
-            estaPagado: true,
-          },
-          {
-            id: "3406",
-            cliente: "Santiago Pereira",
-            direccion: "Retira en local",
-            productos: [
-              { cantidad: 3, nombre: "EMPANADAS DE CARNE" },
-              { cantidad: 2, nombre: "EMPANADAS DE JAMÓN Y QUESO" },
-            ],
-            tiempoEspera: 1,
-            tipoEntrega: "TAKE_AWAY",
-            total: 450,
-            estaPagado: true,
-          },
-          {
-            id: "3407",
-            cliente: "Mariana Costa",
-            direccion: "Bv. España 2890",
-            productos: [
-              {
-                cantidad: 1,
-                nombre: "ENSALADA CESAR",
-                notas: "Aderezo aparte",
-              },
-            ],
-            tiempoEspera: 4,
-            tipoEntrega: "DELIVERY",
-            total: 390,
-            estaPagado: false,
-          },
-          {
-            id: "3408",
-            cliente: "Bruno Diaz",
-            direccion: "Av. Larrañaga 3312",
-            productos: [
-              { cantidad: 1, nombre: "PIZZA CON PEPPERONI" },
-              { cantidad: 1, nombre: "CERVEZA PATAGONIA 730ML" },
-            ],
-            tiempoEspera: 15, // Activará la alerta crítica por mucho retraso
-            tipoEntrega: "DELIVERY",
-            total: 850,
-            estaPagado: false,
-          },
-          {
-            id: "3409",
-            cliente: "Lucía Méndez",
-            direccion: "Retira en local",
-            productos: [{ cantidad: 1, nombre: "CHIVITO AL PLATO (PARA DOS)" }],
-            tiempoEspera: 6,
-            tipoEntrega: "TAKE_AWAY",
-            total: 1100,
-            estaPagado: true,
-          },
-          {
-            id: "3410",
-            cliente: "Facundo Torres",
-            direccion: "Gonzalo Ramírez 1840",
-            productos: [
-              { cantidad: 2, nombre: "MILANESA CON PAPAS FRITAS" },
-              { cantidad: 2, nombre: "COCA COLA 500ML" },
-            ],
-            tiempoEspera: 7,
-            tipoEntrega: "DELIVERY",
-            total: 1340,
-            estaPagado: true,
-          },
-        ];
+        const mapeados: PedidoListado[] = [];
+        const errores: DTOPedido[] = [];
 
-        setTimeout(() => {
-          setPedidos(MOCK_PEDIDOS);
-          setLoading(false);
-        }, 500);
+        for (const pedido of data) {
+          const mapeado = mapearPedido(pedido);
+          if (mapeado) {
+            mapeados.push(mapeado);
+          } else {
+            errores.push(pedido);
+          }
+        }
+
+        setPedidos(mapeados);
+
+        // Si hubo pedidos sin productos, lo notificamos
+        if (errores.length > 0) {
+          showNotification(
+            `${errores.length} pedido(s) ignorado(s) por no contener productos.`,
+            "error",
+          );
+        }
       } catch (error) {
-        console.error("Error al cargar los pedidos", error);
-        setLoading(false);
+        if (!cancelado) {
+          const mensaje =
+            error instanceof Error ? error.message : "Error al cargar pedidos";
+          showNotification(mensaje, "error");
+        }
+      } finally {
+        if (!cancelado) setLoading(false);
       }
     };
-
     fetchPedidos();
+    return () => {
+      cancelado = true;
+    };
   }, []);
 
   const showNotification = (message: string, type: "success" | "error") => {
@@ -217,47 +114,25 @@ export default function ListarSinConfirmar() {
     );
   };
 
-  // --- Manejador de Confirmación (Paso 3 y Flujo Alternativo 3.1) ---
+  // Placeholder para confirmar pedido (deberás implementar la llamada a tu endpoint)
   const handleConfirmar = async (pedidoId: string) => {
     try {
-      /* En producción:
-      const response = await fetch(`/api/pedidos/confirmar/${pedidoId}`, { method: 'PATCH' });
-      
-      // Flujo Alternativo 3.1: Pedido cancelado previamente
-      if (response.status === 409) {
-        showNotification("El pedido ha sido cancelado por el cliente", 'error');
-        setPedidos(prev => prev.filter(p => p.id !== pedidoId));
-        return;
-      }
-      
-      if (!response.ok) throw new Error('Error al confirmar pedido');
-      */
-
-      // Simulación de éxito (Paso 4 del Flujo Principal)
-      showNotification(
-        "Pedido confirmado correctamente. Notificando al cliente...",
-        "success",
-      );
-
-      // Se elimina de la lista actual UI
+      // Ejemplo: await confirmarPedido(pedidoId);
+      showNotification("Pedido confirmado correctamente.", "success");
       setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
     } catch (error) {
-      showNotification(
-        "Ocurrió un error al procesar la confirmación.",
-        "error",
-      );
+      showNotification("Error al confirmar el pedido.", "error");
     }
   };
 
-  // --- Manejador de Cancelación por parte del restaurante ---
+  // Placeholder para cancelar pedido (deberás implementar la llamada a tu endpoint)
   const handleCancelar = async (pedidoId: string) => {
     try {
-      // Llamada al C.U Cancelar Pedido referenciado en tu diagrama
-      // await fetch(`/api/pedidos/cancelar/${pedidoId}`, { method: 'PATCH' });
+      // Ejemplo: await cancelarPedido(pedidoId);
       showNotification("Pedido cancelado por el restaurante.", "error");
       setPedidos((prev) => prev.filter((p) => p.id !== pedidoId));
     } catch (error) {
-      console.error("Error al cancelar", error);
+      showNotification("Error al cancelar el pedido.", "error");
     }
   };
 
@@ -265,17 +140,13 @@ export default function ListarSinConfirmar() {
     pedido.cliente.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-return (
-    // Contenedor principal de la vista. 
-    // Toma todo el ancho y alto disponible que le deje el Layout padre.
+  return (
     <div className="flex-1 w-full h-full p-4 md:p-8 overflow-y-auto bg-gray-50 text-gray-800 font-sans">
-      
-      {/* --- Notificaciones (Toast) --- */}
       {notification.show && (
         <div
           className={`mb-4 p-4 rounded-xl flex items-center shadow-sm ${
-            notification.type === "success" 
-              ? "bg-green-50 text-green-800 border border-green-200" 
+            notification.type === "success"
+              ? "bg-green-50 text-green-800 border border-green-200"
               : "bg-red-50 text-red-800 border border-red-200"
           }`}
         >
@@ -288,54 +159,50 @@ return (
         </div>
       )}
 
-      {/* --- Encabezado de la Vista --- */}
       <h1 className="text-2xl font-black text-gray-800 text-center mb-6 uppercase tracking-tight">
         Pedidos a Confirmar
       </h1>
 
-      {/* --- Buscador --- */}
       <div className="max-w-2xl mx-auto mb-8 relative group">
         <Search
-          className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-green-600 transition-colors"
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
           size={20}
         />
         <input
           type="text"
-          placeholder="Buscar por nombre de cliente..."
+          placeholder="Buscar por cliente..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full bg-white text-gray-700 rounded-2xl py-3.5 pl-12 pr-4 outline-none border border-gray-200 shadow-sm focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all"
         />
       </div>
 
-      {/* --- Lista de Tarjetas --- */}
       <div className="max-w-5xl mx-auto flex flex-col gap-6 pb-10">
         {loading ? (
-          <div className="col-span-full flex justify-center items-center py-12">
+          <div className="flex justify-center items-center py-12">
             <p className="text-gray-500 font-medium flex items-center gap-2">
               <span className="animate-spin h-5 w-5 border-2 border-green-600 border-t-transparent rounded-full"></span>
-              Cargando pedidos pendientes...
+              Cargando pedidos...
             </p>
           </div>
         ) : pedidosFiltrados.length === 0 ? (
-          <div className="col-span-full text-center py-12 bg-white rounded-2xl border border-dashed border-gray-300">
+          <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-300">
             <p className="text-gray-500 font-medium text-lg">
               No hay pedidos pendientes de confirmación.
             </p>
-            <p className="text-gray-400 text-sm mt-1">Buen trabajo, la cocina está al día.</p>
+            <p className="text-gray-400 text-sm mt-1">La cocina está al día.</p>
           </div>
         ) : (
           pedidosFiltrados.map((pedido) => (
             <CardPedidoAconfirmar
               key={pedido.id}
               pedido={pedido}
-              onConfirmar={(id) => { /* tu logica */ }}
-              onCancelar={(id) => { /* tu logica */ }}
+              onConfirmar={handleConfirmar}
+              onCancelar={handleCancelar}
             />
           ))
         )}
       </div>
-      
     </div>
   );
 }

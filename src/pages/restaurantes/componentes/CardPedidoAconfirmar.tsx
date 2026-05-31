@@ -5,15 +5,12 @@ import {
   User,
   Check,
   X,
-  AlertTriangle,
-  Bike,
-  ShoppingBag,
-  CreditCard,
+  AlertTriangle
 } from "lucide-react";
-import type { PedidoDTO } from "../ListarSinConfirmar.js";
+import type { PedidoListado } from "../types/PedidoListado.js";
 
 interface Props {
-  pedido: PedidoDTO;
+  pedido: PedidoListado;
   onConfirmar: (id: string) => void;
   onCancelar: (id: string) => void;
 }
@@ -74,12 +71,12 @@ export default function CardPedidoAconfirmar({
 
               <div className="flex-1">
                 <p className="font-bold text-gray-900 text-sm tracking-wide uppercase">
-                  {prod.nombre}
+                  {prod.producto?.nombre}
                 </p>
                 {/* Notas de modificación: Resaltadas en amarillo/alerta si existen */}
-                {prod.notas && (
+                {prod.observaciones && (
                   <p className="mt-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-1 rounded inline-block">
-                    ⚠️ NOTA: {prod.notas}
+                    ⚠️ NOTA: {prod.observaciones}
                   </p>
                 )}
               </div>
