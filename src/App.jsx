@@ -11,7 +11,10 @@ import CarritoUIRoot from "./components/carrito/CarritoUIRoot.jsx";
 import AltaProducto from "./pages/restaurantes/AltaProducto.js";
 import ListarSinConfirmar from "./pages/restaurantes/ListarSinConfirmar.js";
 import RestauranteLayout from "./pages/restaurantes/RestauranteLayout.js";
+import AdminLayout from "./pages/admin/AdminLayout.js";
 import GestionRestaurantesPage from "./pages/admin/GestionRestaurantesPage.js";
+import ListarRestaurantesPage from "./pages/admin/ListarRestaurantesPage.js";
+import ListarClientesPage from "./pages/admin/ListarClientesPage.js";
 
 export default function AppRouter() {
   return (
@@ -50,10 +53,19 @@ export default function AppRouter() {
           path="/restaurantes/registrarRestaurante"
           element={<RegistrarRestaurante />}
         />
-        <Route
-          path="/admin/restaurantes"
-          element={<GestionRestaurantesPage />}
-        />
+
+        {/* --- RUTAS ADMIN (LAYOUT CON SIDEBAR) --- */}
+        <Route element={<AdminLayout />}>
+          <Route
+            path="/admin/restaurantes"
+            element={<GestionRestaurantesPage />}
+          />
+          <Route
+            path="/admin/restaurantes/todos"
+            element={<ListarRestaurantesPage />}
+          />
+          <Route path="/admin/clientes" element={<ListarClientesPage />} />
+        </Route>
       </Routes>
       <CarritoUIRoot />
     </BrowserRouter>

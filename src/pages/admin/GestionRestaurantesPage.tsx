@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import Header from "../../components/body/Header.js";
 import EmptyState from "../../components/EmptyState.jsx";
 import { administradorApi } from "../../api/administradorApi.js";
 import type { DTORestaurante } from "../../data/DTORestaurante.js";
@@ -139,9 +138,7 @@ export default function GestionRestaurantesPage() {
 
   return (
     <>
-      <Header tipoUser="Administrador" />
-
-      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">
             Solicitudes de alta
@@ -197,7 +194,7 @@ export default function GestionRestaurantesPage() {
             ))}
           </ul>
         )}
-      </main>
+      </div>
 
       {seleccionado && (
         <div
