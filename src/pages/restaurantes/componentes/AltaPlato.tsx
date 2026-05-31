@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ImageUploadField from "../../../components/ImagenUploadField.js";
 import type { ImageField } from "../../../components/typos/ImageField.js";
 import type { DTOIngrediente } from "../../../data/DTOIngrediente.js";
@@ -6,25 +6,34 @@ import { TextSelector } from "../../../components/TextSelector.js";
 import { TextInput } from "../../../components/TextInput.js";
 import { TextInputNumber } from "../../../components/TextImputNumber.js";
 import { TextBuscador } from "../../../components/TextBuscador.js";
-import { SUBCATEGORIAS, type SubcategoriaItem } from "../AltaProducto.js";
+import {
+  crearIngrediente,
+  listarIngredientes,
+} from "../../../api/apiRestaurante.js";
+import type { DTOSubcategoria } from "../../../data/DTOSubcategoria.js";
+import {
+  CATEGORIAS_PRODUCTO,
+  type EnumCategoriaProducto,
+} from "../../../data/EnumCategoriaProducto.js";
 
 interface AltaPlatoProps {
   foto: ImageField;
   onChangeImage: (file: File | null) => void; // solo File | null
   error: Record<string, string>;
+  onChangeApiError: (err: string | null) => void;
   nombre: string;
   onChangeNombre: (nombre: string) => void;
-  subcategoria: SubcategoriaItem | undefined;
-  onChangeSubCategoria: (item: SubcategoriaItem | undefined) => void;
+  subcategorias: DTOSubcategoria[] | undefined;
+  subcategoria: DTOSubcategoria | undefined;
+  onChangeSubCategoria: (item: DTOSubcategoria | undefined) => void;
+  categoria: EnumCategoriaProducto | undefined;
+  onChangeCategoria: (item: EnumCategoriaProducto | undefined) => void;
   precio: number;
   onChangePrecio: (precio: number) => void;
   tiempoPreparacion: number;
   onChangeTiempoPrep: (tp: number) => void;
   descripcion: string;
   onChangeDescripcion: (desc: string) => void;
-  ingredientesDisponibles: DTOIngrediente[];
-  ingredienteSeleccionado: DTOIngrediente | undefined;
-  onChangeIngrediente: (item: DTOIngrediente | undefined) => void;
   listaDeIngredientes: (items: DTOIngrediente[]) => void;
 }
 
@@ -32,29 +41,61 @@ export default function AltaPlato({
   foto,
   onChangeImage,
   error,
+  onChangeApiError,
   nombre,
   onChangeNombre,
+  subcategorias,
   subcategoria,
   onChangeSubCategoria,
+  categoria,
+  onChangeCategoria,
   precio,
   onChangePrecio,
   tiempoPreparacion,
   onChangeTiempoPrep,
   descripcion,
   onChangeDescripcion,
-  ingredientesDisponibles,
-  ingredienteSeleccionado,
-  onChangeIngrediente,
-  listaDeIngredientes
+  listaDeIngredientes,
 }: AltaPlatoProps) {
   const [mostrarFormIngrediente, setMostrarFormIngrediente] = useState(false);
   const [nuevoIngrediente, setNuevoIngrediente] = useState("");
   const [listaIngredientes, setListaIngredientes] = useState<DTOIngrediente[]>(
     [],
   );
+  const [listaIngredientesBackend, setListaIngredientesBackend] = useState<
+    DTOIngrediente[]
+  >([]);
   const handleImageChange = (file: File | null) => {
     onChangeImage(file);
   };
+  const [ingredienteSeleccionado, setIngredienteSeleccionado] = useState<
+    DTOIngrediente | undefined
+  >();
+
+  //Traer ingredientes desde el backend
+  useEffect(() => {
+    let cancelado = false;
+
+    const cargarIngredientes = async () => {
+      try {
+        const lista = await listarIngredientes();
+        if (!cancelado) {
+          setListaIngredientesBackend(lista);
+        }
+      } catch (e) {
+        if (!cancelado) {
+          const mensaje = e instanceof Error ? e.message : "Error inesperado";
+          onChangeApiError(mensaje);
+        }
+      }
+    };
+
+    cargarIngredientes();
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
 
   const agregarIngrediente = (item: DTOIngrediente | undefined) => {
     if (!item) return;
@@ -73,41 +114,55 @@ export default function AltaPlato({
     listaDeIngredientes(nuevaLista); // sincroniza con el padre
   };
 
-  const crearIngredienteLocal = () => {
+  const crearIngredienteLocal = async () => {
     const nombre = nuevoIngrediente.trim();
     if (!nombre) return;
-    const nuevo: DTOIngrediente = {
-      idIngrediente: Date.now(),
-      nombre,
-      idRestaurante: 1,
-    };
-    // Como el padre no tiene función para crear "nuevos" ingredientes,
-    // podemos simularlo agregándolo directamente a la lista de disponibles
-    // y luego seleccionarlo.
-    // Pero para no romper la interfaz, lo dejamos como estaba:
-    // (idealmente el padre debería exponer una función `onCrearIngrediente`)
-    // Por ahora, podemos llamar a onAgregarIngrediente después de actualizar
-    // la lista de disponibles (pero requeriría otra prop).
-    // Solución temporal: lo agregamos directamente a la lista de seleccionados
-    // usando el callback onAgregarIngrediente, pero necesitaríamos pasar el objeto.
-    // Como no está en la interfaz, dejo esta funcionalidad recortada.
-    setMostrarFormIngrediente(false);
-    setNuevoIngrediente("");
-    // Para no perder la funcionalidad, podrías agregar una prop extra:
-    // onCrearIngrediente(nuevo) que el padre maneje.
+
+    try {
+      const nuevo = await crearIngrediente(nombre); // backend responde con DTOIngrediente
+      // Agregar a la lista de ingredientes del backend para no volver a pedirla
+      setListaIngredientesBackend((prev) => [...prev, nuevo]);
+      // Opcional: también agregarlo automáticamente a la lista de seleccionados
+      agregarIngrediente(nuevo);
+      setIngredienteSeleccionado(nuevo);
+      setMostrarFormIngrediente(false);
+      setNuevoIngrediente("");
+    } catch (error) {
+      // Mostrar error (podés usar un estado local o un alert)
+      console.error(error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Error al crear el ingrediente",
+      );
+    }
   };
 
   return (
     <div className="bg-white rounded-3xl p-8 flex flex-col gap-3">
       {/* Row: image + fields */}
       <div className="flex flex-col md:flex-row gap-6">
-        <ImageUploadField
-          label="Imagen Del Producto"
-          imageField={foto}
-          onImageChange={handleImageChange}
-          hasError={!!error.foto}
-          className="w-55 h-40"
-        />
+        <div className="flex flex-col gap-5 m-auto">
+          <ImageUploadField
+            label="Imagen Del Producto"
+            imageField={foto}
+            onImageChange={handleImageChange}
+            hasError={!!error.foto}
+            className="w-55 h-40"
+          />
+
+          <div className="w-55   m-auto">
+            <TextInputNumber
+              value={precio}
+              onChange={onChangePrecio}
+              label="Precio"
+              suffix="$"
+              error={error.precio}
+              min={0}
+            />
+          </div>
+        </div>
+
         <div className="w-100 m-auto mt-5 flex flex-col gap-3">
           <TextInput
             placeholder="Nombre del plato"
@@ -119,56 +174,58 @@ export default function AltaPlato({
           />
 
           <TextSelector
-            items={SUBCATEGORIAS}
-            placeholder="Categorías"
+            items={CATEGORIAS_PRODUCTO}
+            placeholder="Categoria "
             colorStyle="trego-restaurante"
+            mapToItem={(t) => ({ id: t.id, label: t.label })}
+            selected={
+              categoria ? { id: categoria, label: categoria } : undefined
+            }
+            onSelect={(item) =>
+              onChangeCategoria(item?.id as EnumCategoriaProducto)
+            }
+          />
+
+          <TextSelector
+            items={subcategorias ?? []}
+            placeholder="Sub-Categoria Producto"
+            colorStyle="trego-restaurante"
+            mapToItem={(t) => ({
+              id: t.idSubCategoria ?? "",
+              label: t.nombre ?? "",
+            })}
             selected={subcategoria}
             onSelect={onChangeSubCategoria}
-            mapToItem={(t) => ({ id: t.id, label: t.label })}
           />
 
           <TextInputNumber
             value={tiempoPreparacion}
             onChange={onChangeTiempoPrep}
-            label="T. Preparación"
-            suffix="min"
-            error={error.tiempoPreparacion}
-            min={0}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-10">
-        <div className="flex-1">
-          <h1 className="text-sm font-semibold px-5">Descripción</h1>
-          <textarea
-            value={descripcion}
-            onChange={(e) => onChangeDescripcion(e.target.value)}
-            placeholder="Describe el producto..."
-            rows={3}
-            className="w-full border border-gray-400 rounded-3xl p-5 outline-none
-                       focus:border-trego-restaurante focus:ring-1 focus:ring-trego-restaurante"
-          />
-          {error.descripcion && (
-            <p className="text-xs text-red-500 mt-1 px-5">
-              {error.descripcion}
-            </p>
-          )}
-        </div>
-        <div className="w-60 m-auto">
-          <TextInputNumber
-            value={precio}
-            onChange={onChangePrecio}
-            label="Precio"
-            suffix="$"
+            label="Tiempo Preparacion"
+            suffix="Min"
             error={error.precio}
             min={0}
           />
         </div>
       </div>
 
+      <div className="flex1 px-10">
+        <h1 className="text-sm font-semibold px-5">Descripción</h1>
+        <textarea
+          value={descripcion}
+          onChange={(e) => onChangeDescripcion(e.target.value)}
+          placeholder="Describe el producto..."
+          rows={2}
+          className="w-full border border-gray-400 rounded-3xl p-5 outline-none
+                       focus:border-trego-restaurante focus:ring-1 focus:ring-trego-restaurante"
+        />
+        {error.descripcion && (
+          <p className="text-xs text-red-500 mt-1 px-5">{error.descripcion}</p>
+        )}
+      </div>
+
       {/* Ingredientes */}
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col px-10 gap-3">
         <label className="text-sm text-center font-semibold text-gray-700">
           Ingredientes Del Producto
         </label>
@@ -176,12 +233,12 @@ export default function AltaPlato({
         <div className="w-full max-w-2xl mx-auto flex gap-4">
           <div className="flex-1">
             <TextBuscador
-              items={ingredientesDisponibles}
+              items={listaIngredientesBackend}
               selected={ingredienteSeleccionado}
-  onSelect={(item) => {
-    onChangeIngrediente(item);      // actualiza el input del buscador
-    agregarIngrediente(item);       // agrega a la lista local
-  }}
+              onSelect={(item) => {
+                setIngredienteSeleccionado(item); // actualiza el input del buscador
+                agregarIngrediente(item); // agrega a la lista local
+              }}
               mapToItem={(t) => ({ id: t.idIngrediente ?? 0, label: t.nombre })}
               placeholder="Buscar ingrediente"
             />
@@ -251,12 +308,12 @@ export default function AltaPlato({
               {listaIngredientes.map((ing) => (
                 <div
                   key={ing.idIngrediente}
-                  className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-3 py-1 text-sm shadow-sm"
+                  className="flex items-center gap-1.5 bg-trego-orange border border-trego-orange rounded-full px-3 py-1 text-base font-medium text-white shadow-sm"
                 >
                   <span>{ing.nombre}</span>
                   <button
                     onClick={() => quitarIngrediente(ing)}
-                    className="text-gray-400 hover:text-red-500 transition-colors"
+                    className="text-white hover:text-blue-600 transition-colors"
                     title="Eliminar ingrediente"
                   >
                     <svg

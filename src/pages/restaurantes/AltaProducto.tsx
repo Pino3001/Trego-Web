@@ -1,55 +1,33 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { DTOIngrediente } from "../../data/DTOIngrediente.js";
 import type { ImageField } from "../../components/typos/ImageField.js";
 import type { DTOProducto } from "../../data/DTOProducto.js";
-import Header from "../../components/body/Header.js";
-import Sidebar from "../../components/body/Sidebar.js";
 import { TextSelector } from "../../components/TextSelector.js";
 import AltaPlato from "./componentes/AltaPlato.js";
 import AltaArticulo from "./componentes/AltaArticulo.js";
 import AltaCombo from "./componentes/AltaCombo.js";
+import {
+  agregarProducto,
+  listarSubcategorias,
+  obtenerFirmaCloudinary,
+} from "../../api/apiRestaurante.js";
+import type { DTOSubcategoria } from "../../data/DTOSubcategoria.js";
+import { EnumCategoriaProducto } from "../../data/EnumCategoriaProducto.js";
+import { EnumTipoProducto } from "../../data/EnumTipoProducto.js";
 
 // ─── Tipos ─────────────────────────────────────────────────────
 interface TipoProducto {
   id: number;
-  label: string;
+  label: EnumTipoProducto;
 }
 
 const TIPOS_PRODUCTO: TipoProducto[] = [
-  { id: 1, label: "Plato" },
-  { id: 2, label: "Artículo" },
-  { id: 3, label: "Combo" },
+  { id: 1, label: EnumTipoProducto.Plato },
+  { id: 2, label: EnumTipoProducto.Articulo },
+  { id: 3, label: EnumTipoProducto.Combo },
 ];
 
 type StepState = "FORM" | "LOADING" | "SUCCESS";
-
-// Mock de ingredientes
-const INGREDIENTES_DISPONIBLES: DTOIngrediente[] = [
-  { idIngrediente: 1, nombre: "Harina", idRestaurante: 1 },
-  { idIngrediente: 2, nombre: "Azúcar", idRestaurante: 1 },
-  { idIngrediente: 3, nombre: "Huevo", idRestaurante: 1 },
-  { idIngrediente: 4, nombre: "Mantequilla", idRestaurante: 1 },
-  { idIngrediente: 5, nombre: "Leche", idRestaurante: 1 },
-  { idIngrediente: 6, nombre: "Sal", idRestaurante: 1 },
-  { idIngrediente: 7, nombre: "Aceite de Oliva", idRestaurante: 1 },
-  { idIngrediente: 8, nombre: "Ajo", idRestaurante: 1 },
-];
-
-export interface SubcategoriaItem {
-  id: string;
-  label: string;
-}
-
-export const SUBCATEGORIAS: SubcategoriaItem[] = [
-  { id: "sin_subcategoria", label: "Sin subcategoría" },
-  { id: "helados", label: "Helados" },
-  { id: "tartas", label: "Tartas" },
-  { id: "mousses", label: "Mousses" },
-  { id: "tortas", label: "Tortas" },
-  { id: "sopas", label: "Sopas" },
-  { id: "pastas", label: "Pastas" },
-  { id: "arroces", label: "Arroces" },
-];
 
 // ─── Componente principal ──────────────────────────────────────
 export default function AltaProducto() {
@@ -66,16 +44,18 @@ export default function AltaProducto() {
     cloudUrl: null,
     uploadState: "idle",
   });
+  const [listadoSubcategorias, setListadoSubcategorias] =
+    useState<DTOSubcategoria[]>();
+  const [categoriaProducto, setCategoriaProducto] =
+    useState<EnumCategoriaProducto>();
   const [descripcion, setDescripcion] = useState("");
   const [subcategoria, setSubcategoria] = useState<
-    SubcategoriaItem | undefined
-  >(SUBCATEGORIAS[0]);
+    DTOSubcategoria | undefined
+  >();
 
   // Estados para Plato (con ingredientes)
   const [tiempoPreparacion, setTiempoPreparacion] = useState(0);
-  const [ingredienteSeleccionado, setIngredienteSeleccionado] = useState<
-    DTOIngrediente | undefined
-  >(INGREDIENTES_DISPONIBLES[0]);
+
   const [listaIngredientes, setListaIngredientes] = useState<DTOIngrediente[]>(
     [],
   );
@@ -85,28 +65,78 @@ export default function AltaProducto() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  useEffect(() => {
+    let cancelado = false;
+    const cargarSubcategorias = async () => {
+      try {
+        const subcategorias = await listarSubcategorias();
+        if (!cancelado) setListadoSubcategorias(subcategorias);
+      } catch (error) {
+        if (!cancelado)
+          setApiError(error instanceof Error ? error.message : "Error");
+      }
+    };
+    cargarSubcategorias();
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
   // Manejador de imagen
   const handleImageChange = (file: File | null) => {
     if (!file) {
-      setFoto({
-        file: null,
-        previewUrl: null,
-        cloudUrl: null,
-        uploadState: "idle",
-      });
-    } else {
-      const reader = new FileReader();
-      reader.onload = (e) =>
-        setFoto({
-          file,
-          previewUrl: e.target?.result as string,
-          uploadState: "uploading",
-          cloudUrl: null,
-        });
-      reader.readAsDataURL(file);
+      // Opcional: resetear la imagen si se elimina
+      // setFoto({ file: null, previewUrl: null, cloudUrl: null, uploadState: "idle" });
+      return;
     }
+
+    // Liberar URL anterior
+    if (foto.previewUrl) {
+      URL.revokeObjectURL(foto.previewUrl);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setFoto({ file, previewUrl, uploadState: "uploading", cloudUrl: null });
+
+    subirImagen(file, previewUrl); // No retorna nada → void
   };
 
+  async function subirImagen(file: File, previewUrl: string) {
+    try {
+      const nombreSinExtension =
+        file.name.substring(0, file.name.lastIndexOf(".")) || file.name;
+      const datosBack = await obtenerFirmaCloudinary(
+        nombreSinExtension,
+        "image",
+      );
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("api_key", datosBack.apiKey);
+      formData.append("timestamp", datosBack.timestamp.toString());
+      formData.append("signature", datosBack.firma);
+      formData.append("public_id", datosBack.publicId);
+
+      const cloudinaryRes = await fetch(datosBack.uploadUrl, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!cloudinaryRes.ok) throw new Error("Cloudinary rechazó la imagen");
+
+      const cloudinaryData = await cloudinaryRes.json();
+
+      setFoto((prev) => ({
+        ...prev,
+        uploadState: "done",
+        cloudUrl: cloudinaryData.secure_url,
+      }));
+    } catch (error) {
+      console.error("Error en el proceso de imagen:", error);
+      setFoto({ file, previewUrl, uploadState: "idle", cloudUrl: null });
+      setErrors((p) => ({ ...p, foto: "Error al subir la imagen" }));
+    }
+  }
   // Validación
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -126,12 +156,58 @@ export default function AltaProducto() {
     return Object.keys(errs).length === 0;
   };
 
+  const changeTipo = (x: TipoProducto | undefined) => {
+    setTipo(x);
+    setApiError("")
+  }
+
   const handleSubmit = async () => {
     setApiError(null);
     if (!validate()) return;
     setStep("LOADING");
     try {
-      await new Promise((res) => setTimeout(res, 1800)); // Simulación
+      const subca: DTOSubcategoria = {
+        categoria: EnumCategoriaProducto.Bebida,
+      };
+
+      if (!tipo) {
+        setApiError("Tipo de producto no valido!.");
+        return;
+      }
+      if (!foto.cloudUrl) {
+        setApiError("Foto no cargada correctamente!.");
+        return;
+      }
+      if (!subcategoria?.idSubCategoria) {
+        setApiError("Sin sub-categoria seleccionada!.");
+        return;
+      }
+      const data: DTOProducto = {
+        nombre: nombre,
+        descripcion: descripcion,
+        precio: precio,
+        subCategoria: subca,
+        urlImagen: foto.cloudUrl,
+        categoria: categoriaProducto ?? EnumCategoriaProducto.Bebida,
+        idSubCategoria: subcategoria.idSubCategoria,
+        tipo: tipo?.label,
+      };
+
+      switch (tipo.label) {
+        case EnumTipoProducto.Plato:
+          ((data.ingredientes = listaIngredientes),
+            (data.plato = {
+              tiempoPreparacionMinutos: tiempoPreparacion,
+            }));
+          break;
+        case EnumTipoProducto.Combo:
+          data.combo = {
+            productosIncluidosIds: productosCombo.map((p) => p.idProducto ?? 0),
+          };
+          break;
+      }
+      await agregarProducto(data);
+
       setStep("SUCCESS");
     } catch {
       setApiError("Error al guardar el producto.");
@@ -143,7 +219,7 @@ export default function AltaProducto() {
     setNombre("");
     setPrecio(0);
     setDescripcion("");
-    setSubcategoria(SUBCATEGORIAS[0]);
+    setSubcategoria(undefined);
     setTiempoPreparacion(0);
     setListaIngredientes([]);
     setProductosCombo([]);
@@ -166,9 +242,7 @@ export default function AltaProducto() {
   return (
     <>
       <div className="w-full max-w-5xl mx-auto px-10 py-8 min-h-screen bg-gray-50">
-        <h1 className="text-3xl font-bold text-center mb-2">
-          Alta Producto
-        </h1>
+        <h1 className="text-3xl font-bold text-center mb-2">Alta Producto</h1>
 
         {/* SUCCESS */}
         {step === "SUCCESS" && (
@@ -222,7 +296,7 @@ export default function AltaProducto() {
               <TextSelector
                 items={TIPOS_PRODUCTO}
                 selected={tipo}
-                onSelect={setTipo}
+                onSelect={(x) => changeTipo(x)}
                 placeholder="Tipo de producto"
                 mapToItem={(t) => ({ id: t.id, label: t.label })}
               />
@@ -237,17 +311,18 @@ export default function AltaProducto() {
                 subcategoria={subcategoria}
                 tiempoPreparacion={tiempoPreparacion}
                 foto={foto}
-                ingredientesDisponibles={INGREDIENTES_DISPONIBLES}
                 onChangeNombre={setNombre}
                 onChangeDescripcion={setDescripcion}
                 onChangePrecio={setPrecio}
                 onChangeSubCategoria={setSubcategoria}
                 onChangeTiempoPrep={setTiempoPreparacion}
                 onChangeImage={handleImageChange}
-                ingredienteSeleccionado={ingredienteSeleccionado}
-                onChangeIngrediente={setIngredienteSeleccionado} // actualiza el input del buscador
                 listaDeIngredientes={setListaIngredientes}
                 error={errors}
+                onChangeApiError={setApiError}
+                categoria={categoriaProducto}
+                onChangeCategoria={setCategoriaProducto}
+                subcategorias={listadoSubcategorias}
               />
             )}
 
@@ -256,6 +331,7 @@ export default function AltaProducto() {
                 nombre={nombre}
                 descripcion={descripcion}
                 precio={precio}
+                subcategorias={listadoSubcategorias}
                 subcategoria={subcategoria}
                 foto={foto}
                 onChangeNombre={setNombre}
@@ -264,6 +340,8 @@ export default function AltaProducto() {
                 onChangeSubCategoria={setSubcategoria}
                 onChangeImage={handleImageChange}
                 error={errors}
+                categoria={categoriaProducto}
+                onChangeCategoria={setCategoriaProducto}
               />
             )}
 
@@ -282,6 +360,10 @@ export default function AltaProducto() {
                 productosSeleccionados={productosCombo}
                 onChangeListaProd={setProductosCombo}
                 error={errors}
+                onChangeApiError={setApiError}
+                categoria={categoriaProducto}
+                onChangeCategoria={setCategoriaProducto}
+                subcategorias={listadoSubcategorias}
               />
             )}
 

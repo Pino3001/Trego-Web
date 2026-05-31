@@ -16,6 +16,17 @@ interface TextSearchProps<T> {
   mapToItem: (item: T) => SearchItem;
 }
 
+// ── Helper: convierte colorStyle a color hex/tailwind para hover ─────────────
+
+const colorMap: Record<string, string> = {
+  "trego-restaurante": "#fff3e0",
+  "trego-cliente": "#e3f2fd",
+  "blue-500": "#eff6ff",
+  "green-500": "#f0fdf4",
+  "red-500": "#fef2f2",
+  "purple-500": "#faf5ff",
+};
+
 // ── Component ────────────────────────────────────────────────────────────────
 
 export const TextBuscador = <T,>({
@@ -32,11 +43,15 @@ export const TextBuscador = <T,>({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [dropdownDir, setDropdownDir] = useState<"down" | "up">("down");
+
   const selectedMapped = selected ? mapToItem(selected) : undefined;
 
-  const filtered = items.filter((item) =>
-    mapToItem(item).label.toLowerCase().includes(query.toLowerCase()),
-  );
+  // ✅ Fix: filtra solo cuando hay query, si no muestra todos
+  const filtered = query.length > 0
+    ? items.filter((item) =>
+        mapToItem(item).label.toLowerCase().includes(query.toLowerCase())
+      )
+    : items;
 
   // Cierra el dropdown al hacer click fuera
   useEffect(() => {
@@ -62,21 +77,27 @@ export const TextBuscador = <T,>({
   const handleClear = () => {
     onSelect(undefined);
     setQuery("");
+    setIsOpen(false);
+    // ✅ Fix: devuelve el foco al input después de limpiar
+    setTimeout(() => inputRef.current?.focus(), 0);
   };
 
-  const isFloating = isFocused || query.length > 0 || selected !== null;
-
   const openDropdown = () => {
-    if (!selected && inputRef) {
-      const rect = inputRef.current?.getBoundingClientRect();
-      if (rect) {
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const dropdownHeight = 220;
-        setDropdownDir(spaceBelow < dropdownHeight ? "up" : "down");
-      }
+    const rect = inputRef.current?.getBoundingClientRect();
+    if (rect) {
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const dropdownHeight = 220;
+      setDropdownDir(spaceBelow < dropdownHeight ? "up" : "down");
     }
     setIsOpen(true);
   };
+
+  // ✅ Fix: el placeholder flota solo cuando hay foco, query o selección real
+  const isFloating = isFocused || query.length > 0 || !!selected;
+
+  // ✅ Color de hover basado en colorStyle
+  const hoverBg = colorMap[colorStyle] ?? "#f3f4f6";
+
   return (
     <div ref={wrapperRef} className="relative w-full">
       {/* Input */}
@@ -84,44 +105,45 @@ export const TextBuscador = <T,>({
         <input
           ref={inputRef}
           type="text"
-          value={selected ? selectedMapped?.label : query}
+          // ✅ Fix: muestra label del seleccionado o query, nunca undefined
+          value={selectedMapped ? selectedMapped.label : query}
           readOnly={!!selected}
           onChange={(e) => {
             const newQuery = e.target.value;
             setQuery(newQuery);
-            // Si había un ítem seleccionado y el usuario escribe, lo limpiamos
-            if (selected) {
-              onSelect(undefined);
-            }
+            if (selected) onSelect(undefined);
             openDropdown();
           }}
           onFocus={() => {
             setIsFocused(true);
+            // ✅ Fix: al enfocar con selección, limpia para permitir nueva búsqueda
             if (selected) {
               setQuery(selectedMapped?.label ?? "");
-              onSelect(undefined); // limpiar selección para que el dropdown se muestre
+              onSelect(undefined);
             }
             openDropdown();
           }}
           onBlur={() => setIsFocused(false)}
-          placeholder={placeholder}
+          // ✅ Fix: placeholder vacío porque usamos floating label
+          placeholder=""
           className={`
-            peer w-full h-13 border border-gray-400 rounded-full px-5 pr-10
-            outline-none placeholder-transparent
+            peer w-full h-13 border border-gray-300 rounded-full px-5 pr-10
+            outline-none
             focus:border-${colorStyle} focus:ring-1 focus:ring-${colorStyle}
             transition-all duration-200
-            ${selected ? "cursor-default text-gray-700" : ""}
+            ${selected ? "cursor-default text-gray-700" : "text-gray-700"}
           `}
         />
 
-        {/* Floating label */}
+        {/* ✅ Fix: Floating label — siempre visible, flota al enfocar */}
         <label
+          onClick={() => inputRef.current?.focus()}
           className={`
-            absolute left-5 pointer-events-none transition-all duration-200
+            absolute left-5 pointer-events-none transition-all duration-200 select-none
             ${
               isFloating
-                ? `-top-2 text-xs text-${colorStyle} bg-white px-1`
-                : "top-3.5 text-base text-gray-500"
+                ? `-top-2.5 text-xs text-${colorStyle} bg-white px-1 font-medium`
+                : "top-3.5 text-sm text-gray-400"
             }
           `}
         >
@@ -133,11 +155,13 @@ export const TextBuscador = <T,>({
           {selected ? (
             <button
               type="button"
-              onClick={handleClear}
+              onMouseDown={(e) => {
+                e.preventDefault() // ✅ evita que onBlur se dispare antes
+                handleClear()
+              }}
               className={`text-gray-400 hover:text-${colorStyle} transition-colors`}
               aria-label="Limpiar selección"
             >
-              {/* X icon */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="18"
@@ -153,7 +177,17 @@ export const TextBuscador = <T,>({
               </svg>
             </button>
           ) : (
-            <span className="text-gray-400 pointer-events-none">
+            // ✅ Fix: botón de lupa despliega la lista al hacer click
+            <button
+              type="button"
+              onMouseDown={(e) => {
+                e.preventDefault()
+                inputRef.current?.focus()
+                openDropdown()
+              }}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+              aria-label="Buscar"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="17"
@@ -168,7 +202,7 @@ export const TextBuscador = <T,>({
                 <circle cx="11" cy="11" r="8" />
                 <path d="M21 21l-4.35-4.35" />
               </svg>
-            </span>
+            </button>
           )}
         </div>
       </div>
@@ -177,9 +211,10 @@ export const TextBuscador = <T,>({
       {isOpen && !selected && (
         <div
           className={`
-                      absolute left-0 right-0 z-50 bg-white border border-gray-200 rounded-2xl shadow-md overflow-hidden
-                      ${dropdownDir === "up" ? "bottom-[calc(100%+6px)]" : "top-[calc(100%+6px)]"}
-                    `}
+            absolute left-0 right-0 z-50 bg-white border border-gray-200
+            rounded-2xl shadow-lg overflow-hidden
+            ${dropdownDir === "up" ? "bottom-[calc(100%+6px)]" : "top-[calc(100%+6px)]"}
+          `}
         >
           {filtered.length === 0 ? (
             <p className="px-4 py-3 text-sm text-gray-400 text-center">
@@ -187,22 +222,41 @@ export const TextBuscador = <T,>({
             </p>
           ) : (
             <ul className="max-h-52 overflow-y-auto py-1">
-              {items.map((item) => {
+              {filtered.map((item) => {
                 const mapped = mapToItem(item);
+                const isSelected = selectedMapped?.id === mapped.id;
                 return (
                   <li
                     key={mapped.id}
                     onMouseDown={() => handleSelect(item)}
+                    // ✅ Fix: hover con color del colorStyle muy claro via style inline
+                    style={{ "--hover-bg": hoverBg } as React.CSSProperties}
                     className={`
-                                px-4 py-2.5 text-sm cursor-pointer transition-colors
-                                ${
-                                  selectedMapped?.id === mapped.id
-                                    ? `text-${colorStyle} bg-gray-50 font-medium`
-                                    : "text-gray-700 hover:bg-gray-50"
-                                }
-                            `}
+                      px-4 py-3 text-sm cursor-pointer transition-colors
+                      border-b border-gray-100 last:border-b-0
+                      ${isSelected
+                        ? `text-${colorStyle} font-semibold bg-gray-50`
+                        : "text-gray-700"
+                      }
+                    `}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        (e.currentTarget as HTMLElement).style.backgroundColor = hoverBg;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        (e.currentTarget as HTMLElement).style.backgroundColor = "";
+                      }
+                    }}
                   >
-                    {mapped.label}
+                    {/* ✅ Fix: items con mejor visual — icono + label */}
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 bg-${colorStyle}`}
+                      />
+                      <span>{mapped.label}</span>
+                    </div>
                   </li>
                 );
               })}

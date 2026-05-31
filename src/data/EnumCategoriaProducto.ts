@@ -7,3 +7,8 @@ export enum EnumCategoriaProducto {
   Postre = "Postre",
   Otros = "Otros"
 }
+
+export const CATEGORIAS_PRODUCTO = Object.values(EnumCategoriaProducto).map((categoria) => ({
+  id: categoria,  
+  label: categoria,
+}));

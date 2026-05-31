@@ -6,7 +6,7 @@ export interface SelectItem {
 }
 
 // Props genéricas que extienden SelectItem
-interface TextSelectProps<T extends SelectItem> {
+interface TextSelectProps<T,> {
   items: T[];
   placeholder?: string;
   colorStyle?: string;
@@ -15,7 +15,7 @@ interface TextSelectProps<T extends SelectItem> {
   mapToItem: (item: T) => SelectItem;
 }
 
-export const TextSelector = <T extends SelectItem>({
+export const TextSelector = <T,>({
   items,
   placeholder = "Seleccioná...",
   colorStyle = "trego-restaurante",
@@ -82,7 +82,7 @@ export const TextSelector = <T extends SelectItem>({
           bg-white
         `}
       >
-        {selected?.label ?? placeholder}
+        {selectedMapped?.label ?? placeholder}
       </button>
 
       {/* Floating label */}

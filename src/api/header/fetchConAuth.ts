@@ -26,6 +26,6 @@ export const fetchConAuth = async (
     localStorage.removeItem("jwtToken");
     window.location.href = "/login/cliente";
   }
-
+  console.log("Token", token)
   return response;
 };

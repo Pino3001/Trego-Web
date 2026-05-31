@@ -1,7 +1,7 @@
 import type { EnumCategoriaProducto } from "./EnumCategoriaProducto.js";
 
-export interface DTSubcategoria{
-    idSubCategoria?: string;
+export interface DTOSubcategoria{
+    idSubCategoria?: number;
     nombre?: string;
     categoria?: EnumCategoriaProducto;
     urlImagen?: string;
