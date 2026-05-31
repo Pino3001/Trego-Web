@@ -1,6 +1,7 @@
 export const ENDPOINTS = {
   // Restaurantes (cliente)
   RESTAURANTES: '/api/restaurantes',
+  RESTAURANTES_TODOS: '/api/restaurantes/listar',
   RESTAURANTES_ZONA: '/api/restaurantes/listarXdirreccion', // falta endpoint backend
   RESTAURANTE_POR_ID: '/api/restaurantes/:id',
 
@@ -49,4 +50,7 @@ export const ENDPOINTS = {
   ADMIN_RESTAURANTES_LISTA: '/api/administradores/restaurantes/lista',
   ADMIN_RESTAURANTE_HABILITAR: '/api/administradores/restaurantes/:id/habilitar',
   ADMIN_RESTAURANTE_NO_HABILITAR: '/api/administradores/restaurantes/:id/noHabilitar/:motivo',
+
+  // Administrador — clientes
+  CLIENTES_TODOS: '/api/clientes',
 }

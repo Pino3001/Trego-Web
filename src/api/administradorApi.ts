@@ -1,4 +1,5 @@
 import type { DTORestaurante } from "../data/DTORestaurante.js";
+import type { DTOClienteResponse } from "../data/DTOClienteResponse.js";
 import { ENDPOINTS } from "./endpoints.js";
 import { fetchConAuth } from "./header/fetchConAuth.js";
 
@@ -8,6 +9,26 @@ export const administradorApi = {
 
     if (!response.ok) {
       throw new Error("ERROR_CARGA");
+    }
+
+    return response.json();
+  },
+
+  obtenerRestaurantesHabilitados: async (): Promise<DTORestaurante[]> => {
+    const response = await fetchConAuth(ENDPOINTS.RESTAURANTES_TODOS);
+
+    if (!response.ok) {
+      throw new Error("ERROR_CARGA_HABILITADOS");
+    }
+
+    return response.json();
+  },
+
+  obtenerClientesRegistrados: async (): Promise<DTOClienteResponse[]> => {
+    const response = await fetchConAuth(ENDPOINTS.CLIENTES_TODOS);
+
+    if (!response.ok) {
+      throw new Error("ERROR_CARGA_CLIENTES");
     }
 
     return response.json();
