@@ -1,6 +1,17 @@
-import{ useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ModalBase, { Z_MODAL } from './ModalBase'
 import { useCarrito } from '../../context/CarritoContext'
+
+function obtenerUrlPago(preferencia) {
+  const initPoint = preferencia?.initPoint || preferencia?.init_point || preferencia?.url
+  const sandboxInitPoint = preferencia?.sandboxInitPoint || preferencia?.sandbox_init_point
+
+  if (import.meta.env.VITE_MP_USAR_SANDBOX === 'true') {
+    return sandboxInitPoint || initPoint
+  }
+
+  return initPoint || sandboxInitPoint
+}
 
 export default function PagoModal() {
   const {
@@ -13,14 +24,19 @@ export default function PagoModal() {
 
   const [estado, setEstado] = useState('esperando') // esperando | procesando | exito | rechazado | error
   const [errorMsg, setErrorMsg] = useState(null)
+  const pagoIniciadoRef = useRef(false)
 
   useEffect(() => {
     if (!pagoModalAbierto) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setEstado('esperando')
       setErrorMsg(null)
+      pagoIniciadoRef.current = false
       return
     }
+
+    if (pagoIniciadoRef.current) return
+    pagoIniciadoRef.current = true
 
     let cancelado = false
 
@@ -31,7 +47,11 @@ export default function PagoModal() {
         const preferencia = await confirmarPedidoYpagar()
         if (cancelado) return
 
-        const url = preferencia?.sandboxInitPoint || preferencia?.initPoint
+        if (preferencia?.externalReference) {
+          sessionStorage.setItem('trego_ultimo_pedido_pago', String(preferencia.externalReference))
+        }
+
+        const url = obtenerUrlPago(preferencia)
         if (url) {
           window.location.href = url
           return

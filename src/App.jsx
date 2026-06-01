@@ -15,6 +15,9 @@ import AdminLayout from "./pages/admin/AdminLayout.js";
 import GestionRestaurantesPage from "./pages/admin/GestionRestaurantesPage.js";
 import ListarRestaurantesPage from "./pages/admin/ListarRestaurantesPage.js";
 import ListarClientesPage from "./pages/admin/ListarClientesPage.js";
+import PagoExito from "./pages/pago/PagoExito.jsx";
+import PagoError from "./pages/pago/PagoError.jsx";
+import PagoPendiente from "./pages/pago/PagoPendiente.jsx";
 
 export default function AppRouter() {
   return (
@@ -31,6 +34,11 @@ export default function AppRouter() {
           path="/restaurantes/registrarRestaurante"
           element={<RegistrarRestaurante />}
         />
+
+        {/* --- RUTAS DE RETORNO MERCADO PAGO --- */}
+        <Route path="/success" element={<PagoExito />} />
+        <Route path="/failure" element={<PagoError />} />
+        <Route path="/pending" element={<PagoPendiente />} />
 
         {/* --- RUTAS PRIVADAS (ENVUELTAS EN EL LAYOUT) --- */}
         {/* Este Route padre inyecta el Header y Sidebar. Los hijos se renderizan en el <Outlet /> todo lo que lleve la barra lateral de restaurante debe ir dentro de este Route*/}
