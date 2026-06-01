@@ -13,6 +13,12 @@ interface FiltrosPedido {
   idProducto?: number;
 }
 
+// DTO esperado por el backend (ajustá los campos exactos según tu definición Java)
+export interface DTOActualizarEstadoRequest {
+  pedido: DTOPedido; // pedido a actualizar
+  estado: EnumEstadoPedido; // nuevo estado
+}
+
 /** falta endpoint backend */
 export async function enviarSolicitudAltaRestaurante(
   resto: Partial<DTORestaurante>,
@@ -178,6 +184,117 @@ export async function listarSubcategorias(): Promise<DTOSubcategoria[]> {
   if (!response.ok) {
     const errorText = await response.text().catch(() => "Error desconocido");
     throw new Error(errorText || "Error al listar las subcategorías");
+  }
+
+  return response.json();
+}
+
+/**
+ * Confirma un pedido desde el restaurante.
+ * @param pedidoId - ID del pedido a confirmar.
+ * @returns El pedido actualizado con su nuevo estado.
+ * @throws Error con el mensaje del backend si falla (400/409/500).
+ */
+export async function confirmarPedidoRestaurante(
+  pedidoId: number,
+): Promise<DTOPedido> {
+  const response = await fetchConAuth(
+    `${ENDPOINTS.CONFIRMAR_PEDIDO}/${pedidoId}`,
+    {
+      method: "PATCH",
+    },
+  );
+
+  if (!response.ok) {
+    // Intentamos extraer el mensaje de error del cuerpo de la respuesta
+    let mensaje = `Error ${response.status}`;
+    try {
+      const errorData = await response.json();
+      mensaje =
+        errorData.message || errorData.error || JSON.stringify(errorData);
+    } catch {
+      mensaje = await response.text().catch(() => "Error desconocido");
+    }
+
+    // Errores específicos según el backend
+    if (response.status === 400) {
+      throw new Error(mensaje || "El pedido no está en estado Pagado.");
+    }
+    if (response.status === 409) {
+      throw new Error(
+        mensaje || "El pedido ya fue cancelado o confirmado previamente.",
+      );
+    }
+
+    throw new Error(mensaje || "Error al confirmar el pedido.");
+  }
+
+  return response.json();
+}
+
+/**
+ * Actualiza el estado de un pedido (ej. a "EnCamino" o "Entregado").
+ * @param request - Objeto con el ID del pedido y el nuevo estado.
+ * @returns El pedido actualizado.
+ * @throws Error si el salto de estado es inválido (400) u otro error.
+ */
+export async function actualizarEstadoPedido(
+  request: DTOActualizarEstadoRequest,
+): Promise<DTOPedido> {
+  const response = await fetchConAuth(ENDPOINTS.ACTUALIZAR_ESTADO, {
+    method: "PATCH",
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    let mensaje = `Error ${response.status}`;
+    try {
+      const errorData = await response.json();
+      mensaje =
+        errorData.message || errorData.error || JSON.stringify(errorData);
+    } catch {
+      mensaje = await response.text().catch(() => "Error desconocido");
+    }
+
+    if (response.status === 400) {
+      throw new Error(mensaje || "Salto de estado inválido.");
+    }
+
+    throw new Error(mensaje || "Error al actualizar el estado del pedido.");
+  }
+
+  return response.json();
+}
+
+/**
+ * Solicita el reembolso de un pedido al backend.
+ * @param pedido - pedido a reembolsar.
+ * @returns El pedido actualizado con estado "Reembolsado".
+ * @throws Error con mensaje descriptivo si falla.
+ */
+export async function reembolsarPedido(pedido: DTOPedido): Promise<DTOPedido> {
+  const response = await fetchConAuth(ENDPOINTS.CANCELAR_PEDIDO, {
+    method: 'POST',
+    body: JSON.stringify(pedido),
+  });
+
+  if (!response.ok) {
+    let mensaje = `Error ${response.status}`;
+    try {
+      const errorData = await response.json();
+      mensaje = errorData.message || errorData.error || JSON.stringify(errorData);
+    } catch {
+      mensaje = await response.text().catch(() => 'Error desconocido');
+    }
+
+    if (response.status === 400) {
+      throw new Error(mensaje || 'Pedido inválido o no tiene pago asociado.');
+    }
+    if (response.status === 409) {
+      throw new Error(mensaje || 'El pedido ya había sido reembolsado.');
+    }
+
+    throw new Error(mensaje || 'Error al procesar el reembolso.');
   }
 
   return response.json();

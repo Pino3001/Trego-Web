@@ -18,6 +18,10 @@ import ListarClientesPage from "./pages/admin/ListarClientesPage.js";
 import PagoExito from "./pages/pago/PagoExito.jsx";
 import PagoError from "./pages/pago/PagoError.jsx";
 import PagoPendiente from "./pages/pago/PagoPendiente.jsx";
+import ListarEnPreparacion from "./pages/restaurantes/ListarEnPreparacion.js";
+import ListarEnCamino from "./pages/restaurantes/ListarEnCamino.js";
+import ListarEntregados from "./pages/restaurantes/ListarEntregados.js";
+import ListarCancelados from "./pages/restaurantes/ListarCancelados.js";
 
 export default function AppRouter() {
   return (
@@ -49,8 +53,24 @@ export default function AppRouter() {
           />
           <Route path="/restaurantes/altaProducto" element={<AltaProducto />} />
           <Route
-            path="/ListarPedidosSinConfirmar"
+            path="/restaurantes/ListarPedidosSinConfirmar"
             element={<ListarSinConfirmar />}
+          />
+          <Route
+            path="/restaurantes/Listar-en-preparacion"
+            element={<ListarEnPreparacion />}
+          />
+          <Route
+            path="/restaurantes/Listar-en-camino"
+            element={<ListarEnCamino />}
+          />
+          <Route
+            path="/restaurantes/pedidos-entregados"
+            element={<ListarEntregados />}
+          />
+          <Route
+            path="/restaurantes/pedidos-cancelados"
+            element={<ListarCancelados />}
           />
         </Route>
         <Route

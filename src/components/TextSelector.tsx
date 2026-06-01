@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 export interface SelectItem {
   id: string | number;
@@ -6,7 +7,7 @@ export interface SelectItem {
 }
 
 // Props genéricas que extienden SelectItem
-interface TextSelectProps<T,> {
+interface TextSelectProps<T> {
   items: T[];
   placeholder?: string;
   colorStyle?: string;
@@ -28,6 +29,7 @@ export const TextSelector = <T,>({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLButtonElement>(null);
   const selectedMapped = selected ? mapToItem(selected) : undefined;
+  const [rect, setRect] = useState<DOMRect | null>(null);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -45,6 +47,7 @@ export const TextSelector = <T,>({
   const openDropdown = () => {
     const rect = inputRef.current?.getBoundingClientRect();
     if (rect) {
+      setRect(rect);
       const spaceBelow = window.innerHeight - rect.bottom;
       setDropdownDir(spaceBelow < 220 ? "up" : "down");
     }
@@ -144,42 +147,45 @@ export const TextSelector = <T,>({
       </div>
 
       {/* Dropdown */}
-      {isOpen && (
-        <ul
-          className={`
-          absolute left-0 right-0 z-50
-          bg-white border border-gray-200 rounded-2xl shadow-md
-          overflow-y-auto max-h-52 py-1
-          ${dropdownDir === "up" ? "bottom-full mb-1.5" : "top-full mt-1.5"}
-        `}
-        >
-          {items.length === 0 ? (
-            <li className="px-4 py-3 text-sm text-gray-400 text-center">
-              Sin opciones
-            </li>
-          ) : (
-            items.map((item) => {
-              const mapped = mapToItem(item);
-              return (
-                <li
-                  key={mapped.id}
-                  onMouseDown={() => handleSelect(item)}
-                  className={`
-                                px-4 py-2.5 text-sm cursor-pointer transition-colors
-                                ${
-                                  selectedMapped?.id === mapped.id
-                                    ? `text-${colorStyle} bg-gray-50 font-medium`
-                                    : "text-gray-700 hover:bg-gray-50"
-                                }
-                            `}
-                >
-                  {mapped.label}
-                </li>
-              );
-            })
-          )}
-        </ul>
-      )}
+      {isOpen &&
+        createPortal(
+          <ul
+            className="absolute bg-white border border-gray-200 rounded-2xl shadow-md overflow-y-auto max-h-52 py-1 z-9999"
+            style={{
+              position: "fixed",
+              left: `${rect?.left ?? 0}px`,
+              top:
+                dropdownDir === "down"
+                  ? `${(rect?.bottom ?? 0) + 4}px`
+                  : `${(rect?.top ?? 0) - 4}px`,
+              width: `${rect?.width ?? 200}px`,
+            }}
+          >
+            {items.length === 0 ? (
+              <li className="px-4 py-3 text-sm text-gray-400 text-center">
+                Sin opciones
+              </li>
+            ) : (
+              items.map((item) => {
+                const mapped = mapToItem(item);
+                return (
+                  <li
+                    key={mapped.id}
+                    onMouseDown={() => handleSelect(item)}
+                    className={`px-4 py-2.5 text-sm cursor-pointer transition-colors ${
+                      selectedMapped?.id === mapped.id
+                        ? `text-${colorStyle} bg-gray-50 font-medium`
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {mapped.label}
+                  </li>
+                );
+              })
+            )}
+          </ul>,
+          document.body,
+        )}
     </div>
   );
 };

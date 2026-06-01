@@ -19,6 +19,7 @@ export default function HomePage() {
     restaurantes,
     filtros,
     cargando,
+    error,
     modoBusqueda,
     cargarZona,
     buscar,
@@ -92,7 +93,7 @@ export default function HomePage() {
 
   const sinUbicacion =
     (geo.ubicacionDenegada || ubicacionCancelada) && !geo.tieneUbicacion
-  const vacio = geo.tieneUbicacion && !cargando && listaPrincipal.length === 0
+  const vacio = geo.tieneUbicacion && !cargando && !error && listaPrincipal.length === 0
 
   return (
     <div className="min-h-screen bg-[#f5f5f7]">
@@ -107,6 +108,12 @@ export default function HomePage() {
       <main className="mx-auto max-w-275 px-4 py-5 sm:px-6 sm:py-6">
         {cargando && (
           <p className="mb-4 text-center text-sm text-gray-500">Cargando restaurantes...</p>
+        )}
+
+        {error && (
+          <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700">
+            {error}
+          </p>
         )}
 
         {sinUbicacion && (

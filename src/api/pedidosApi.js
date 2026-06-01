@@ -38,11 +38,10 @@ function normalizarPreferenciaPago(preferencia) {
 export async function confirmarPedido({ carrito, direccion, restauranteId }) {
   const response = await fetchConAuth(ENDPOINTS.PEDIDO_CONFIRMAR, {
     method: 'POST',
-    body: JSON.stringify({
-      carrito,
-      direccion,
-      restauranteId,
-    }),
+    // El backend /api/pedido/confirmar espera unicamente un DTODireccion.
+    // Ignoramos carrito/restauranteId porque del lado servidor se obtiene
+    // el carrito activo desde la sesión (JWT).
+    body: JSON.stringify(direccion),
   })
 
   if (!response.ok) {

@@ -2,7 +2,7 @@ export enum EnumEstadoPedido {
   Solicitado = "Solicitado",
   Pagado = "Pagado",
   PagoRechazado = "PagoRechazado",
-  Aprobado = "Aprobado",
+  EnPreparacion = "EnPreparacion",
   EnCamino = "EnCamino",
   Entregado = "Entregado",
   Cancelado = "Cancelado",
