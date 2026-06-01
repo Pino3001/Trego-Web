@@ -19,6 +19,14 @@ export function useRestaurantes() {
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState(null)
 
+  const mensajeErrorAmigable = (e) => {
+    const msg = e?.message ?? ''
+    if (msg.includes('listar por zona') || msg.includes('500')) {
+      return 'No se pudieron cargar restaurantes para tu zona. Reiniciá el backend y probá de nuevo.'
+    }
+    return msg || 'Error al cargar restaurantes'
+  }
+
   const cargarZona = useCallback(
     async (coords) => {
       if (!coords) return
@@ -32,7 +40,7 @@ export function useRestaurantes() {
         })
         setRestaurantes(data)
       } catch (e) {
-        setError(e.message ?? 'Error al cargar restaurantes')
+        setError(mensajeErrorAmigable(e))
         setRestaurantes([])
       } finally {
         setCargando(false)
