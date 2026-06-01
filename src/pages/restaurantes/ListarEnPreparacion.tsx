@@ -1,16 +1,16 @@
-import { useState, useEffect } from "react";
-import { Search, CheckCircle, AlertCircle } from "lucide-react";
-import CardPedidoAconfirmar from "./componentes/CardPedidoAconfirmar.js";
-import { EnumEstadoPedido } from "../../data/EnumEstadoPedido.js";
+import { useEffect, useState } from "react";
+import type { NotificationState } from "./types/NotificationState.js";
 import {
-  confirmarPedidoRestaurante,
+  actualizarEstadoPedido,
   reembolsarPedido,
 } from "../../api/apiRestaurante.js";
-import type { NotificationState } from "./types/NotificationState.js";
+import { EnumEstadoPedido } from "../../data/EnumEstadoPedido.js";
 import { usePedidos } from "./utilitis/funcionesListado.js";
+import { AlertCircle, CheckCircle, Search } from "lucide-react";
+import CardPedidoAconfirmar from "./componentes/CardPedidoAconfirmar.js";
 import type { DTOPedido } from "../../data/DTOPedido.js";
 
-export default function ListarSinConfirmar() {
+export default function ListarEnPreparacion() {
   const [searchTerm, setSearchTerm] = useState("");
   const [notification, setNotification] = useState<NotificationState>({
     show: false,
@@ -20,7 +20,7 @@ export default function ListarSinConfirmar() {
 
   // Obtener pedidos con estado "Solicitado"
   const { pedidos, loading, error, recargar, removerPedidoLocal } = usePedidos(
-    EnumEstadoPedido.Pagado, 20  
+    EnumEstadoPedido.EnPreparacion, 180
   );
 
   const showNotification = (message: string, type: "success" | "error") => {
@@ -31,60 +31,43 @@ export default function ListarSinConfirmar() {
     );
   };
 
-  useEffect(() => {
-    if (error) showNotification(error, "error");
-  }, [error]);
-
-  // Placeholder para confirmar pedido (deberás implementar la llamada a tu endpoint)
-  const handleConfirmar = async (pedido: DTOPedido | undefined) => {
+  const handleActualizarEstado = async (
+    pedido: DTOPedido,
+    nuevoEstado: EnumEstadoPedido,
+  ) => {
     try {
-      if (!pedido || !pedido.idPedido) {
-        showNotification(
-          "No se ha seleccionado un pedido correctamente.",
-          "error",
-        );
-        return;
-      }
-      const confirmacion = window.confirm(
-        `¿Estás seguro de que deseas confirmar el pedido #${pedido.idPedido}"? Esta acción no se puede deshacer.`,
-      );
-
-      if (confirmacion) {
-        await confirmarPedidoRestaurante(pedido.idPedido);
+      if (nuevoEstado === EnumEstadoPedido.Cancelado) {
+        if (!pedido || !pedido.idPedido) {
+          showNotification("Sin pedido seleccionado.", "error");
+          return;
+        }
+        await reembolsarPedido(pedido);
         removerPedidoLocal(pedido.idPedido);
-        showNotification("Pedido confirmado correctamente.", "success");
+        showNotification("Pedido cancelado por el restaurante.", "error");
+      } else {
+        if (!pedido || !pedido.idPedido) {
+          showNotification("Sin pedido seleccionado.", "error");
+          return;
+        }
+        await actualizarEstadoPedido({ pedido, estado: nuevoEstado });
+        removerPedidoLocal(pedido.idPedido);
+        showNotification(
+          `Pedido #${pedido.idPedido} actualizado a ${nuevoEstado}.`,
+          "success",
+        );
       }
     } catch (error) {
       const mensaje =
         error instanceof Error
           ? error.message
-          : "Error al confirmar el pedido.";
+          : "Error al actualizar el pedido.";
       showNotification(mensaje, "error");
     }
   };
 
-  // Placeholder para cancelar pedido
-  const handleCancelar = async (pedido: DTOPedido | undefined) => {
-    try {
-      if (!pedido || !pedido.idPedido) {
-        showNotification("No se selecciono un pedido correctamente.", "error");
-        return;
-      }
-      const confirmacion = window.confirm(
-        `¿Estás seguro de que deseas cancelar el pedido #${pedido.idPedido}}"? Esta acción no se puede deshacer.`,
-      );
-
-      if (confirmacion) {
-        await reembolsarPedido(pedido);
-        removerPedidoLocal(pedido.idPedido);
-        showNotification("Pedido cancelado por el restaurante.", "error");
-      }
-    } catch (error) {
-      const mensaje =
-        error instanceof Error ? error.message : "Error desconocido";
-      showNotification(mensaje, "error");
-    }
-  };
+  useEffect(() => {
+    if (error) showNotification(error, "error");
+  }, [error]);
 
   const pedidosFiltrados = pedidos.filter((pedido) =>
     pedido.nombreCliente?.toLowerCase().includes(searchTerm.toLowerCase()),
@@ -147,8 +130,7 @@ export default function ListarSinConfirmar() {
             <CardPedidoAconfirmar
               key={pedido.idPedido}
               pedido={pedido}
-              onConfirmar={handleConfirmar}
-              onCancelar={handleCancelar} 
+              onActualizarEstado={handleActualizarEstado}
             />
           ))
         )}

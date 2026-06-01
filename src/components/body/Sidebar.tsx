@@ -19,9 +19,9 @@ const SECCIONES: SidebarSection[] = [
   {
     section: "Pedidos",
     items: [
-      { label: "En espera de confirmación", path: "/ListarPedidosSinConfirmar" },
-      { label: "En preparacion (Confirmados)", path: "/restaurantes/pedidos-preparacion" },
-      { label: "En camino", path: "/restaurantes/pedidos-en-camino" },
+      { label: "En espera de confirmación", path: "/restaurantes/ListarPedidosSinConfirmar" },
+      { label: "En preparacion(Confirmados)", path: "/restaurantes/Listar-en-preparacion" },
+      { label: "En camino", path: "/restaurantes/Listar-en-camino" },
       { label: "Entregados", path: "/restaurantes/pedidos-entregados" },
       { label: "Cancelados", path: "/restaurantes/pedidos-cancelados" },
     ],
@@ -59,7 +59,7 @@ export default function Sidebar({ habilitado }: SidebarProps) {
         <div className="flex flex-col gap-3">
           <TextoDivider
             texto="Solicitudes"
-            classNameTexto="font-bold text-trego-restaurante"
+            classNameTexto="font-bold text-base text-trego-restaurante"
             classNameDivider="bg-trego-restaurante w-full"
           />
           <NavLink 
@@ -84,7 +84,7 @@ export default function Sidebar({ habilitado }: SidebarProps) {
               texto={section}
               classNameTexto="font-bold text-trego-restaurante"
               classNameDivider="bg-trego-restaurante"
-              height="h-0"
+
             />
             <div className="flex flex-col gap-0.5 mt-2">
               {items.map((item) => (

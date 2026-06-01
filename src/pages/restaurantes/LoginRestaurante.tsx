@@ -70,7 +70,7 @@ export default function LoginRestaurante() {
 
       if (data.rol === "Restaurante") {
         if (response.habilitado) {
-          navigate("/ListarPedidosSinConfirmar"); // Va directo a trabajar
+          navigate("/restaurantes/ListarPedidosSinConfirmar"); // Va directo a trabajar
         } else {
           navigate("/restaurantes/solicitarAlta"); // Va a llenar los papeles
         }
