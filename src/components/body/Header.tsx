@@ -6,6 +6,7 @@ import { IconCart, IconMenu, IconSearch, IconUser } from "../icons.jsx";
 import { useNavigate } from "react-router";
 import { apiAuth } from "../../api/apiAuth.js";
 import { useCarrito } from "../../context/CarritoContext.jsx";
+import MenuUsuario from "./MenuUsuario.js";
 
 interface HeaderProps {
   busqueda?: string;
@@ -22,6 +23,7 @@ export default function Header(props: HeaderProps) {
   const navigate = useNavigate();
   const [menuAbierto, setMenuAbierto] = useState(false);
   const { abrirCarrito, cantidadTotal } = useCarrito();
+  const [restauranteAbierto, setRestauranteAbierto] = useState<boolean>(false)
 
   const {
     busqueda,
@@ -146,19 +148,19 @@ export default function Header(props: HeaderProps) {
 
               {/* Pequeño menú modal flotante */}
               {menuAbierto && (
-                <div className="absolute right-0 mt-2 w-48 rounded-xl border border-gray-100 bg-white p-1 shadow-xl z-50 frame-fade-in">
-                  <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    {tipoUser}
-                  </div>
-                  <hr className="border-gray-100 my-1" />
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
-                  >
-                    Cerrar sesión
-                  </button>
-                </div>
+                <MenuUsuario
+                  nombre="Alexis"
+                  email="alexiswlcg@gmail.com"
+                  tipoUser={tipoUser}
+                  restauranteAbierto={restauranteAbierto}
+                  onVerPerfil={() => {
+                    /* navegar a perfil */
+                  }}
+                  onCerrarSesion={handleLogout}
+                  onToggleRestaurante={() =>
+                    setRestauranteAbierto((prev) => !prev)
+                  }
+                />
               )}
             </div>
           )}

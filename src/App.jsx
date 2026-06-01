@@ -15,6 +15,10 @@ import AdminLayout from "./pages/admin/AdminLayout.js";
 import GestionRestaurantesPage from "./pages/admin/GestionRestaurantesPage.js";
 import ListarRestaurantesPage from "./pages/admin/ListarRestaurantesPage.js";
 import ListarClientesPage from "./pages/admin/ListarClientesPage.js";
+import ListarEnPreparacion from "./pages/restaurantes/ListarEnPreparacion.js";
+import ListarEnCamino from "./pages/restaurantes/ListarEnCamino.js";
+import ListarEntregados from "./pages/restaurantes/ListarEntregados.js";
+import ListarCancelados from "./pages/restaurantes/ListarCancelados.js";
 
 export default function AppRouter() {
   return (
@@ -41,8 +45,24 @@ export default function AppRouter() {
           />
           <Route path="/restaurantes/altaProducto" element={<AltaProducto />} />
           <Route
-            path="/ListarPedidosSinConfirmar"
+            path="/restaurantes/ListarPedidosSinConfirmar"
             element={<ListarSinConfirmar />}
+          />
+          <Route
+            path="/restaurantes/Listar-en-preparacion"
+            element={<ListarEnPreparacion />}
+          />
+          <Route
+            path="/restaurantes/Listar-en-camino"
+            element={<ListarEnCamino />}
+          />
+          <Route
+            path="/restaurantes/pedidos-entregados"
+            element={<ListarEntregados />}
+          />
+          <Route
+            path="/restaurantes/pedidos-cancelados"
+            element={<ListarCancelados />}
           />
         </Route>
         <Route
