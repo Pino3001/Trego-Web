@@ -8,6 +8,7 @@ import {
 } from "react";
 import { mapearCarritoDtoAItems } from "../api/mapeadores.js";
 import {
+  agregarProductoAlCarrito as agregarProductoAlCarritoApi,
   eliminarCarritoCompleto,
   eliminarProductoDelCarrito,
   modificarProductoEnCarrito,
@@ -247,7 +248,7 @@ export function CarritoProvider({ children }) {
 
     if (tieneSesion()) {
       try {
-        const dto = await agregarProductoAlCarrito({
+        const dto = await agregarProductoAlCarritoApi({
           producto,
           cantidad,
           comentarios,

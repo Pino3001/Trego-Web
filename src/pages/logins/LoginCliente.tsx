@@ -97,13 +97,26 @@ export default function LoginCliente() {
         await auth.signOut();
       } else if (err instanceof Error && err.message === "TOKEN_INVALIDO") {
         setError(
-          "Google inició sesión, pero el backend no pudo validar el token. Verificá que el proyecto Firebase del front (firebase.config.js) coincida con firebase-service-account.json del backend.",
+          "El token es de trego-615dc (tu apiKey del front) pero el backend valida con trego-project. Usá la misma opción en ambos: clave de servicio de trego-615dc en el backend, O config web completa de trego-project en firebase.config.js.",
         );
         await auth.signOut();
       } else if (err instanceof TypeError) {
         setError(
           "No se pudo conectar con el servidor de Trego. ¿Está levantado el backend en el puerto 8080?",
         );
+      } else if (err instanceof Error && err.message === "ERROR_SERVIDOR") {
+        setError(
+          "El servidor respondió con un error. Revisá la consola del backend (puerto 8080).",
+        );
+      } else if (
+        err instanceof Error &&
+        (err.message.includes("Firebase") || err.message.includes("auth/"))
+      ) {
+        setError(
+          `Error de Firebase: ${err.message}. Copiá el firebaseConfig completo del proyecto trego-project en Firebase Console y reemplazá firebase.config.js (apiKey, appId, etc.).`,
+        );
+      } else if (err instanceof Error && err.message) {
+        setError(err.message);
       } else {
         setError("No se pudo conectar con el servidor de Trego.");
       }
