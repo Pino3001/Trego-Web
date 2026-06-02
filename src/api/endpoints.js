@@ -8,6 +8,7 @@ export const ENDPOINTS = {
   // Menú y pedidos
   MENU_RESTAURANTE: '/api/pedido/restaurante/:id/verMenu',
   PEDIDO_CONFIRMAR: '/api/pedido/confirmar',
+  PEDIDO_MIS_PEDIDOS: '/api/pedido/misPedidos',
 
   // Carrito
   CARRITO: '/api/carrito',

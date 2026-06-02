@@ -22,6 +22,7 @@ import ListarEnPreparacion from "./pages/restaurantes/ListarEnPreparacion.js";
 import ListarEnCamino from "./pages/restaurantes/ListarEnCamino.js";
 import ListarEntregados from "./pages/restaurantes/ListarEntregados.js";
 import ListarCancelados from "./pages/restaurantes/ListarCancelados.js";
+import HistorialPage from "./pages/HistorialPage.jsx";
 
 export default function AppRouter() {
   return (
@@ -34,6 +35,7 @@ export default function AppRouter() {
         <Route path="/login/Administrador" element={<LoginAdmin />} />
         <Route path="/restaurante/:id" element={<RestauranteMenuPage />} />
         <Route path="/restaurantes" element={<HomePage />} />
+        <Route path="/Historial" element={<HistorialPage />} />
         <Route
           path="/restaurantes/registrarRestaurante"
           element={<RegistrarRestaurante />}
