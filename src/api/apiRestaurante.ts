@@ -39,7 +39,7 @@ export async function obtenerFirmaCloudinary(
 ): Promise<DTOFirma> {
   // Limpiamos el nombre de espacios o caracteres raros por las dudas
   const nombreLimpio = encodeURIComponent(nombreArchivo.trim());
-  const url = `${ENDPOINTS.FIRMA_IMAGEN}/${nombreLimpio},${tipo}`;
+  const url = `${ENDPOINTS.FIRMA_IMAGEN}/${nombreLimpio}/${tipo}`;
 
   const response = await fetchConAuth(url, {
     method: "POST",
