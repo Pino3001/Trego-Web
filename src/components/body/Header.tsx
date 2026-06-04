@@ -18,13 +18,14 @@ interface HeaderProps {
   tipoUser?: "Cliente" | "Restaurante" | "Administrador";
   botonRegistrar?: boolean;
   children?: ReactNode;
+  onToggleRestauranteAbierto: () => {};
+  restauranteAbierto: boolean;
 }
 
 export default function Header(props: HeaderProps) {
   const navigate = useNavigate();
   const [menuAbierto, setMenuAbierto] = useState(false);
   const { abrirCarrito, cantidadTotal } = useCarrito();
-  const [restauranteAbierto, setRestauranteAbierto] = useState<boolean>(false)
 
   const {
     busqueda,
@@ -35,6 +36,8 @@ export default function Header(props: HeaderProps) {
     tipoUser = "Cliente",
     botonRegistrar,
     children,
+    onToggleRestauranteAbierto,
+    restauranteAbierto,
   } = props;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -153,14 +156,12 @@ export default function Header(props: HeaderProps) {
                   nombre="Alexis"
                   email="alexiswlcg@gmail.com"
                   tipoUser={tipoUser}
-                  restauranteAbierto={restauranteAbierto}
                   onVerPerfil={() => {
                     /* navegar a perfil */
                   }}
                   onCerrarSesion={handleLogout}
-                  onToggleRestaurante={() =>
-                    setRestauranteAbierto((prev) => !prev)
-                  }
+                  onToggleRestaurante={onToggleRestauranteAbierto}
+                  restauranteAbierto={restauranteAbierto}
                 />
               )}
             </div>

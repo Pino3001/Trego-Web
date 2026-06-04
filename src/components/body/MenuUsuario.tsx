@@ -44,21 +44,18 @@ export default function MenuUsuario({
           <img
             src={avatarUrl}
             alt={nombre}
-            className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+            className="w-22 h-22 rounded-full object-cover shrink-0"
           />
         ) : (
-          <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-base font-medium text-blue-600 flex-shrink-0 select-none">
+          <div className="w-22 h-22 rounded-full bg-blue-50 flex items-center justify-center text-base font-medium text-blue-600 flex-shrink-0 select-none">
             {getInitials(nombre)}
           </div>
         )}
-        <div className="min-w-0">
+        <div className="min-w-0 ">
           <p className="font-medium text-[15px] text-gray-900 mb-0.5">
             ¡Hola, {nombre}!
           </p>
           <p className="text-xs text-gray-400 mb-1.5 truncate">{email}</p>
-          <span className="text-[11px] bg-blue-50 text-blue-600 font-medium px-2 py-0.5 rounded-md">
-            {tipoUser}
-          </span>
         </div>
       </div>
 
@@ -73,13 +70,25 @@ export default function MenuUsuario({
             onKeyDown={(e) => e.key === "Enter" && onToggleRestaurante()}
             className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors"
           >
-            <Store size={18} className="text-gray-400 flex-shrink-0" />
+            <Store
+              size={32}
+              className={`shrink-0 ${
+                restauranteAbierto ? "text-trego-restaurante" : "text-gray-400"
+              }`}
+            />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-800 leading-tight">
+              <p
+                className={`text-sm font-medium leading-tight ${
+                  restauranteAbierto
+                    ? "text-trego-restaurante"
+                    : "text-gray-800"
+                }
+                `}
+              >
                 Restaurante
               </p>
               <p
-                className={`text-xs leading-tight mt-0.5 transition-colors ${
+                className={`text-sm leading-tight mt-0.5 transition-colors ${
                   restauranteAbierto ? "text-emerald-600" : "text-gray-400"
                 }`}
               >
@@ -89,13 +98,13 @@ export default function MenuUsuario({
 
             {/* Switch */}
             <div
-              className={`relative w-9 h-[22px] rounded-full flex-shrink-0 transition-colors duration-200 ${
+              className={`relative w-12 h-7 rounded-full shrink-0 transition-colors duration-200 ${
                 restauranteAbierto ? "bg-emerald-500" : "bg-gray-200"
               }`}
             >
               <div
-                className={`absolute top-0.5 w-[18px] h-[18px] rounded-full bg-white shadow-sm transition-all duration-200 ${
-                  restauranteAbierto ? "left-[18px]" : "left-0.5"
+                className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-all duration-200 ${
+                  restauranteAbierto ? "left-6" : "left-1"
                 }`}
               />
             </div>
@@ -108,11 +117,11 @@ export default function MenuUsuario({
           onClick={onVerPerfil}
           className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-gray-50 transition-colors"
         >
-          <User size={18} className="text-gray-400 flex-shrink-0" />
+          <User size={32} className="text-gray-400 shrink-0" />
           <span className="flex-1 text-sm font-medium text-gray-800">
             Ver perfil
           </span>
-          <ChevronRight size={16} className="text-gray-300 flex-shrink-0" />
+          <ChevronRight size={16} className="text-gray-300 shrink-0" />
         </button>
 
         <hr className="border-gray-100 my-1 mx-1" />
@@ -123,7 +132,7 @@ export default function MenuUsuario({
           onClick={onCerrarSesion}
           className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-red-50 transition-colors"
         >
-          <LogOut size={18} className="text-red-500 flex-shrink-0" />
+          <LogOut size={32} className="text-red-500 shrink-0" />
           <span className="text-sm font-medium text-red-600">
             Cerrar sesión
           </span>
