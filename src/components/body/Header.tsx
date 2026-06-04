@@ -5,6 +5,7 @@ import tregoAdmin from "../../assets/tregoAdminCircular.svg";
 import { IconCart, IconMenu, IconSearch, IconUser } from "../icons.jsx";
 import { useNavigate } from "react-router";
 import { apiAuth } from "../../api/apiAuth.js";
+import { limpiarSesion } from "../../utils/sesion.js";
 import { useCarrito } from "../../context/CarritoContext.jsx";
 import MenuUsuario from "./MenuUsuario.js";
 
@@ -48,7 +49,7 @@ export default function Header(props: HeaderProps) {
     } catch (error) {
       console.error("Error al revocar el token en el servidor:", error);
     } finally {
-      localStorage.removeItem("jwtToken");
+      limpiarSesion();
       navigate("/");
     }
   };

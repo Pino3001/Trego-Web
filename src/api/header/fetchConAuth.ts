@@ -1,7 +1,10 @@
+import { limpiarSesion } from "../../utils/sesion.js";
+
 export const fetchConAuth = async (
   endpoint: string,
-  options: RequestInit = {},
+  options: RequestInit & { redirectOnUnauthorized?: boolean } = {},
 ) => {
+  const { redirectOnUnauthorized = true, ...fetchOptions } = options;
   const token = localStorage.getItem("jwtToken");
 
   const headers = new Headers(options.headers || {});
@@ -17,15 +20,22 @@ export const fetchConAuth = async (
   const url = endpoint;
 
   const response = await fetch(url, {
-    ...options,
+    ...fetchOptions,
     headers,
   });
 
-  if (response.status === 401) {
+  if (response.status === 401 && redirectOnUnauthorized) {
     console.error("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.");
-    localStorage.removeItem("jwtToken");
-    window.location.href = "/login/cliente";
+    limpiarSesion();
+    const path = window.location.pathname;
+    if (path.startsWith("/admin")) {
+      window.location.href = "/login/Administrador";
+    } else if (path.startsWith("/restaurantes")) {
+      window.location.href = "/login/Restaurante";
+    } else {
+      window.location.href = "/login/cliente";
+    }
   }
-  console.log("Token", token)
+
   return response;
 };

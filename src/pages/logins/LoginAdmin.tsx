@@ -7,6 +7,7 @@ import { TextInput } from "../../components/TextInput.js";
 import TextoDivider from "../../components/TextoDivider.js";
 import { apiAuth } from "../../api/apiAuth.js";
 import type { DTOLoginRegistro } from "../../data/DTOLoginRegistro.js";
+import { guardarSesion } from "../../utils/sesion.js";
 
 type AuthStep = "INGRESO" | "LOADING";
 
@@ -54,7 +55,7 @@ export default function LoginAdmin() {
       const data = await apiAuth.login(loginResponse);
 
       // Guardar el token que te devolvió Spring Boot para tus futuras peticiones
-      localStorage.setItem("jwtToken", data.token);
+      guardarSesion(data.token, data.rol);
       window.dispatchEvent(new Event("trego-sesion-iniciada"));
       //       /*Ver esto con mas detalle tenemos que usar un dato que google no pueda obtener de firebase*/
       // // Dependiendo del tipo de inicio se dirije
@@ -69,7 +70,13 @@ export default function LoginAdmin() {
       //   setStep("INGRESO");
       //   setError("El correo ingresado no pertenece a un Administrador.");
       // }
-      if (data.rol == "Administrador") {
+      if (!data.token) {
+        setStep("INGRESO");
+        setError("El servidor no devolvió un token de sesión. ¿Está corriendo el backend?");
+        return;
+      }
+
+      if (data.rol === "Administrador") {
         navigate("/admin/restaurantes");
       } else {
         setStep("INGRESO");
