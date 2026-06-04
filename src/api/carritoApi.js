@@ -25,8 +25,20 @@ export async function obtenerCarrito() {
   return leerJson(response)
 }
 
-export async function agregarProductoAlCarrito({ producto, cantidad, comentarios, idRestaurante }) {
-  const body = armarProductoPedidoRequest({ producto, cantidad, comentarios, idRestaurante })
+export async function agregarProductoAlCarrito({
+  producto,
+  cantidad,
+  comentarios,
+  ingredientesQuitados,
+  idRestaurante,
+}) {
+  const body = armarProductoPedidoRequest({
+    producto,
+    cantidad,
+    comentarios,
+    ingredientesQuitados,
+    idRestaurante,
+  })
   const response = await fetchConAuth(ENDPOINTS.CARRITO_PRODUCTOS, {
     method: 'POST',
     body: JSON.stringify(body),
@@ -39,12 +51,14 @@ export async function modificarProductoEnCarrito({
   producto,
   cantidad,
   comentarios,
+  ingredientesQuitados,
   idRestaurante,
 }) {
   const body = armarProductoPedidoRequest({
     producto,
     cantidad,
     comentarios,
+    ingredientesQuitados,
     idRestaurante,
   })
   const response = await fetchConAuth(ENDPOINTS.CARRITO_PRODUCTOS, {

@@ -252,6 +252,7 @@ export function CarritoProvider({ children }) {
           producto,
           cantidad,
           comentarios,
+          ingredientesQuitados,
           idRestaurante,
         });
         aplicarCarritoDto(dto);
@@ -328,6 +329,7 @@ export function CarritoProvider({ children }) {
           producto: item ?? { idProducto, precio: 0 },
           cantidad,
           comentarios: item?.comentarios,
+          ingredientesQuitados: item?.ingredientesQuitados,
           idRestaurante: restaurante?.idUsuario ?? carritoDto?.idRestaurante,
         });
         await cargarCarritoDesdeApi();
@@ -356,6 +358,7 @@ export function CarritoProvider({ children }) {
           producto: item ?? { idProducto, precio: 0 },
           cantidad: item?.cantidad ?? 1,
           comentarios,
+          ingredientesQuitados: item?.ingredientesQuitados,
           idRestaurante: restaurante?.idUsuario ?? carritoDto?.idRestaurante,
         });
         await cargarCarritoDesdeApi();
@@ -373,14 +376,33 @@ export function CarritoProvider({ children }) {
     );
   }
 
-  function cambiarIngredientesQuitados(idProducto, ingredientesQuitados) {
+  async function cambiarIngredientesQuitados(idProducto, ingredientesQuitados) {
+    const lista = ingredientesQuitados ?? []
+
+    if (tieneSesion()) {
+      const item = items.find((i) => i.idProducto === idProducto)
+      try {
+        await modificarProductoEnCarrito({
+          producto: item ?? { idProducto, precio: 0 },
+          cantidad: item?.cantidad ?? 1,
+          comentarios: item?.comentarios ?? '',
+          ingredientesQuitados: lista,
+          idRestaurante: restaurante?.idUsuario ?? carritoDto?.idRestaurante,
+        })
+        await cargarCarritoDesdeApi()
+      } catch (err) {
+        setMensajeCarrito(err.message ?? 'No se pudieron actualizar los ingredientes')
+      }
+      return
+    }
+
     setItems((prev) =>
       prev.map((it) =>
         it.idProducto === idProducto
-          ? { ...it, ingredientesQuitados: ingredientesQuitados ?? [] }
+          ? { ...it, ingredientesQuitados: lista }
           : it,
       ),
-    );
+    )
   }
 
   function direccionParaBackend() {

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { History, Store } from 'lucide-react'
+import { AlertCircle, CheckCircle2, History, Store } from 'lucide-react'
 import Header from '../components/body/Header.js'
 import EmptyState from '../components/EmptyState.jsx'
+import RealizarReclamoModal from '../components/reclamos/RealizarReclamoModal.jsx'
 import { obtenerMisPedidos } from '../api/pedidosApi.js'
 import { listarRestaurantesTodos } from '../api/restaurantesApi.js'
 
@@ -79,6 +80,10 @@ export default function HistorialPage() {
   const [filtroRestauranteId, setFiltroRestauranteId] = useState('')
   const [fechaDesde, setFechaDesde] = useState('')
   const [fechaHasta, setFechaHasta] = useState('')
+
+  const [pedidosConReclamo, setPedidosConReclamo] = useState(() => new Set())
+  const [pedidoParaReclamo, setPedidoParaReclamo] = useState(null)
+  const [mensajeExito, setMensajeExito] = useState(null)
 
   const cargarDatos = useCallback(async () => {
     setCargando(true)
@@ -186,6 +191,25 @@ export default function HistorialPage() {
     setFechaHasta('')
   }
 
+  function puedeReclamar(pedido) {
+    if (!pedido?.idPedido || pedido.estado !== 'Entregado') return false
+    return !pedidosConReclamo.has(pedido.idPedido)
+  }
+
+  function abrirReclamo(pedido) {
+    setPedidoParaReclamo(pedido)
+  }
+
+  function cerrarReclamo() {
+    setPedidoParaReclamo(null)
+  }
+
+  function onReclamoExito(idPedido) {
+    setPedidosConReclamo((prev) => new Set(prev).add(idPedido))
+    setMensajeExito('Reclamo realizado. El restaurante revisará tu caso.')
+    window.setTimeout(() => setMensajeExito(null), 6000)
+  }
+
   return (
     <div className="min-h-screen bg-[#f5f5f7]">
       <Header abrirPerfil />
@@ -215,6 +239,16 @@ export default function HistorialPage() {
         {error && (
           <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center text-sm text-red-700">
             {error}
+          </p>
+        )}
+
+        {mensajeExito && (
+          <p
+            role="status"
+            className="mb-4 flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-center text-sm font-medium text-emerald-800"
+          >
+            <CheckCircle2 className="h-5 w-5 shrink-0" aria-hidden />
+            {mensajeExito}
           </p>
         )}
 
@@ -351,12 +385,42 @@ export default function HistorialPage() {
                       </dd>
                     </div>
                   </dl>
+
+                  {puedeReclamar(pedido) && (
+                    <button
+                      type="button"
+                      onClick={() => abrirReclamo(pedido)}
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-semibold text-trego-orange transition hover:bg-orange-100"
+                    >
+                      <AlertCircle className="h-4 w-4" aria-hidden />
+                      Realizar reclamo
+                    </button>
+                  )}
+
+                  {pedido.estado === 'Entregado' &&
+                    pedidosConReclamo.has(pedido.idPedido) && (
+                      <p className="mt-3 text-center text-xs font-medium text-gray-500">
+                        Ya registraste un reclamo para este pedido
+                      </p>
+                    )}
                 </article>
               </li>
             ))}
           </ul>
         )}
       </main>
+
+      <RealizarReclamoModal
+        abierto={!!pedidoParaReclamo}
+        pedido={pedidoParaReclamo}
+        nombreRestaurante={
+          pedidoParaReclamo
+            ? nombreRestaurante(pedidoParaReclamo.idRestaurante)
+            : ''
+        }
+        onCerrar={cerrarReclamo}
+        onExito={onReclamoExito}
+      />
     </div>
   )
 }

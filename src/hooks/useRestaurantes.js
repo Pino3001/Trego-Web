@@ -21,8 +21,14 @@ export function useRestaurantes() {
 
   const mensajeErrorAmigable = (e) => {
     const msg = e?.message ?? ''
+    if (msg === 'NO_EN_ZONA') {
+      return 'No hay restaurantes que repartan hasta tu ubicación. Probá desde Montevideo o ampliá el radio en los locales de prueba.'
+    }
+    if (msg === 'SIN_SESION') {
+      return 'Tenés que iniciar sesión como cliente para ver restaurantes en tu zona.'
+    }
     if (msg.includes('listar por zona') || msg.includes('500')) {
-      return 'No se pudieron cargar restaurantes para tu zona. Reiniciá el backend y probá de nuevo.'
+      return 'No se pudieron cargar restaurantes para tu zona. Reiniciá el backend y revisá geoapify.api.key en application.properties.'
     }
     return msg || 'Error al cargar restaurantes'
   }

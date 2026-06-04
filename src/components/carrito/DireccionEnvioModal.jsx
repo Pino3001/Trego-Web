@@ -101,7 +101,9 @@ export default function DireccionEnvioModal() {
     etiquetaUbicacion ??
     (resolviendoDireccion || cargandoUbicacion
       ? 'Buscando dirección…'
-      : 'Tu ubicación en Montevideo')
+      : tieneUbicacion
+        ? 'Resolviendo dirección…'
+        : 'Tocá el botón para detectar tu dirección')
 
   return (
     <ModalBase
