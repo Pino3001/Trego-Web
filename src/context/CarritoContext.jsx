@@ -16,6 +16,7 @@ import {
 } from "../api/carritoApi.js";
 import { obtenerDireccionesGuardadas } from "../api/usuariosApi.js";
 import { confirmarPedido } from "../api/pedidosApi.js";
+import { esSesionCliente } from "../utils/sesion.js";
 
 const CarritoContext = createContext(null);
 
@@ -62,7 +63,7 @@ export function CarritoProvider({ children }) {
   const [mensajeCarrito, setMensajeCarrito] = useState(null);
   const [cargandoCarrito, setCargandoCarrito] = useState(false);
 
-  const usarApi = tieneSesion();
+  const usarApi = tieneSesion() && esSesionCliente();
 
   const aplicarCarritoDto = useCallback((dto) => {
     setCarritoDto(dto);
@@ -105,14 +106,14 @@ export function CarritoProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (tieneSesion()) {
+    if (tieneSesion() && esSesionCliente()) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       cargarCarritoDesdeApi();
       cargarDireccionesDesdeApi();
     }
 
     function alIniciarSesion() {
-      if (tieneSesion()) {
+      if (tieneSesion() && esSesionCliente()) {
         cargarCarritoDesdeApi();
         cargarDireccionesDesdeApi();
       }

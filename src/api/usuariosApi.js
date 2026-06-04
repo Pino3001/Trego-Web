@@ -8,7 +8,9 @@ export async function guardarDireccion(_direccion) {
 }
 
 export async function obtenerDireccionesGuardadas() {
-  const response = await fetchConAuth(ENDPOINTS.USUARIO_DIRECCIONES)
+  const response = await fetchConAuth(ENDPOINTS.USUARIO_DIRECCIONES, {
+    redirectOnUnauthorized: false,
+  })
   if (!response.ok) {
     if (response.status === 401) return []
     throw new Error('No se pudieron cargar las direcciones')
