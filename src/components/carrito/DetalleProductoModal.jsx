@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import ModalBase, { Z_MODAL } from './ModalBase'
 import { useCarrito } from '../../context/CarritoContext'
 
@@ -24,21 +24,50 @@ export default function DetalleProductoModal() {
   const [cantidad, setCantidad] = useState(1)
   const [comentarios, setComentarios] = useState('')
   const [quitados, setQuitados] = useState([])
+  const [errorIngredientes, setErrorIngredientes] = useState(null)
 
   const ingredientes = useMemo(() => obtenerIngredientes(producto), [producto])
 
+  useEffect(() => {
+    setQuitados([])
+    setErrorIngredientes(null)
+    setCantidad(1)
+    setComentarios('')
+  }, [producto?.idProducto])
+
+  const MSG_TODOS_INGREDIENTES =
+    'No podés quitar todos los ingredientes. Dejá al menos uno en el plato.'
+
   function toggleQuitado(nombre) {
-    setQuitados((prev) => (prev.includes(nombre) ? prev.filter((x) => x !== nombre) : [...prev, nombre]))
+    if (quitados.includes(nombre)) {
+      setQuitados((prev) => prev.filter((x) => x !== nombre))
+      setErrorIngredientes(null)
+      return
+    }
+    if (ingredientes.length > 0 && quitados.length + 1 >= ingredientes.length) {
+      setErrorIngredientes(MSG_TODOS_INGREDIENTES)
+      return
+    }
+    setQuitados((prev) => [...prev, nombre])
+    setErrorIngredientes(null)
   }
 
   function cerrar() {
     setCantidad(1)
     setComentarios('')
     setQuitados([])
+    setErrorIngredientes(null)
     cerrarDetalleProducto()
   }
 
   function agregar() {
+    if (
+      ingredientes.length > 0 &&
+      quitados.length >= ingredientes.length
+    ) {
+      setErrorIngredientes(MSG_TODOS_INGREDIENTES)
+      return
+    }
     agregarProductoAlCarrito(
       { producto, cantidad, comentarios, ingredientesQuitados: quitados },
       restauranteDelDetalle,
@@ -105,7 +134,12 @@ export default function DetalleProductoModal() {
             {ingredientes.length === 0 ? (
               <p className="mt-2 text-[12px] text-gray-500">Este producto no tiene ingredientes configurados.</p>
             ) : (
-            <p className="mt-1 text-[12px] text-gray-500">Tocá para quitar.</p>
+            <p className="mt-1 text-[12px] text-gray-500">Tocá los que querés sacar (tiene que quedar al menos uno).</p>
+            )}
+            {errorIngredientes && (
+              <p className="mt-2 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-[12px] font-bold text-orange-800">
+                {errorIngredientes}
+              </p>
             )}
             <div className="mt-3 flex flex-wrap gap-2">
               {ingredientes.map((ing) => {

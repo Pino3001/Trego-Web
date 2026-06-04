@@ -22,9 +22,10 @@ export function useMenuRestaurante(idRestaurante) {
       if (data.restaurante) {
         restauranteRef.current = data.restaurante
       }
+      const restaurante = data.restaurante ?? restauranteRef.current
       setMenu({
-        restaurante: data.restaurante ?? restauranteRef.current,
-        productos: data.productos,
+        restaurante,
+        productos: data.productos ?? [],
         mensaje: data.mensaje,
       })
     } catch (e) {
@@ -49,7 +50,10 @@ export function useMenuRestaurante(idRestaurante) {
 
   const ofertas = useMemo(() => productosConOferta(productos), [productos])
 
-  const sinProductos = !!menu?.restaurante && !categoria && productos.length === 0
+  const sinProductos =
+    (!!menu?.restaurante || !!menu?.mensaje) &&
+    !categoria &&
+    productos.length === 0
   const sinProductosEnCategoria = !!categoria && productos.length === 0 && !!menu?.restaurante
 
   return {

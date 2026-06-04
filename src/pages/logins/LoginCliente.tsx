@@ -97,7 +97,7 @@ export default function LoginCliente() {
         await auth.signOut();
       } else if (err instanceof Error && err.message === "TOKEN_INVALIDO") {
         setError(
-          "El token es de trego-615dc (tu apiKey del front) pero el backend valida con trego-project. Usá la misma opción en ambos: clave de servicio de trego-615dc en el backend, O config web completa de trego-project en firebase.config.js.",
+          "",
         );
         await auth.signOut();
       } else if (err instanceof TypeError) {

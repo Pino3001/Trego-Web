@@ -3,12 +3,15 @@ export const ENDPOINTS = {
   RESTAURANTES: '/api/restaurantes',
   RESTAURANTES_TODOS: '/api/restaurantes/listar',
   RESTAURANTES_ZONA: '/api/restaurantes/listarXdirreccion', // falta endpoint backend
-  RESTAURANTE_POR_ID: '/api/restaurantes/:id',
+  RESTAURANTE_POR_ID: '/api/restaurantes/obtenerRestaurante/:id',
 
   // Menú y pedidos
   MENU_RESTAURANTE: '/api/pedido/restaurante/:id/verMenu',
   PEDIDO_CONFIRMAR: '/api/pedido/confirmar',
   PEDIDO_MIS_PEDIDOS: '/api/pedido/misPedidos',
+
+  // Reclamos
+  RECLAMOS: '/api/reclamos',
 
   // Carrito
   CARRITO: '/api/carrito',
@@ -18,6 +21,9 @@ export const ENDPOINTS = {
 
   // Pagos
   PAGO_ESTADO: '/api/pagos/estado/:idPedido',
+
+  // Geocoding
+  GEO_REVERSE: '/api/geo/reverse',
 
   // Usuarios
   USUARIO_DIRECCIONES: '/api/usuarios/obtenerDirecciones',

@@ -5,6 +5,7 @@
 import { precioConDescuento } from "../utils/productos.js"
 import { reverseGeocodeGeoapify } from "./apiGeoapify.js"
 import { reverseGeocodeNominatim } from "./nominatim.js"
+import { ENDPOINTS } from "./endpoints.js"
 
 function formatearHora(hora) {
   if (!hora) return null
@@ -82,7 +83,13 @@ export function mapearMenuRespuesta(data) {
   }
   const restaurante = mapearRestaurante(data)
   const productos = (data.productos ?? []).map(mapearProducto).filter(Boolean)
-  return { restaurante, productos }
+  const sinListaProductosEnRespuesta =
+    data.productos == null && !Array.isArray(data.productos)
+  const mensaje =
+    productos.length === 0 && sinListaProductosEnRespuesta
+      ? 'Este restaurante aún no ha cargado su menú'
+      : undefined
+  return { restaurante, productos, mensaje }
 }
 
 export function mapearLineaCarritoAItem(linea) {
@@ -168,6 +175,39 @@ function direccionDesdeNominatim(data, latitud, longitud) {
   })
 }
 
+async function reverseGeocodeBackend(latitud, longitud) {
+  try {
+    const params = new URLSearchParams({
+      lat: String(latitud),
+      lon: String(longitud),
+    })
+    const response = await fetch(`${ENDPOINTS.GEO_REVERSE}?${params}`)
+    if (!response.ok) return null
+    return await response.json()
+  } catch (err) {
+    console.warn('[Trego] Reverse geocode backend falló', err)
+    return null
+  }
+}
+
+function direccionDesdeBackendDto(dto, latitud, longitud) {
+  const calle = String(dto?.calle ?? '').trim()
+  const numero = dto?.numero ?? ''
+  const nombre =
+    nombreDireccionDesdeCampos(calle, numero) ||
+    String(dto?.tag ?? '').trim() ||
+    calle ||
+    `Ubicación (${Number(latitud).toFixed(5)}, ${Number(longitud).toFixed(5)})`
+  return armarResultadoDireccion({
+    nombre,
+    calle: calle || nombre,
+    numero,
+    esquina: dto?.esquina ?? '',
+    latitud,
+    longitud,
+  })
+}
+
 function direccionDesdeGeoapify(geo, latitud, longitud) {
   const nombre =
     nombreDireccionDesdeCampos(geo.calle, geo.numero) ||
@@ -189,7 +229,7 @@ export function esLabelSoloCoordenadas(nombre) {
   return /^Lat\s-?\d/i.test(nombre) || /^-?\d+\.\d+,\s*-?\d+\.\d+/.test(nombre)
 }
 
-/** Resuelve coords GPS → nombre + DTO (Geoapify → Nominatim → texto genérico). */
+/** Resuelve coords GPS → nombre + DTO (Nominatim → backend Geoapify → front Geoapify). */
 export async function resolverDireccionDesdeCoords(coords) {
   const latitud = Number(coords?.latitud)
   const longitud = Number(coords?.longitud)
@@ -204,19 +244,24 @@ export async function resolverDireccionDesdeCoords(coords) {
     })
   }
 
-  const geo = await reverseGeocodeGeoapify(latitud, longitud)
-  if (geo?.calle || geo?.direccionCompleta) {
-    return direccionDesdeGeoapify(geo, latitud, longitud)
-  }
-
   const nominatim = await reverseGeocodeNominatim(latitud, longitud)
   if (nominatim && (nominatim.address || nominatim.display_name)) {
     return direccionDesdeNominatim(nominatim, latitud, longitud)
   }
 
+  const backend = await reverseGeocodeBackend(latitud, longitud)
+  if (backend && (backend.calle || backend.tag)) {
+    return direccionDesdeBackendDto(backend, latitud, longitud)
+  }
+
+  const geo = await reverseGeocodeGeoapify(latitud, longitud)
+  if (geo?.calle || geo?.direccionCompleta) {
+    return direccionDesdeGeoapify(geo, latitud, longitud)
+  }
+
   return armarResultadoDireccion({
-    nombre: 'Tu ubicación en Montevideo',
-    calle: 'Ubicación actual',
+    nombre: `Ubicación (${latitud.toFixed(5)}, ${longitud.toFixed(5)})`,
+    calle: 'Ubicación GPS',
     numero: 0,
     esquina: '',
     latitud,
@@ -261,16 +306,43 @@ export function productoMinimoParaCarrito(producto, idRestaurante) {
   }
 }
 
+/** Convierte nombres/ids del front a DTOIngrediente[] para el back. */
+export function ingredientesAQuitarParaApi(ingredientesQuitados, producto) {
+  const quitados = ingredientesQuitados ?? []
+  if (!quitados.length) return []
+
+  const catalogo = producto?.ingredientes ?? []
+  return quitados
+    .map((entry) => {
+      const nombre = typeof entry === 'string' ? entry : entry?.nombre
+      const match = catalogo.find(
+        (i) =>
+          (nombre && i.nombre === nombre) ||
+          (entry?.idIngrediente != null && i.idIngrediente === entry.idIngrediente),
+      )
+      const idIngrediente = match?.idIngrediente ?? entry?.idIngrediente ?? null
+      const nombreFinal = nombre ?? match?.nombre
+      if (!nombreFinal && idIngrediente == null) return null
+      return {
+        idIngrediente: idIngrediente ?? undefined,
+        nombre: nombreFinal,
+      }
+    })
+    .filter(Boolean)
+}
+
 /** Body para POST/PATCH /api/carrito/productos */
 export function armarProductoPedidoRequest({
   producto,
   cantidad,
   comentarios,
   idRestaurante,
+  ingredientesQuitados,
 }) {
   return {
     cantidad: cantidad ?? 1,
     observaciones: comentarios ?? '',
+    ingredientesAQuitar: ingredientesAQuitarParaApi(ingredientesQuitados, producto),
     producto: productoMinimoParaCarrito(producto, idRestaurante),
   }
 }

@@ -16,7 +16,8 @@ async function listarZonaDesdeBackend(latitud, longitud) {
     method: 'POST',
     body: JSON.stringify({ latitud, longitud }),
   })
-  if (response.status === 404) return []
+  if (response.status === 404) throw new Error('NO_EN_ZONA')
+  if (response.status === 401 || response.status === 403) throw new Error('SIN_SESION')
   if (!response.ok) throw new Error('Error al listar por zona')
   const data = await response.json()
   const lista = Array.isArray(data) ? data : []

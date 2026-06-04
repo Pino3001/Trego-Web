@@ -68,9 +68,11 @@ export default function RestauranteMenuPage() {
     return (
       <PageShell>
         <NavBack />
-        <RestauranteBanner restaurante={menu.restaurante} />
+        {menu.restaurante ? <RestauranteBanner restaurante={menu.restaurante} /> : null}
         <div className="mt-10 flex flex-col items-center gap-4 text-center">
-          <p className="text-lg text-gray-600">Este restaurante aún no ha cargado su menú</p>
+          <p className="text-lg text-gray-600">
+            {menu.mensaje ?? 'Este restaurante aún no ha cargado su menú'}
+          </p>
           <Link
             to="/restaurantes"
             className="rounded-xl bg-trego-orange px-6 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
