@@ -50,6 +50,9 @@ export const ENDPOINTS = {
   CONFIRMAR_PEDIDO: `/api/pedido/confirmar`,
   ACTUALIZAR_ESTADO: `/api/pedido/estado`,
   CANCELAR_PEDIDO: `/api/pedido/reembolsar`,
+  ABRIR_LOCAL: `/api/restaurantes/abrirLocal`,
+  CERRAR_LOCAL: `/api/restaurantes/cerrarLocal`,
+  ACTUALIZAR_CIERRE: `/api/restaurantes/actualizarCierre`,
 
   //Registro
   REGISTRAR_RESTAURANTE: `/api/usuarios/registrar-restaurante/solicitar`,

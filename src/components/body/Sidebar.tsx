@@ -1,112 +1,77 @@
 import { NavLink } from "react-router";
 import TextoDivider from "../../components/TextoDivider.js";
-
-interface SidebarItem {
-  label: string;
-  path: string;
-}
-
-interface SidebarSection {
-  section: string;
-  items: SidebarItem[];
-}
+import type { SidebarSection } from "./utilities/DataSidebar.js";
 
 interface SidebarProps {
-  habilitado: boolean;
+  secciones: SidebarSection[];
+  tipoUser: "Restaurante" | "Administrador";
 }
-
-const SECCIONES: SidebarSection[] = [
-  {
-    section: "Pedidos",
-    items: [
-      { label: "En espera de confirmación", path: "/restaurantes/ListarPedidosSinConfirmar" },
-      { label: "En preparacion(Confirmados)", path: "/restaurantes/Listar-en-preparacion" },
-      { label: "En camino", path: "/restaurantes/Listar-en-camino" },
-      { label: "Entregados", path: "/restaurantes/pedidos-entregados" },
-      { label: "Cancelados", path: "/restaurantes/pedidos-cancelados" },
-    ],
-  },
-  {
-    section: "Reclamos",
-    items: [
-      { label: "Ver Reclamos", path: "/restaurantes/reclamos" }
-    ],
-  },
-  {
-    section: "Gestión",
-    items: [
-      { label: "Alta Producto", path: "/restaurantes/altaProducto" },
-      { label: "Modificar Producto", path: "/restaurantes/modificarProducto" },
-    ],
-  },
-  {
-    section: "Estadísticas",
-    items: [
-      { label: "Platos mas solicitados", path: "/restaurantes/estadisticas/platos" },
-      { label: "Pedidos por fecha", path: "/restaurantes/estadisticas/fechas" },
-      { label: "Monto promedio", path: "/restaurantes/estadisticas/monto" },
-    ],
-  },
-];
-
 // Ya no necesitamos el prop 'itemActivo', se calcula solo por URL
-export default function Sidebar({ habilitado }: SidebarProps) {
-  return (
-    <aside className="hidden md:flex flex-col w-64 shrink-0 border-r border-trego-restaurante bg-white pt-8 px-4 gap-6">
-      
-      {/* CASO: No habilitado (Solicitud de Alta) */}
-      {!habilitado ? (
-        <div className="flex flex-col gap-3">
-          <TextoDivider
-            texto="Solicitudes"
-            classNameTexto="font-bold text-base text-trego-restaurante"
-            classNameDivider="bg-trego-restaurante w-full"
-          />
-          <NavLink 
-            to="/restaurantes/solicitarAlta"
-            className={({ isActive }) => `
-              w-full text-center text-sm px-4 py-2.5 rounded-xl transition-colors duration-150 block font-semibold
-              ${isActive 
-                ? "bg-trego-restaurante text-white shadow-sm" 
-                : "text-gray-600 hover:bg-green-50 hover:text-trego-restaurante"
-              }
-            `}
-          >
-            Solicitar Alta
-          </NavLink>
-        </div>
-      ) : (
-        
-        /* CASO: Habilitado (Menú Completo) */
-        SECCIONES.map(({ section, items }) => (
-          <div key={section} className="flex flex-col gap-1">
-            <TextoDivider
-              texto={section}
-              classNameTexto="font-bold text-trego-restaurante"
-              classNameDivider="bg-trego-restaurante"
+export default function Sidebar({
+  secciones,
+  tipoUser = "Restaurante",
+}: SidebarProps) {
+  const colorClass =
+    tipoUser === "Administrador" ? "trego-admin" : "trego-restaurante";
 
-            />
-            <div className="flex flex-col gap-0.5 mt-2">
-              {items.map((item) => (
+  return (
+    <aside
+      className={`hidden md:flex flex-col w-64 shrink-0 border-r border-${colorClass} bg-white pt-8 px-4 gap-6`}
+    >
+      {secciones.map(({ section, items }) => (
+        <div key={section} className="flex flex-col gap-1">
+          <TextoDivider
+            texto={section}
+            classNameTexto={`font-bold text-${colorClass}`}
+            classNameDivider={`bg-${colorClass}`}
+          />
+          <div className="flex flex-col gap-0.5 mt-2">
+            {items.map((item) => {
+              if (item.disabled) {
+                return (
+                  <span
+                    key={item.label}
+                    className="w-full text-left text-sm px-4 py-2.5 rounded-xl text-gray-400 cursor-not-allowed select-none"
+                    title="Próximamente"
+                  >
+                    {item.label}
+                  </span>
+                );
+              }
+
+              return (
                 <NavLink
                   key={item.label}
-                  to={item.path}
-                  // NavLink nos permite pasarle una función a className que recibe 'isActive'
+                  to={item.path!}
+                  end={item.end ?? false}
                   className={({ isActive }) => `
-                    w-full text-left text-sm px-4 py-2.5 rounded-xl transition-colors duration-150 block
-                    ${isActive
-                      ? "bg-trego-restaurante text-white font-semibold shadow-sm"
-                      : "text-gray-600 hover:bg-green-50 hover:text-trego-restaurante"
+                    w-full text-left text-sm px-4 py-2.5 rounded-xl transition-colors duration-150
+                    flex items-center justify-between gap-2
+                    ${
+                      isActive
+                        ? `bg-${colorClass} text-white font-semibold shadow-sm`
+                        : `text-gray-600 hover:bg-green-50 hover:text-${colorClass}`
                     }
                   `}
                 >
-                  {item.label}
+                  <span>{item.label}</span>
+                  {item.badge != null && item.badge > 0 && (
+                    <span
+                      className={`min-w-5 rounded-full px-1.5 py-0.5 text-center text-xs font-bold ${
+                        item.disabled
+                          ? "bg-white/20 text-white"
+                          : `bg-${colorClass} text-white`
+                      }`}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
                 </NavLink>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        ))
-      )}
+        </div>
+      ))}
     </aside>
   );
 }

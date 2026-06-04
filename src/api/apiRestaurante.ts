@@ -13,13 +13,17 @@ interface FiltrosPedido {
   idProducto?: number;
 }
 
-// DTO esperado por el backend (ajustá los campos exactos según tu definición Java)
+// DTO esperado por el backend a la gora de Actualizar un estado de pedido
 export interface DTOActualizarEstadoRequest {
   pedido: DTOPedido; // pedido a actualizar
   estado: EnumEstadoPedido; // nuevo estado
 }
 
-/** falta endpoint backend */
+/**
+ * Eniva una solicitud de alta al backend para que posteriormente sea habilitado por un Administrador
+ * @param resto Datos del restaurante Solicitante
+ * @returns 
+ */
 export async function enviarSolicitudAltaRestaurante(
   resto: Partial<DTORestaurante>,
 ) {
@@ -33,6 +37,12 @@ export async function enviarSolicitudAltaRestaurante(
   return response.json();
 }
 
+/**
+ * Obtiene una firma de Cloudinary que permite subir posteriormente la imagen
+ * @param nombreArchivo Nombre del archivo que se va a firmar en Cloudinary
+ * @param tipo Tipo de archivo que se va a subir a Cloudinary
+ * @returns Retorna la firma con los parametros que aceptara Cloudinary a la hora de subir una imagen
+ */
 export async function obtenerFirmaCloudinary(
   nombreArchivo: string,
   tipo: "image" | "video" | "raw" = "image",
@@ -53,6 +63,10 @@ export async function obtenerFirmaCloudinary(
   return response.json();
 }
 
+/**
+ * Devuelve un restaurante en base del token de sesion que tiene el restaurante
+ * @returns Retorna el restaurante actual
+ */
 export async function obtenerActual(): Promise<DTORestaurante> {
   const response = await fetchConAuth(ENDPOINTS.OBTENER_RESTAURANTE_ACTUAL, {
     method: "GET",
@@ -68,6 +82,10 @@ export async function obtenerActual(): Promise<DTORestaurante> {
   return response.json();
 }
 
+/**
+ * Ingresa un producto creado por el restaurante y lo ingresa a su lista de productos
+ * @param producto Producto creado por el restaurante
+ */
 export async function agregarProducto(producto: DTOProducto): Promise<void> {
   const response = await fetchConAuth("/api/productos/agregarProducto", {
     method: "POST",
@@ -108,6 +126,11 @@ export async function listarIngredientes(): Promise<DTOIngrediente[]> {
   return response.json();
 }
 
+/**
+ * Crea un nuevo ingrediente en DB
+ * @param nombre Nombre del ingrediente
+ * @returns Devuelve el infrediente en su estado de DB
+ */
 export async function crearIngrediente(
   nombre: string,
 ): Promise<DTOIngrediente> {
@@ -298,4 +321,124 @@ export async function reembolsarPedido(pedido: DTOPedido): Promise<DTOPedido> {
   }
 
   return response.json();
+}
+
+/**
+ * Abre un restaurante al publico
+ * @param horaCierre - Hora en la que cerrara el Restaurante.
+ * @returns Nada.
+ * @throws Error con el mensaje del backend si falla (400/409/500).
+ */
+export async function abrirLocal(
+  cierre: string,
+): Promise<void> {
+  const response = await fetchConAuth(
+    `${ENDPOINTS.ABRIR_LOCAL}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ horaCierre: cierre }),
+    },
+  );
+
+  if (!response.ok) {
+    // Intentamos extraer el mensaje de error del cuerpo de la respuesta
+    let mensaje = `Error ${response.status}`;
+    try {
+      const errorData = await response.json();
+      mensaje =
+        errorData.message || errorData.error || JSON.stringify(errorData);
+    } catch {
+      mensaje = await response.text().catch(() => "Error desconocido");
+    }
+
+    // Errores específicos según el backend
+    if (response.status === 400) {
+      throw new Error(mensaje || "Falta la hora de cierre.");
+    }
+    if (response.status === 409) {
+      throw new Error(
+        mensaje || "El local aun no tiene productos cargados.",
+      );
+    }
+
+    throw new Error(mensaje || "Error al abrir el local.");
+  }
+
+  return;
+}
+
+/**
+ * Cierra un local abierto
+ * @returns No retorna nada
+ */
+export async function cerrarLocal(): Promise<void> {
+  const response = await fetchConAuth(
+    `${ENDPOINTS.CERRAR_LOCAL}`,
+    { method: "PATCH" }
+  );
+
+  if (!response.ok) {
+    let mensaje = `Error ${response.status}`;
+    try {
+      const errorData = await response.json();
+      mensaje = errorData.message || errorData.error || JSON.stringify(errorData);
+    } catch {
+      mensaje = await response.text().catch(() => "Error desconocido");
+    }
+
+    // Errores específicos según el backend
+    if (response.status === 409) {
+      throw new Error(mensaje || "El local ya se encontraba cerrado");
+    }
+    if (response.status === 404) {
+      throw new Error(mensaje || "Restaurante no encontrado");
+    }
+
+    throw new Error(mensaje || "Error al cerrar el local");
+  }
+  return response.json().catch(() => undefined);
+}
+
+/**
+ * Actualiza la hora de cierre de un restaurante
+ * @param horaCierre - Hora en la que cerrara el Restaurante.
+ * @returns Nada.
+ * @throws Error con el mensaje del backend si falla (400/409/500).
+ */
+export async function actualizarHoraCierre(
+  cierre: string,
+): Promise<void> {
+  const response = await fetchConAuth(
+    `${ENDPOINTS.ACTUALIZAR_CIERRE}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify({ horaCierre: cierre }),
+    },
+  );
+
+  if (!response.ok) {
+    // Intentamos extraer el mensaje de error del cuerpo de la respuesta
+    let mensaje = `Error ${response.status}`;
+    try {
+      const errorData = await response.json();
+      mensaje =
+        errorData.message || errorData.error || JSON.stringify(errorData);
+    } catch {
+      mensaje = await response.text().catch(() => "Error desconocido");
+    }
+
+    // Errores específicos según el backend
+    if (response.status === 400) {
+      throw new Error(mensaje || "Falta la hora de cierre.");
+    }
+    if (response.status === 404) {
+      throw new Error(
+        mensaje || "Restaurante no encontrado.",
+      );
+    }
+
+    throw new Error(mensaje || "Error al actualizar la hora.");
+  }
+
+  return;
 }

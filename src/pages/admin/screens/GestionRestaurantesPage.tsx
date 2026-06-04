@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import EmptyState from "../../components/EmptyState.jsx";
-import { administradorApi } from "../../api/administradorApi.js";
-import type { DTORestaurante } from "../../data/DTORestaurante.js";
-import type { DTODireccion } from "../../data/DTODireccion.js";
+import type { DTORestaurante } from "../../../data/DTORestaurante.js";
+import type { DTODireccion } from "../../../data/DTODireccion.js";
+import { administradorApi } from "../../../api/administradorApi.js";
+import EmptyState from "../../../components/EmptyState.jsx";
 
 type VistaModal = "detalle" | "rechazar";
 

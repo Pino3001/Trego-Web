@@ -16,10 +16,12 @@ interface HeaderProps {
   onAbrirFiltros?: () => void;
   abrirPerfil?: boolean;
   tipoUser?: "Cliente" | "Restaurante" | "Administrador";
-  botonRegistrar?: boolean;
   children?: ReactNode;
-  onToggleRestauranteAbierto: () => {};
-  restauranteAbierto: boolean;
+  onToggleRestauranteAbierto?: (hora?: string) => void;
+  restauranteAbierto?: boolean;
+  horaCierre?: string | undefined;
+  onChangeHoraCierre?: (item: string | undefined) => void;
+  onLogout: () => void;
 }
 
 export default function Header(props: HeaderProps) {
@@ -34,10 +36,12 @@ export default function Header(props: HeaderProps) {
     onAbrirFiltros,
     abrirPerfil, // Esto es momentaneo, despues cuandp tengammos lo de perfil cambiamos por lo que convenga
     tipoUser = "Cliente",
-    botonRegistrar,
     children,
     onToggleRestauranteAbierto,
     restauranteAbierto,
+    horaCierre,
+    onChangeHoraCierre,
+    onLogout
   } = props;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -45,17 +49,6 @@ export default function Header(props: HeaderProps) {
     onBuscar?.();
   };
 
-  const handleLogout = async () => {
-    try {
-      setMenuAbierto(false);
-      await apiAuth.cerrarSesion();
-    } catch (error) {
-      console.error("Error al revocar el token en el servidor:", error);
-    } finally {
-      limpiarSesion();
-      navigate("/");
-    }
-  };
   return (
     <header className="sticky top-0 z-40 bg-white">
       <div className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6">
@@ -122,7 +115,7 @@ export default function Header(props: HeaderProps) {
             >
               <IconCart className="h-5 w-5 text-white" />
               {cantidadTotal > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-extrabold text-white">
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-extrabold text-white">
                   {cantidadTotal}
                 </span>
               )}
@@ -159,9 +152,11 @@ export default function Header(props: HeaderProps) {
                   onVerPerfil={() => {
                     /* navegar a perfil */
                   }}
-                  onCerrarSesion={handleLogout}
-                  onToggleRestaurante={onToggleRestauranteAbierto}
+                  onCerrarSesion={onLogout}
+                  onToggleRestaurante={(hora) => onToggleRestauranteAbierto?.(hora)}
                   restauranteAbierto={restauranteAbierto}
+                  horaCierre={horaCierre}
+                  onChangeHoraCierre={onChangeHoraCierre}
                 />
               )}
             </div>
