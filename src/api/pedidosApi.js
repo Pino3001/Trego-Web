@@ -66,3 +66,17 @@ export async function consultarEstadoPago(idPedido) {
   if (!response.ok) throw new Error('No se pudo consultar el estado del pago')
   return leerJson(response)
 }
+
+/**
+ * Historial de compras del cliente autenticado.
+ * @returns {Promise<import('../data/DTOPedido.js').DTOPedido[]>}
+ */
+export async function obtenerMisPedidos() {
+  const response = await fetchConAuth(ENDPOINTS.PEDIDO_MIS_PEDIDOS)
+  if (!response.ok) {
+    const text = await response.text().catch(() => '')
+    throw new Error(text || 'No se pudo cargar el historial de compras')
+  }
+  const data = await leerJson(response)
+  return Array.isArray(data) ? data : []
+}
