@@ -1,11 +1,9 @@
 import { BrowserRouter, Route, Routes } from "react-router";
 import SeleccionarRol from "./pages/SeleccionarRol.js";
 import LoginCliente from "./pages/logins/LoginCliente.js";
-import LoginRestaurante from "./pages/restaurantes/screens/LoginRestaurante.js";
 import LoginAdmin from "./pages/logins/LoginAdmin.js";
 import RecuperarContraseñaPage from "./pages/logins/RecuperarContraseñaPage.js";
 import CambiarContraseñaPage from "./pages/logins/CambiarContraseñaPage.js";
-import RegistrarRestaurante from "./pages/restaurantes/screens/RegistrarRestaurante.js";
 import PagoExito from "./pages/pago/PagoExito.jsx";
 import PagoError from "./pages/pago/PagoError.jsx";
 import PagoPendiente from "./pages/pago/PagoPendiente.jsx";
@@ -28,6 +26,8 @@ import ClienteLayaut from "./pages/cliente/ClienteLayaut.js";
 import { CarritoProvider } from "./context/CarritoContext.jsx";
 import { FiltrosUIProvider } from "./context/FiltrosContext.js";
 import { BusquedaProvider } from "./context/BusquedaContext.js";
+import LoginRestaurante from "./pages/logins/LoginRestaurante.js";
+import RegistrarRestaurante from "./pages/logins/RegistrarRestaurante.js";
 
 export default function AppRouter() {
   return (

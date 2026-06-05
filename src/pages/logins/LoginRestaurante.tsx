@@ -1,16 +1,13 @@
-import Header from "../../../components/body/Header.js";
-import logo from "../../../assets/tregoRestaurante.svg";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import OTPInput from "../../../components/inicio/OTPInput.js";
-import {
-  TextInput,
-  type SeguridadPassword,
-} from "../../../components/TextInput.js";
-import TextoDivider from "../../../components/TextoDivider.js";
-import { apiAuth } from "../../../api/apiAuth.js";
-import type { DTOLoginRegistro } from "../../../data/DTOLoginRegistro.js";
-import { obtenerActual } from "../../../api/apiRestaurante.js";
+import type { DTOLoginRegistro } from "../../data/DTOLoginRegistro.js";
+import { apiAuth } from "../../api/apiAuth.js";
+import { obtenerActual } from "../../api/apiRestaurante.js";
+import Header from "../../components/body/Header.js";
+import logo from "../../assets/tregoRestaurante.svg";
+import TextoDivider from "../../components/TextoDivider.js";
+import { TextInput } from "../../components/TextInput.js";
+
 
 type AuthStep = "INGRESO" | "LOADING";
 
@@ -138,7 +135,7 @@ export default function LoginRestaurante() {
       <main className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gray-50 px-4 py-10">
         <div className="flex w-full max-w-4xl rounded-3xl mb-5 overflow-hidden shadow-2xl shadow-green-100 bg-white">
           {/* Panel izquierdo — marca */}
-          <div className="hidden md:flex flex-col items-center justify-center bg-trego-restaurante w-5/12 h-130 p-10 gap-6">
+          <div className="hidden md:flex flex-col items-center justify-center bg-trego-restaurante w-5/12 p-10 gap-6">
             <div className="w-60 h-60 rounded-full bg-white flex items-center justify-center shadow-inner mb-10">
               <img src={logo} />
             </div>
@@ -180,7 +177,7 @@ export default function LoginRestaurante() {
 
             {/* ── Selección de método ── */}
             {step === "INGRESO" && (
-              <div className="flex flex-col gap-8">
+              <div className="flex flex-col gap-6">
                 <TextoDivider texto="Ingresa Usuario y Contraseña" />
 
                 <TextInput
