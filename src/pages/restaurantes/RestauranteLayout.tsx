@@ -10,6 +10,7 @@ import {
 } from "../../api/apiRestaurante.js";
 import { apiAuth } from "../../api/apiAuth.js";
 import { limpiarSesion } from "../../utils/sesion.js";
+import { obtenerUsuarioActual } from "../../api/usuariosApi.js";
 import type { SidebarSection } from "../../components/body/utilities/DataSidebar.js";
 
 const SECCIONES: SidebarSection[] = [
@@ -81,6 +82,8 @@ export default function RestauranteLayout() {
     minutos: number;
     segundos: number;
   } | null>(null);
+  const [perfilNombre, setPerfilNombre] = useState("Restaurante");
+  const [perfilEmail, setPerfilEmail] = useState("");
 
   // --- REGLAS DE SEGURIDAD ---
 
@@ -91,7 +94,11 @@ export default function RestauranteLayout() {
 
   // Regla B: Si NO está habilitado, SOLO puede estar en /solicitarAlta.
   // Si intenta ir a /ListarPedidosSinConfirmar o /altaProducto, lo devolvemos.
-  if (!isHabilitado && location.pathname !== "/restaurantes/solicitarAlta") {
+  if (
+    !isHabilitado &&
+    location.pathname !== "/restaurantes/solicitarAlta" &&
+    location.pathname !== "/restaurantes/perfil/contraseña"
+  ) {
     return <Navigate to="/restaurantes/solicitarAlta" replace />;
   }
 
@@ -104,6 +111,17 @@ export default function RestauranteLayout() {
     ? SECCIONES
     : NO_Habilitado;
   // Effect para enviar al backend el estado del backend
+  useEffect(() => {
+    if (!token) return;
+
+    obtenerUsuarioActual()
+      .then((usuario) => {
+        setPerfilNombre(usuario.nombre?.trim() || "Restaurante");
+        setPerfilEmail(usuario.email ?? "");
+      })
+      .catch(() => {});
+  }, [token]);
+
   useEffect(() => {
     if (!token || !isHabilitado) return;
 
@@ -278,6 +296,9 @@ export default function RestauranteLayout() {
       <Header
         abrirPerfil
         tipoUser="Restaurante"
+        perfilNombre={perfilNombre}
+        perfilEmail={perfilEmail}
+        onVerPerfil={() => navigate("/restaurantes/perfil/contraseña")}
         horaCierre={horaCierre}
         onChangeHoraCierre={handleChangeHoraCierre}
         restauranteAbierto={restauranteAbierto}

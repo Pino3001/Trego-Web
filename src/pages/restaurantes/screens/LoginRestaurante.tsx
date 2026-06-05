@@ -1,7 +1,7 @@
 import Header from "../../../components/body/Header.js";
 import logo from "../../../assets/tregoRestaurante.svg";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import OTPInput from "../../../components/inicio/OTPInput.js";
 import {
   TextInput,
@@ -211,6 +211,13 @@ export default function LoginRestaurante() {
                 >
                   Iniciar Sesión
                 </button>
+
+                <Link
+                  to="/login/Restaurante/recuperar"
+                  className="text-center text-sm text-gray-500 hover:text-trego-restaurante transition-colors"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
               </div>
             )}
 

@@ -18,7 +18,10 @@ interface HeaderProps {
   restauranteAbierto?: boolean;
   horaCierre?: string | undefined;
   onChangeHoraCierre?: (item: string | undefined) => void;
-  onLogout: () => void;
+  onLogout?: () => void;
+  perfilNombre?: string;
+  perfilEmail?: string;
+  onVerPerfil?: () => void;
   cantidadTotal?: number;
   onAbrirCarrito?: () => void;
   noMostrarbuscador?: boolean;
@@ -42,6 +45,9 @@ export default function Header(props: HeaderProps) {
     horaCierre,
     onChangeHoraCierre,
     onLogout,
+    perfilNombre,
+    perfilEmail,
+    onVerPerfil,
     cantidadTotal,
     onAbrirCarrito,
     noMostrarbuscador,
@@ -150,21 +156,39 @@ export default function Header(props: HeaderProps) {
 
               {/* Pequeño menú modal flotante */}
               {menuAbierto && (
-                <MenuUsuario
-                  nombre="Alexis"
-                  email="alexiswlcg@gmail.com"
-                  tipoUser={tipoUser}
-                  onVerPerfil={() => {
-                    /* navegar a perfil */
-                  }}
-                  onCerrarSesion={onLogout}
-                  onToggleRestaurante={(hora) =>
-                    onToggleRestauranteAbierto?.(hora)
-                  }
-                  restauranteAbierto={restauranteAbierto}
-                  horaCierre={horaCierre}
-                  onChangeHoraCierre={onChangeHoraCierre}
-                />
+                <>
+                  {/*
+                  <MenuUsuario
+                    nombre="Alexis"
+                    email="alexiswlcg@gmail.com"
+                    tipoUser={tipoUser}
+                    onVerPerfil={() => { }}
+                    onCerrarSesion={onLogout}
+                    onToggleRestaurante={(hora) =>
+                      onToggleRestauranteAbierto?.(hora)
+                    }
+                    restauranteAbierto={restauranteAbierto}
+                    horaCierre={horaCierre}
+                    onChangeHoraCierre={onChangeHoraCierre}
+                  />
+                  */}
+                  <MenuUsuario
+                    nombre={perfilNombre ?? "Usuario"}
+                    email={perfilEmail ?? ""}
+                    tipoUser={tipoUser}
+                    onVerPerfil={() => {
+                      setMenuAbierto(false);
+                      onVerPerfil?.();
+                    }}
+                    onCerrarSesion={() => onLogout?.()}
+                    onToggleRestaurante={(hora) =>
+                      onToggleRestauranteAbierto?.(hora)
+                    }
+                    restauranteAbierto={restauranteAbierto}
+                    horaCierre={horaCierre}
+                    onChangeHoraCierre={onChangeHoraCierre}
+                  />
+                </>
               )}
             </div>
           )}

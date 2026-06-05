@@ -3,6 +3,8 @@ import SeleccionarRol from "./pages/SeleccionarRol.js";
 import LoginCliente from "./pages/logins/LoginCliente.js";
 import LoginRestaurante from "./pages/restaurantes/screens/LoginRestaurante.js";
 import LoginAdmin from "./pages/logins/LoginAdmin.js";
+import RecuperarContraseñaPage from "./pages/logins/RecuperarContraseñaPage.js";
+import CambiarContraseñaPage from "./pages/logins/CambiarContraseñaPage.js";
 import RegistrarRestaurante from "./pages/restaurantes/screens/RegistrarRestaurante.js";
 import PagoExito from "./pages/pago/PagoExito.jsx";
 import PagoError from "./pages/pago/PagoError.jsx";
@@ -35,7 +37,15 @@ export default function AppRouter() {
         <Route path="/" element={<SeleccionarRol />} />
         <Route path="/login/cliente" element={<LoginCliente />} />
         <Route path="/login/Restaurante" element={<LoginRestaurante />} />
+        <Route
+          path="/login/Restaurante/recuperar"
+          element={<RecuperarContraseñaPage tipo="Restaurante" />}
+        />
         <Route path="/login/Administrador" element={<LoginAdmin />} />
+        <Route
+          path="/login/Administrador/recuperar"
+          element={<RecuperarContraseñaPage tipo="Administrador" />}
+        />
         <Route
           path="/restaurantes/registrarRestaurante"
           element={<RegistrarRestaurante />}
@@ -78,6 +88,15 @@ export default function AppRouter() {
             path="/restaurantes/solicitarAlta"
             element={<SolicitarAltaRestaurante />}
           />
+          <Route
+            path="/restaurantes/perfil/contraseña"
+            element={
+              <CambiarContraseñaPage
+                tipo="Restaurante"
+                volverPath="/restaurantes/ListarPedidosSinConfirmar"
+              />
+            }
+          />
         </Route>
 
         {/* --- RUTAS ADMIN (LAYOUT CON SIDEBAR) --- */}
@@ -91,6 +110,15 @@ export default function AppRouter() {
             element={<ListarRestaurantesPage />}
           />
           <Route path="/admin/clientes" element={<ListarClientesPage />} />
+          <Route
+            path="/admin/perfil/contraseña"
+            element={
+              <CambiarContraseñaPage
+                tipo="Administrador"
+                volverPath="/admin/restaurantes"
+              />
+            }
+          />
         </Route>
 
         {/*--- Rutas Cliente--- */}
