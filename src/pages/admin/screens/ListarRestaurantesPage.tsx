@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router";
 import EmptyState from "../../../components/EmptyState.jsx";
 import { administradorApi } from "../../../api/administradorApi.js";
 import type { DTORestaurante } from "../../../data/DTORestaurante.js";
@@ -53,6 +54,7 @@ function MetricaCard({
 }
 
 export default function ListarRestaurantesPage() {
+  const location = useLocation();
   const [restaurantes, setRestaurantes] = useState<DTORestaurante[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,12 +73,20 @@ export default function ListarRestaurantesPage() {
         administradorApi.obtenerRestaurantesPendientes(),
       ]);
 
-      const lista = [
-        ...habilitados.map((r) => ({ ...r, habilitado: true })),
-        ...pendientes.map((r) => ({ ...r, habilitado: false })),
-      ];
+      const porId = new Map<number, DTORestaurante>();
 
-      setRestaurantes(lista);
+      for (const r of habilitados) {
+        if (r.idRestaurante != null) {
+          porId.set(r.idRestaurante, { ...r, habilitado: true });
+        }
+      }
+      for (const r of pendientes) {
+        if (r.idRestaurante != null && !porId.has(r.idRestaurante)) {
+          porId.set(r.idRestaurante, { ...r, habilitado: false });
+        }
+      }
+
+      setRestaurantes([...porId.values()]);
     } catch {
       setError("No se pudo cargar la lista de restaurantes.");
     } finally {
@@ -86,6 +96,14 @@ export default function ListarRestaurantesPage() {
 
   useEffect(() => {
     cargarDatos();
+  }, [cargarDatos, location.pathname]);
+
+  useEffect(() => {
+    const refrescar = () => cargarDatos();
+    window.addEventListener("trego-restaurante-gestionado", refrescar);
+    return () => {
+      window.removeEventListener("trego-restaurante-gestionado", refrescar);
+    };
   }, [cargarDatos]);
 
   const metricas = useMemo(() => {

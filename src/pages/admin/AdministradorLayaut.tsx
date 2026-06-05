@@ -6,6 +6,7 @@ import Sidebar from "../../components/body/Sidebar.js";
 import type { SidebarSection } from "../../components/body/utilities/DataSidebar.js";
 import { useEffect, useState } from "react";
 import { administradorApi } from "../../api/administradorApi.js";
+import { obtenerUsuarioActual } from "../../api/usuariosApi.js";
 
 export const SECCIONES_ADMIN: SidebarSection[] = [
   {
@@ -50,6 +51,8 @@ export default function AdministradorLayaut() {
   // Verificamos si hay sesión iniciada
   const token = localStorage.getItem("jwtToken");
   const [pendientesCount, setPendientesCount] = useState(0);
+  const [perfilNombre, setPerfilNombre] = useState("Administrador");
+  const [perfilEmail, setPerfilEmail] = useState("");
 
 
   if (!token) {
@@ -59,10 +62,29 @@ export default function AdministradorLayaut() {
   useEffect(() => {
     if (!token) return;
 
-    administradorApi
-      .obtenerRestaurantesPendientes()
-      .then((lista) => setPendientesCount(lista.length))
-      .catch(() => setPendientesCount(0));
+    const actualizarPendientes = () => {
+      administradorApi
+        .obtenerRestaurantesPendientes()
+        .then((lista) => setPendientesCount(lista.length))
+        .catch(() => setPendientesCount(0));
+    };
+
+    actualizarPendientes();
+
+    obtenerUsuarioActual()
+      .then((usuario) => {
+        setPerfilNombre(usuario.nombre?.trim() || "Administrador");
+        setPerfilEmail(usuario.email ?? "");
+      })
+      .catch(() => {});
+
+    window.addEventListener("trego-restaurante-gestionado", actualizarPendientes);
+    return () => {
+      window.removeEventListener(
+        "trego-restaurante-gestionado",
+        actualizarPendientes,
+      );
+    };
   }, [token]);
 
   // cerrar sesion
@@ -91,7 +113,14 @@ export default function AdministradorLayaut() {
   // Si pasa todas las reglas, renderizamos la pantalla normal
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-50 overflow-hidden">
-      <Header abrirPerfil tipoUser="Administrador" onLogout={handleLogout} />
+      <Header
+        abrirPerfil
+        tipoUser="Administrador"
+        perfilNombre={perfilNombre}
+        perfilEmail={perfilEmail}
+        onVerPerfil={() => navigate("/admin/perfil/contraseña")}
+        onLogout={handleLogout}
+      />
       <div className="flex flex-1 overflow-hidden">
         {/* Le pasamos el estado real al Sidebar para que se bloquee visualmente */}
         <Sidebar tipoUser="Administrador" secciones={seccionesConBadges} />

@@ -1,7 +1,7 @@
 import Header from "../../components/body/Header.js";
 import logo from "../../assets/tregoAdminy.svg";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import OTPInput from "../../components/inicio/OTPInput.js";
 import { TextInput } from "../../components/TextInput.js";
 import TextoDivider from "../../components/TextoDivider.js";
@@ -194,6 +194,13 @@ export default function LoginAdmin() {
                 >
                   Iniciar Sesión
                 </button>
+
+                <Link
+                  to="/login/Administrador/recuperar"
+                  className="text-center text-sm text-gray-500 hover:text-trego-admin transition-colors"
+                >
+                  ¿Olvidaste tu contraseña?
+                </Link>
               </div>
             )}
 

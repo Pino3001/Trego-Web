@@ -203,7 +203,7 @@ export default function MenuUsuario({
           </>
         )}
 
-        {/* Ver perfil */}
+        {/* Perfil / contraseña */}
         <button
           type="button"
           onClick={onVerPerfil}
@@ -211,7 +211,7 @@ export default function MenuUsuario({
         >
           <User size={32} className="text-gray-400 shrink-0" />
           <span className="flex-1 text-sm font-medium text-gray-800">
-            Ver perfil
+            {tipoUser === "Cliente" ? "Ver perfil" : "Cambiar contraseña"}
           </span>
           <ChevronRight size={16} className="text-gray-300 shrink-0" />
         </button>

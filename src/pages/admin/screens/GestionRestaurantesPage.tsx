@@ -101,6 +101,7 @@ export default function GestionRestaurantesPage() {
         `"${seleccionado.nombre}" fue habilitado correctamente.`,
       );
       removerDeLista(seleccionado.idRestaurante);
+      window.dispatchEvent(new Event("trego-restaurante-gestionado"));
     } catch {
       setError("No se pudo habilitar el restaurante. Intentá de nuevo.");
     } finally {
@@ -129,6 +130,7 @@ export default function GestionRestaurantesPage() {
         `La solicitud de "${seleccionado.nombre}" fue rechazada.`,
       );
       removerDeLista(seleccionado.idRestaurante);
+      window.dispatchEvent(new Event("trego-restaurante-gestionado"));
     } catch {
       setError("No se pudo rechazar el restaurante. Intentá de nuevo.");
     } finally {
