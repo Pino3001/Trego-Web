@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+/* import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router";
 import Header from "../../components/body/Header.js";
 import AdminSidebar from "../../components/body/AdminSidebar.js";
@@ -33,3 +33,4 @@ export default function AdminLayout() {
     </div>
   );
 }
+ */

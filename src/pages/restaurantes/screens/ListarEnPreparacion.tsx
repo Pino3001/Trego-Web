@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
-import type { NotificationState } from "./types/NotificationState.js";
-import { EnumEstadoPedido } from "../../data/EnumEstadoPedido.js";
-import { usePedidos } from "./utilitis/funcionesListado.js";
+import type { NotificationState } from "../types/NotificationState.js";
+import {
+  actualizarEstadoPedido,
+  reembolsarPedido,
+} from "../../../api/apiRestaurante.js";
+import { EnumEstadoPedido } from "../../../data/EnumEstadoPedido.js";
+import { usePedidos } from "../utilitis/funcionesListado.js";
 import { AlertCircle, CheckCircle, Search } from "lucide-react";
-import CardPedidoAconfirmar from "./componentes/CardPedidoAconfirmar.js";
+import CardPedidoAconfirmar from "../componentes/CardPedidoAconfirmar.js";
+import type { DTOPedido } from "../../../data/DTOPedido.js";
 
-export default function ListarCancelados() {
+export default function ListarEnPreparacion() {
   const [searchTerm, setSearchTerm] = useState("");
   const [notification, setNotification] = useState<NotificationState>({
     show: false,
@@ -14,8 +19,8 @@ export default function ListarCancelados() {
   });
 
   // Obtener pedidos con estado "Solicitado"
-  const { pedidos, loading, error, recargar } = usePedidos(
-    EnumEstadoPedido.Cancelado, 1000
+  const { pedidos, loading, error, recargar, removerPedidoLocal } = usePedidos(
+    EnumEstadoPedido.EnPreparacion, 180
   );
 
   const showNotification = (message: string, type: "success" | "error") => {
@@ -24,6 +29,40 @@ export default function ListarCancelados() {
       () => setNotification({ show: false, message: "", type: "success" }),
       4000,
     );
+  };
+
+  const handleActualizarEstado = async (
+    pedido: DTOPedido,
+    nuevoEstado: EnumEstadoPedido,
+  ) => {
+    try {
+      if (nuevoEstado === EnumEstadoPedido.Cancelado) {
+        if (!pedido || !pedido.idPedido) {
+          showNotification("Sin pedido seleccionado.", "error");
+          return;
+        }
+        await reembolsarPedido(pedido);
+        removerPedidoLocal(pedido.idPedido);
+        showNotification("Pedido cancelado por el restaurante.", "error");
+      } else {
+        if (!pedido || !pedido.idPedido) {
+          showNotification("Sin pedido seleccionado.", "error");
+          return;
+        }
+        await actualizarEstadoPedido({ pedido, estado: nuevoEstado });
+        removerPedidoLocal(pedido.idPedido);
+        showNotification(
+          `Pedido #${pedido.idPedido} actualizado a ${nuevoEstado}.`,
+          "success",
+        );
+      }
+    } catch (error) {
+      const mensaje =
+        error instanceof Error
+          ? error.message
+          : "Error al actualizar el pedido.";
+      showNotification(mensaje, "error");
+    }
   };
 
   useEffect(() => {
@@ -91,6 +130,7 @@ export default function ListarCancelados() {
             <CardPedidoAconfirmar
               key={pedido.idPedido}
               pedido={pedido}
+              onActualizarEstado={handleActualizarEstado}
             />
           ))
         )}

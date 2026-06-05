@@ -1,13 +1,13 @@
 import { Link, useParams } from 'react-router'
 import { useEffect } from 'react'
-import RestauranteBanner from '../components/menu/RestauranteBanner'
-import MenuSidebar from '../components/menu/MenuSidebar'
-import OfertaCard from '../components/menu/OfertaCard'
-import ProductoMenuCard from '../components/menu/ProductoMenuCard'
-import { IconBack, IconTag } from '../components/icons'
-import { useMenuRestaurante } from '../hooks/useMenuRestaurante'
-import Header from '../components/body/Header.js'
-import { useCarrito } from '../context/CarritoContext.jsx'
+import { useMenuRestaurante } from '../../../hooks/useMenuRestaurante.js'
+import { useCarrito } from '../../../context/CarritoContext.jsx'
+import RestauranteBanner from '../../../components/menu/RestauranteBanner.jsx'
+import MenuSidebar from '../../../components/menu/MenuSidebar.jsx'
+import { IconBack, IconTag } from '../../../components/icons.jsx'
+import OfertaCard from '../../../components/menu/OfertaCard.jsx'
+import ProductoMenuCard from '../../../components/menu/ProductoMenuCard.jsx'
+
 
 export default function RestauranteMenuPage() {
   const { id } = useParams()
@@ -139,9 +139,8 @@ export default function RestauranteMenuPage() {
 
 function PageShell({ children }) {
   return (
-    <div className="min-h-screen bg-[#f0f0f0]">
-      <Header busqueda="" onBusquedaChange={() => {}} onBuscar={() => {}} onAbrirFiltros={() => {}} />
-      <main className="mx-auto max-w-275 px-4 py-3 sm:px-6 sm:py-4">{children}</main>
+    <div className=" bg-[#f0f0f0]">
+      <div className="mx-auto max-w-275 px-4 py-3 sm:px-6 sm:py-4">{children}</div>
     </div>
   )
 }

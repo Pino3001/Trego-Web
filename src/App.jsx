@@ -1,28 +1,31 @@
-import { BrowserRouter, Routes, Route } from "react-router";
-import HomePage from "./pages/HomePage";
-import RestauranteMenuPage from "./pages/RestauranteMenuPage";
-import LoginCliente from "./pages/logins/LoginCliente.js";
+import { BrowserRouter, Route, Routes } from "react-router";
 import SeleccionarRol from "./pages/SeleccionarRol.js";
-import LoginRestaurante from "./pages/restaurantes/LoginRestaurante.js";
+import LoginCliente from "./pages/logins/LoginCliente.js";
+import LoginRestaurante from "./pages/restaurantes/screens/LoginRestaurante.js";
 import LoginAdmin from "./pages/logins/LoginAdmin.js";
-import SolicitarAltaRestaurante from "./pages/restaurantes/SolicitarAltaRestaurante.js";
-import RegistrarRestaurante from "./pages/restaurantes/RegistrarRestaurante.js";
-import CarritoUIRoot from "./components/carrito/CarritoUIRoot.jsx";
-import AltaProducto from "./pages/restaurantes/AltaProducto.js";
-import ListarSinConfirmar from "./pages/restaurantes/ListarSinConfirmar.js";
-import RestauranteLayout from "./pages/restaurantes/RestauranteLayout.js";
-import AdminLayout from "./pages/admin/AdminLayout.js";
-import GestionRestaurantesPage from "./pages/admin/GestionRestaurantesPage.js";
-import ListarRestaurantesPage from "./pages/admin/ListarRestaurantesPage.js";
-import ListarClientesPage from "./pages/admin/ListarClientesPage.js";
+import RegistrarRestaurante from "./pages/restaurantes/screens/RegistrarRestaurante.js";
 import PagoExito from "./pages/pago/PagoExito.jsx";
 import PagoError from "./pages/pago/PagoError.jsx";
 import PagoPendiente from "./pages/pago/PagoPendiente.jsx";
-import ListarEnPreparacion from "./pages/restaurantes/ListarEnPreparacion.js";
-import ListarEnCamino from "./pages/restaurantes/ListarEnCamino.js";
-import ListarEntregados from "./pages/restaurantes/ListarEntregados.js";
-import ListarCancelados from "./pages/restaurantes/ListarCancelados.js";
-import HistorialPage from "./pages/HistorialPage.jsx";
+import RestauranteLayout from "./pages/restaurantes/RestauranteLayout.js";
+import SolicitarAltaRestaurante from "./pages/restaurantes/screens/SolicitarAltaRestaurante.js";
+import AltaProducto from "./pages/restaurantes/screens/AltaProducto.js";
+import ListarSinConfirmar from "./pages/restaurantes/screens/ListarSinConfirmar.js";
+import ListarEnPreparacion from "./pages/restaurantes/screens/ListarEnPreparacion.js";
+import ListarEnCamino from "./pages/restaurantes/screens/ListarEnCamino.js";
+import ListarEntregados from "./pages/restaurantes/screens/ListarEntregados.js";
+import ListarCancelados from "./pages/restaurantes/screens/ListarCancelados.js";
+import GestionRestaurantesPage from "./pages/admin/screens/GestionRestaurantesPage.js";
+import ListarRestaurantesPage from "./pages/admin/screens/ListarRestaurantesPage.js";
+import ListarClientesPage from "./pages/admin/screens/ListarClientesPage.js";
+import AdministradorLayaut from "./pages/admin/AdministradorLayaut.js";
+import RestauranteMenuPage from "./pages/cliente/screens/RestauranteMenuPage.jsx";
+import HomePage from "./pages/cliente/screens/HomePage.jsx";
+import HistorialPage from "./pages/cliente/screens/HistorialPage.jsx";
+import ClienteLayaut from "./pages/cliente/ClienteLayaut.js";
+import { CarritoProvider } from "./context/CarritoContext.jsx";
+import { FiltrosUIProvider } from "./context/FiltrosContext.js";
+import { BusquedaProvider } from "./context/BusquedaContext.js";
 
 export default function AppRouter() {
   return (
@@ -33,9 +36,6 @@ export default function AppRouter() {
         <Route path="/login/cliente" element={<LoginCliente />} />
         <Route path="/login/Restaurante" element={<LoginRestaurante />} />
         <Route path="/login/Administrador" element={<LoginAdmin />} />
-        <Route path="/restaurante/:id" element={<RestauranteMenuPage />} />
-        <Route path="/restaurantes" element={<HomePage />} />
-        <Route path="/Historial" element={<HistorialPage />} />
         <Route
           path="/restaurantes/registrarRestaurante"
           element={<RegistrarRestaurante />}
@@ -74,18 +74,14 @@ export default function AppRouter() {
             path="/restaurantes/pedidos-cancelados"
             element={<ListarCancelados />}
           />
+          <Route
+            path="/restaurantes/solicitarAlta"
+            element={<SolicitarAltaRestaurante />}
+          />
         </Route>
-        <Route
-          path="/restaurantes/solicitarAlta"
-          element={<SolicitarAltaRestaurante />}
-        />
-        <Route
-          path="/restaurantes/registrarRestaurante"
-          element={<RegistrarRestaurante />}
-        />
 
         {/* --- RUTAS ADMIN (LAYOUT CON SIDEBAR) --- */}
-        <Route element={<AdminLayout />}>
+        <Route element={<AdministradorLayaut />}>
           <Route
             path="/admin/restaurantes"
             element={<GestionRestaurantesPage />}
@@ -96,8 +92,24 @@ export default function AppRouter() {
           />
           <Route path="/admin/clientes" element={<ListarClientesPage />} />
         </Route>
+
+        {/*--- Rutas Cliente--- */}
+        <Route
+          element={
+            <CarritoProvider>
+              <FiltrosUIProvider>
+                <BusquedaProvider>
+                  <ClienteLayaut />
+                </BusquedaProvider>
+              </FiltrosUIProvider>
+            </CarritoProvider>
+          }
+        >
+          <Route path="/restaurante/:id" element={<RestauranteMenuPage />} />
+          <Route path="/restaurantes" element={<HomePage />} />
+          <Route path="/Historial" element={<HistorialPage />} />
+        </Route>
       </Routes>
-      <CarritoUIRoot />
     </BrowserRouter>
   );
 }
