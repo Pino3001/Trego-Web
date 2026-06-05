@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { Search, CheckCircle, AlertCircle } from "lucide-react";
-import CardPedidoAconfirmar from "./componentes/CardPedidoAconfirmar.js";
-import { EnumEstadoPedido } from "../../data/EnumEstadoPedido.js";
+import CardPedidoAconfirmar from "../componentes/CardPedidoAconfirmar.js";
+import { EnumEstadoPedido } from "../../../data/EnumEstadoPedido.js";
 import {
   confirmarPedidoRestaurante,
   reembolsarPedido,
-} from "../../api/apiRestaurante.js";
-import type { NotificationState } from "./types/NotificationState.js";
-import { usePedidos } from "./utilitis/funcionesListado.js";
-import type { DTOPedido } from "../../data/DTOPedido.js";
+} from "../../../api/apiRestaurante.js";
+import type { NotificationState } from "../types/NotificationState.js";
+import { usePedidos } from "../utilitis/funcionesListado.js";
+import type { DTOPedido } from "../../../data/DTOPedido.js";
 
 export default function ListarSinConfirmar() {
   const [searchTerm, setSearchTerm] = useState("");

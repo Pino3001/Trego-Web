@@ -1,4 +1,4 @@
-import { NavLink, useMatch } from "react-router";
+/* import { NavLink, useMatch } from "react-router";
 import TextoDivider from "../TextoDivider.js";
 
 interface NavItem {
@@ -139,3 +139,4 @@ export default function AdminSidebar({ pendientesCount }: AdminSidebarProps) {
     </aside>
   );
 }
+ */

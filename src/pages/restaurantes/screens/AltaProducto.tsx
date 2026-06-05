@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
-import type { DTOIngrediente } from "../../data/DTOIngrediente.js";
-import type { ImageField } from "../../components/typos/ImageField.js";
-import type { DTOProducto } from "../../data/DTOProducto.js";
-import { TextSelector } from "../../components/TextSelector.js";
-import AltaPlato from "./componentes/AltaPlato.js";
-import AltaArticulo from "./componentes/AltaArticulo.js";
-import AltaCombo from "./componentes/AltaCombo.js";
+import type { DTOIngrediente } from "../../../data/DTOIngrediente.js";
+import type { ImageField } from "../../../components/typos/ImageField.js";
+import type { DTOProducto } from "../../../data/DTOProducto.js";
+import { TextSelector } from "../../../components/TextSelector.js";
+import AltaPlato from "../componentes/AltaPlato.js";
+import AltaArticulo from "../componentes/AltaArticulo.js";
+import AltaCombo from "../componentes/AltaCombo.js";
 import {
   agregarProducto,
   listarSubcategorias,
   obtenerFirmaCloudinary,
-} from "../../api/apiRestaurante.js";
-import type { DTOSubcategoria } from "../../data/DTOSubcategoria.js";
-import { EnumCategoriaProducto } from "../../data/EnumCategoriaProducto.js";
-import { EnumTipoProducto } from "../../data/EnumTipoProducto.js";
+} from "../../../api/apiRestaurante.js";
+import type { DTOSubcategoria } from "../../../data/DTOSubcategoria.js";
+import { EnumCategoriaProducto } from "../../../data/EnumCategoriaProducto.js";
+import { EnumTipoProducto } from "../../../data/EnumTipoProducto.js";
 
 // ─── Tipos ─────────────────────────────────────────────────────
 interface TipoProducto {

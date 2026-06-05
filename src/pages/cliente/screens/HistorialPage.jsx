@@ -1,62 +1,62 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
-import { AlertCircle, CheckCircle2, History, Store } from 'lucide-react'
-import Header from '../components/body/Header.js'
-import EmptyState from '../components/EmptyState.jsx'
-import RealizarReclamoModal from '../components/reclamos/RealizarReclamoModal.jsx'
-import { obtenerMisPedidos } from '../api/pedidosApi.js'
-import { listarRestaurantesTodos } from '../api/restaurantesApi.js'
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
+import { AlertCircle, CheckCircle2, History, Store } from "lucide-react";
+import { obtenerMisPedidos } from "../../../api/pedidosApi.js";
+import { listarRestaurantesTodos } from "../../../api/restaurantesApi.js";
+import Header from "../../../components/body/Header.js";
+import EmptyState from "../../../components/EmptyState.jsx";
+import RealizarReclamoModal from "../../../components/reclamos/RealizarReclamoModal.jsx";
 
 function formatearFecha(iso) {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString('es-UY', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("es-UY", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function formatearMonto(total) {
-  if (total == null || Number.isNaN(Number(total))) return '—'
-  return `$ ${Number(total).toLocaleString('es-UY', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`
+  if (total == null || Number.isNaN(Number(total))) return "—";
+  return `$ ${Number(total).toLocaleString("es-UY", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
 function soloFecha(iso) {
-  if (!iso) return null
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return null
-  return d.toISOString().slice(0, 10)
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10);
 }
 
 function etiquetaEstado(estado) {
   const map = {
-    Pagado: 'Pagado',
-    EnPreparacion: 'En preparación',
-    EnCamino: 'En camino',
-    Entregado: 'Entregado',
-    Cancelado: 'Cancelado',
-    Reembolsado: 'Reembolsado',
-  }
-  return map[estado] ?? estado ?? '—'
+    Pagado: "Pagado",
+    EnPreparacion: "En preparación",
+    EnCamino: "En camino",
+    Entregado: "Entregado",
+    Cancelado: "Cancelado",
+    Reembolsado: "Reembolsado",
+  };
+  return map[estado] ?? estado ?? "—";
 }
 
 function claseEstado(estado) {
   switch (estado) {
-    case 'Entregado':
-      return 'bg-emerald-50 text-emerald-700'
-    case 'EnCamino':
-    case 'EnPreparacion':
-      return 'bg-orange-50 text-orange-700'
-    case 'Cancelado':
-    case 'Reembolsado':
-    case 'PagoRechazado':
-      return 'bg-red-50 text-red-600'
+    case "Entregado":
+      return "bg-emerald-50 text-emerald-700";
+    case "EnCamino":
+    case "EnPreparacion":
+      return "bg-orange-50 text-orange-700";
+    case "Cancelado":
+    case "Reembolsado":
+    case "PagoRechazado":
+      return "bg-red-50 text-red-600";
     default:
-      return 'bg-gray-100 text-gray-600'
+      return "bg-gray-100 text-gray-600";
   }
 }
 
@@ -64,157 +64,171 @@ function MetricaCard({ etiqueta, valor }) {
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
       <p className="text-sm font-medium text-gray-500">{etiqueta}</p>
-      <p className="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl">{valor}</p>
+      <p className="mt-1 text-2xl font-bold text-gray-900 sm:text-3xl">
+        {valor}
+      </p>
     </div>
-  )
+  );
 }
 
 export default function HistorialPage() {
-  const navigate = useNavigate()
-  const [pedidos, setPedidos] = useState([])
-  const [nombresRestaurante, setNombresRestaurante] = useState({})
-  const [cargando, setCargando] = useState(true)
-  const [error, setError] = useState(null)
+  const navigate = useNavigate();
+  const [pedidos, setPedidos] = useState([]);
+  const [nombresRestaurante, setNombresRestaurante] = useState({});
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
 
-  const [busqueda, setBusqueda] = useState('')
-  const [filtroRestauranteId, setFiltroRestauranteId] = useState('')
-  const [fechaDesde, setFechaDesde] = useState('')
-  const [fechaHasta, setFechaHasta] = useState('')
+  const [busqueda, setBusqueda] = useState("");
+  const [filtroRestauranteId, setFiltroRestauranteId] = useState("");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
 
-  const [pedidosConReclamo, setPedidosConReclamo] = useState(() => new Set())
-  const [pedidoParaReclamo, setPedidoParaReclamo] = useState(null)
-  const [mensajeExito, setMensajeExito] = useState(null)
+  const [pedidosConReclamo, setPedidosConReclamo] = useState(() => new Set());
+  const [pedidoParaReclamo, setPedidoParaReclamo] = useState(null);
+  const [mensajeExito, setMensajeExito] = useState(null);
 
   const cargarDatos = useCallback(async () => {
-    setCargando(true)
-    setError(null)
+    setCargando(true);
+    setError(null);
     try {
       const [listaPedidos, restaurantes] = await Promise.all([
         obtenerMisPedidos(),
         listarRestaurantesTodos().catch(() => []),
-      ])
-      const mapa = {}
+      ]);
+      const mapa = {};
       for (const r of restaurantes) {
-        const id = r.idRestaurante ?? r.idUsuario
-        if (id != null && r.nombre) mapa[id] = r.nombre
+        const id = r.idRestaurante ?? r.idUsuario;
+        if (id != null && r.nombre) mapa[id] = r.nombre;
       }
-      setNombresRestaurante(mapa)
-      setPedidos(listaPedidos)
+      setNombresRestaurante(mapa);
+      setPedidos(listaPedidos);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : 'No se pudo cargar el historial de compras',
-      )
-      setPedidos([])
+        err instanceof Error
+          ? err.message
+          : "No se pudo cargar el historial de compras",
+      );
+      setPedidos([]);
     } finally {
-      setCargando(false)
+      setCargando(false);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem('jwtToken')
+    const token = localStorage.getItem("jwtToken");
     if (!token) {
-      navigate('/login/cliente', { replace: true })
-      return
+      navigate("/login/cliente", { replace: true });
+      return;
     }
-    cargarDatos()
-  }, [cargarDatos, navigate])
+    cargarDatos();
+  }, [cargarDatos, navigate]);
 
   const nombreRestaurante = useCallback(
     (idRestaurante) => {
-      if (idRestaurante == null) return 'Restaurante'
-      return nombresRestaurante[idRestaurante] ?? `Restaurante #${idRestaurante}`
+      if (idRestaurante == null) return "Restaurante";
+      return (
+        nombresRestaurante[idRestaurante] ?? `Restaurante #${idRestaurante}`
+      );
     },
     [nombresRestaurante],
-  )
+  );
 
   const restaurantesEnHistorial = useMemo(() => {
-    const ids = new Set()
+    const ids = new Set();
     for (const p of pedidos) {
-      if (p.idRestaurante != null) ids.add(p.idRestaurante)
+      if (p.idRestaurante != null) ids.add(p.idRestaurante);
     }
     return [...ids]
       .map((id) => ({ id, nombre: nombreRestaurante(id) }))
-      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
-  }, [pedidos, nombreRestaurante])
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
+  }, [pedidos, nombreRestaurante]);
 
   const pedidosFiltrados = useMemo(() => {
-    let lista = [...pedidos]
+    let lista = [...pedidos];
 
     if (filtroRestauranteId) {
-      const id = Number(filtroRestauranteId)
-      lista = lista.filter((p) => p.idRestaurante === id)
+      const id = Number(filtroRestauranteId);
+      lista = lista.filter((p) => p.idRestaurante === id);
     }
 
-    const q = busqueda.trim().toLowerCase()
+    const q = busqueda.trim().toLowerCase();
     if (q) {
       lista = lista.filter((p) =>
         nombreRestaurante(p.idRestaurante).toLowerCase().includes(q),
-      )
+      );
     }
 
     if (fechaDesde) {
       lista = lista.filter((p) => {
-        const f = soloFecha(p.fechaCreacion)
-        return f && f >= fechaDesde
-      })
+        const f = soloFecha(p.fechaCreacion);
+        return f && f >= fechaDesde;
+      });
     }
 
     if (fechaHasta) {
       lista = lista.filter((p) => {
-        const f = soloFecha(p.fechaCreacion)
-        return f && f <= fechaHasta
-      })
+        const f = soloFecha(p.fechaCreacion);
+        return f && f <= fechaHasta;
+      });
     }
 
     return lista.sort((a, b) => {
-      const ta = new Date(a.fechaCreacion ?? 0).getTime()
-      const tb = new Date(b.fechaCreacion ?? 0).getTime()
-      return tb - ta
-    })
-  }, [pedidos, filtroRestauranteId, busqueda, fechaDesde, fechaHasta, nombreRestaurante])
+      const ta = new Date(a.fechaCreacion ?? 0).getTime();
+      const tb = new Date(b.fechaCreacion ?? 0).getTime();
+      return tb - ta;
+    });
+  }, [
+    pedidos,
+    filtroRestauranteId,
+    busqueda,
+    fechaDesde,
+    fechaHasta,
+    nombreRestaurante,
+  ]);
 
   const metricas = useMemo(() => {
-    const totalGastado = pedidosFiltrados.reduce((acc, p) => acc + (p.total ?? 0), 0)
+    const totalGastado = pedidosFiltrados.reduce(
+      (acc, p) => acc + (p.total ?? 0),
+      0,
+    );
     return {
       cantidad: pedidosFiltrados.length,
       totalGastado,
-    }
-  }, [pedidosFiltrados])
+    };
+  }, [pedidosFiltrados]);
 
   const hayFiltrosActivos =
-    !!busqueda.trim() || !!filtroRestauranteId || !!fechaDesde || !!fechaHasta
+    !!busqueda.trim() || !!filtroRestauranteId || !!fechaDesde || !!fechaHasta;
 
   const limpiarFiltros = () => {
-    setBusqueda('')
-    setFiltroRestauranteId('')
-    setFechaDesde('')
-    setFechaHasta('')
-  }
+    setBusqueda("");
+    setFiltroRestauranteId("");
+    setFechaDesde("");
+    setFechaHasta("");
+  };
 
   function puedeReclamar(pedido) {
-    if (!pedido?.idPedido || pedido.estado !== 'Entregado') return false
-    return !pedidosConReclamo.has(pedido.idPedido)
+    if (!pedido?.idPedido || pedido.estado !== "Entregado") return false;
+    return !pedidosConReclamo.has(pedido.idPedido);
   }
 
   function abrirReclamo(pedido) {
-    setPedidoParaReclamo(pedido)
+    setPedidoParaReclamo(pedido);
   }
 
   function cerrarReclamo() {
-    setPedidoParaReclamo(null)
+    setPedidoParaReclamo(null);
   }
 
   function onReclamoExito(idPedido) {
-    setPedidosConReclamo((prev) => new Set(prev).add(idPedido))
-    setMensajeExito('Reclamo realizado. El restaurante revisará tu caso.')
-    window.setTimeout(() => setMensajeExito(null), 6000)
+    setPedidosConReclamo((prev) => new Set(prev).add(idPedido));
+    setMensajeExito("Reclamo realizado. El restaurante revisará tu caso.");
+    window.setTimeout(() => setMensajeExito(null), 6000);
   }
 
   return (
     <div className="min-h-screen bg-[#f5f5f7]">
-      <Header abrirPerfil />
-
-      <main className="mx-auto max-w-275 px-4 py-5 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-275 px-4 py-5 sm:px-6 sm:py-6">
         <div className="mb-6 flex flex-wrap items-start justify-between gap-3 px-1">
           <div>
             <div className="mb-2 flex items-center gap-2 text-trego-orange">
@@ -229,7 +243,7 @@ export default function HistorialPage() {
           </div>
           <button
             type="button"
-            onClick={() => navigate('/restaurantes')}
+            onClick={() => navigate("/restaurantes")}
             className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 shadow-sm hover:bg-gray-50"
           >
             Volver al inicio
@@ -254,7 +268,10 @@ export default function HistorialPage() {
 
         {!cargando && !error && (
           <div className="mb-6 grid gap-3 sm:grid-cols-2">
-            <MetricaCard etiqueta="Pedidos (filtro actual)" valor={metricas.cantidad} />
+            <MetricaCard
+              etiqueta="Pedidos (filtro actual)"
+              valor={metricas.cantidad}
+            />
             <MetricaCard
               etiqueta="Total gastado (filtro actual)"
               valor={formatearMonto(metricas.totalGastado)}
@@ -278,7 +295,9 @@ export default function HistorialPage() {
             </label>
 
             <label className="flex min-w-[180px] flex-1 flex-col gap-1 sm:max-w-xs">
-              <span className="text-sm font-medium text-gray-700">Restaurante</span>
+              <span className="text-sm font-medium text-gray-700">
+                Restaurante
+              </span>
               <select
                 value={filtroRestauranteId}
                 onChange={(e) => setFiltroRestauranteId(e.target.value)}
@@ -334,8 +353,8 @@ export default function HistorialPage() {
           <EmptyState
             mensaje={
               pedidos.length === 0
-                ? 'Aún no tenés compras registradas'
-                : 'No hay pedidos para los filtros aplicados'
+                ? "Aún no tenés compras registradas"
+                : "No hay pedidos para los filtros aplicados"
             }
             onLimpiarFiltros={hayFiltrosActivos ? limpiarFiltros : undefined}
           />
@@ -354,7 +373,7 @@ export default function HistorialPage() {
                           {nombreRestaurante(pedido.idRestaurante)}
                         </h2>
                         <p className="text-xs text-gray-500">
-                          Pedido #{pedido.idPedido ?? '—'}
+                          Pedido #{pedido.idPedido ?? "—"}
                         </p>
                       </div>
                     </div>
@@ -397,7 +416,7 @@ export default function HistorialPage() {
                     </button>
                   )}
 
-                  {pedido.estado === 'Entregado' &&
+                  {pedido.estado === "Entregado" &&
                     pedidosConReclamo.has(pedido.idPedido) && (
                       <p className="mt-3 text-center text-xs font-medium text-gray-500">
                         Ya registraste un reclamo para este pedido
@@ -408,7 +427,7 @@ export default function HistorialPage() {
             ))}
           </ul>
         )}
-      </main>
+      </div>
 
       <RealizarReclamoModal
         abierto={!!pedidoParaReclamo}
@@ -416,11 +435,11 @@ export default function HistorialPage() {
         nombreRestaurante={
           pedidoParaReclamo
             ? nombreRestaurante(pedidoParaReclamo.idRestaurante)
-            : ''
+            : ""
         }
         onCerrar={cerrarReclamo}
         onExito={onReclamoExito}
       />
     </div>
-  )
+  );
 }

@@ -1,20 +1,22 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import FiltersModal from '../components/FiltersModal'
-import LocationPrompt from '../components/LocationPrompt'
-import EmptyState from '../components/EmptyState'
-import SectionRow from '../components/SectionRow'
-import RestaurantCard from '../components/RestaurantCard'
-import { IconRefresh } from '../components/icons'
+import { useEffect, useMemo, useState } from "react";
+import FiltersModal from "../../../components/FiltersModal.jsx";
+import LocationPrompt from "../../../components/LocationPrompt.jsx";
+import EmptyState from "../../../components/EmptyState.jsx";
+import SectionRow from "../../../components/SectionRow.jsx";
+import RestaurantCard from "../../../components/RestaurantCard.jsx";
+import { IconRefresh } from "../../../components/icons.jsx";
 import {
   leerPrefUbicacion,
   ubicacionPromptYaRespondido,
   useGeolocation,
-} from '../hooks/useGeolocation'
-import { useRestaurantes } from '../hooks/useRestaurantes'
-import Header from '../components/body/Header.js'
+} from "../../../hooks/useGeolocation.js";
+import { useRestaurantes } from "../../../hooks/useRestaurantes.js";
+import { useFiltros } from "../../../context/FiltrosContext.js";
+import { useBusqueda } from "../../../context/BusquedaContext.js";
+import { useDebounce } from "../../../hooks/useDebounce.js";
 
 export default function HomePage() {
-  const geo = useGeolocation(false)
+  const geo = useGeolocation(false);
   const {
     restaurantes,
     filtros,
@@ -27,87 +29,78 @@ export default function HomePage() {
     limpiarFiltros,
     recargar,
     hayFiltrosActivos,
-  } = useRestaurantes()
+  } = useRestaurantes();
+  const { filtrosAbiertos, cerrarFiltros } = useFiltros();
 
-  const [busqueda, setBusqueda] = useState('')
-  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false)
-  const [mostrarPromptUbicacion, setMostrarPromptUbicacion] = useState(
-    () => !ubicacionPromptYaRespondido(),
-  )
+  // 1. Buscador con Debounce
+  const { busqueda, setBusqueda } = useBusqueda();
+  const debouncedBusqueda = useDebounce(busqueda, 500);
+
+  // 2. Manejo de Ubicación SIN useEffect (Elimina el warning de setState)
   const [ubicacionCancelada, setUbicacionCancelada] = useState(
     () => !!leerPrefUbicacion()?.rechazado,
-  )
+  );
+  const [promptOcultoManualmente, setPromptOcultoManualmente] = useState(false);
 
+  // Derivamos el valor al vuelo. Si cambia alguna de estas variables, React lo recalcula solo.
+  const mostrarPromptUbicacion =
+    !promptOcultoManualmente &&
+    !geo.tieneUbicacion &&
+    !geo.ubicacionDenegada &&
+    !ubicacionCancelada &&
+    !ubicacionPromptYaRespondido();
+
+  // 3. Cálculos de listas
   const destacados = useMemo(
     () =>
       [...restaurantes]
         .sort((a, b) => (b.calificacionProm ?? 0) - (a.calificacionProm ?? 0))
         .slice(0, 4),
     [restaurantes],
-  )
+  );
 
-  const iniciarCarga = useCallback(() => {
-    if (geo.tieneUbicacion) {
-      cargarZona(geo.coords)
-    }
-  }, [geo.tieneUbicacion, geo.coords, cargarZona])
+  const ofertas = restaurantes.filter((r) => r.tieneOfertas);
+  const listaPrincipal = restaurantes;
 
+  // 4. El "Motor" de búsqueda y carga inicial reactivo al Debounce
   useEffect(() => {
-    if (geo.tieneUbicacion) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setMostrarPromptUbicacion(false)
-      iniciarCarga()
-      return
-    }
-    if (geo.ubicacionDenegada || ubicacionCancelada || ubicacionPromptYaRespondido()) {
-      setMostrarPromptUbicacion(false)
-    }
-  }, [geo.ubicacionDenegada, geo.tieneUbicacion, iniciarCarga, ubicacionCancelada])
+    if (!geo.tieneUbicacion) return;
 
+    if (debouncedBusqueda.trim()) {
+      buscar(geo.coords, debouncedBusqueda.trim());
+    } else {
+      cargarZona(geo.coords);
+    }
+  }, [geo.tieneUbicacion, geo.coords, debouncedBusqueda, buscar, cargarZona]);
+
+  // 5. Funciones de Interacción (Handlers)
   const handleActivarUbicacion = () => {
-    setMostrarPromptUbicacion(false)
-    geo.solicitar()
-  }
+    setPromptOcultoManualmente(true); // Oculta nuestro cartel para no estorbar al del navegador
+    geo.solicitar();
+  };
 
   const handleCancelarUbicacion = () => {
-    setMostrarPromptUbicacion(false)
-    setUbicacionCancelada(true)
-    geo.marcarPromptRechazado()
-  }
-
-  const handleBuscar = () => {
-    if (!geo.tieneUbicacion) return
-    if (busqueda.trim()) {
-      buscar(geo.coords, busqueda)
-    } else {
-      cargarZona(geo.coords)
-    }
-  }
+    setUbicacionCancelada(true); // Actualiza el estado derivado automáticamente a false
+    geo.marcarPromptRechazado();
+  };
 
   const handleRecargar = () => {
-    if (geo.tieneUbicacion) recargar(geo.coords)
-  }
+    if (geo.tieneUbicacion) recargar(geo.coords);
+  };
 
-  const ofertas = restaurantes.filter((r) => r.tieneOfertas)
-  const listaPrincipal = restaurantes
-
+  // 6. Estados UI finales
   const sinUbicacion =
-    (geo.ubicacionDenegada || ubicacionCancelada) && !geo.tieneUbicacion
-  const vacio = geo.tieneUbicacion && !cargando && !error && listaPrincipal.length === 0
+    (geo.ubicacionDenegada || ubicacionCancelada) && !geo.tieneUbicacion;
+  const vacio =
+    geo.tieneUbicacion && !cargando && !error && listaPrincipal.length === 0;
 
   return (
     <div className="min-h-screen bg-[#f5f5f7]">
-      <Header
-        busqueda={busqueda}
-        onBusquedaChange={setBusqueda}
-        onBuscar={handleBuscar}
-        onAbrirFiltros={() => setFiltrosAbiertos(true)}
-        abrirPerfil={true}
-      />
-
-      <main className="mx-auto max-w-275 px-4 py-5 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-400 px-4 py-5 sm:px-6 sm:py-6">
         {cargando && (
-          <p className="mb-4 text-center text-sm text-gray-500">Cargando restaurantes...</p>
+          <p className="mb-4 text-center text-sm text-gray-500">
+            Cargando restaurantes...
+          </p>
         )}
 
         {error && (
@@ -116,25 +109,27 @@ export default function HomePage() {
           </p>
         )}
 
-        {sinUbicacion && (
-          <EmptyState mensaje="No hay nada para mostrar" />
-        )}
+        {sinUbicacion && <EmptyState mensaje="No hay nada para mostrar" />}
 
         {geo.tieneUbicacion && !sinUbicacion && (
           <>
             {ofertas.length > 0 && (
-              <SectionRow
-                titulo="Las Ofertas de Hoy"
-                accion={<LinkMas />}
-              >
+              <SectionRow titulo="Las Ofertas de Hoy" accion={<LinkMas />}>
                 {ofertas.slice(0, 4).map((r) => (
-                  <RestaurantCard key={r.idUsuario} restaurante={r} modoBusqueda={modoBusqueda} />
+                  <RestaurantCard
+                    key={r.idUsuario}
+                    restaurante={r}
+                    modoBusqueda={modoBusqueda}
+                  />
                 ))}
               </SectionRow>
             )}
 
             {destacados.length > 0 && (
-              <SectionRow titulo="Descubre los Mejores Platos" accion={<LinkMas />}>
+              <SectionRow
+                titulo="Descubre los Mejores Platos"
+                accion={<LinkMas />}
+              >
                 {destacados.map((r) => (
                   <RestaurantCard
                     key={`destacado-${r.idUsuario}`}
@@ -170,8 +165,8 @@ export default function HomePage() {
                   onLimpiarFiltros={
                     hayFiltrosActivos || modoBusqueda
                       ? () => {
-                          setBusqueda('')
-                          limpiarFiltros(geo.coords)
+                          setBusqueda("");
+                          limpiarFiltros(geo.coords);
                         }
                       : undefined
                   }
@@ -191,14 +186,16 @@ export default function HomePage() {
             </section>
           </>
         )}
-      </main>
+      </div>
 
-      {mostrarPromptUbicacion && !geo.tieneUbicacion && !geo.ubicacionDenegada && (
-        <LocationPrompt
-          onActivar={handleActivarUbicacion}
-          onCancelar={handleCancelarUbicacion}
-        />
-      )}
+      {mostrarPromptUbicacion &&
+        !geo.tieneUbicacion &&
+        !geo.ubicacionDenegada && (
+          <LocationPrompt
+            onActivar={handleActivarUbicacion}
+            onCancelar={handleCancelarUbicacion}
+          />
+        )}
 
       {geo.cargandoUbicacion && !geo.tieneUbicacion && (
         <p className="fixed bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-sm text-white">
@@ -209,11 +206,13 @@ export default function HomePage() {
       <FiltersModal
         abierto={filtrosAbiertos}
         filtros={filtros}
-        onCerrar={() => setFiltrosAbiertos(false)}
-        onAplicar={(nuevos) => geo.tieneUbicacion && aplicarFiltros(geo.coords, nuevos)}
+        onCerrar={cerrarFiltros}
+        onAplicar={(nuevos) =>
+          geo.tieneUbicacion && aplicarFiltros(geo.coords, nuevos)
+        }
       />
     </div>
-  )
+  );
 }
 
 function LinkMas() {
@@ -224,5 +223,5 @@ function LinkMas() {
     >
       Mostrar Mas &gt;
     </button>
-  )
+  );
 }

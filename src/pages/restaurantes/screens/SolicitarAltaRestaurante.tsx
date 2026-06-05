@@ -1,15 +1,15 @@
 import { useState } from "react";
-import Header from "../../components/body/Header.js";
-import { TextInput } from "../../components/TextInput.js";
-import Sidebar from "../../components/body/Sidebar.js";
-import type { ImageField } from "../../components/typos/ImageField.js";
-import ImageUploadField from "../../components/ImagenUploadField.js";
-import type { DTORestaurante } from "../../data/DTORestaurante.js";
+import Header from "../../../components/body/Header.js";
+import { TextInput } from "../../../components/TextInput.js";
+import Sidebar from "../../../components/body/Sidebar.js";
+import type { ImageField } from "../../../components/typos/ImageField.js";
+import ImageUploadField from "../../../components/ImagenUploadField.js";
+import type { DTORestaurante } from "../../../data/DTORestaurante.js";
 
-import AddressAutocomplete from "../../components/DireccionAutocomplete.js";
-import type { DireccionGeoapify } from "../../data/DireccionGeoapify.js";
-import type { DTODireccion } from "../../data/DTODireccion.js";
-import { enviarSolicitudAltaRestaurante, obtenerFirmaCloudinary } from "../../api/apiRestaurante.js";
+import AddressAutocomplete from "../../../components/DireccionAutocomplete.js";
+import type { DireccionGeoapify } from "../../../data/DireccionGeoapify.js";
+import type { DTODireccion } from "../../../data/DTODireccion.js";
+import { enviarSolicitudAltaRestaurante, obtenerFirmaCloudinary } from "../../../api/apiRestaurante.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

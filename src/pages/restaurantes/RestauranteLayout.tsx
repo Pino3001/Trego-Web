@@ -53,7 +53,7 @@ const SECCIONES: SidebarSection[] = [
   },
 ];
 
-const Habilitado: SidebarSection[] = [
+const NO_Habilitado: SidebarSection[] = [
   {
     section: "Solicitudes",
     items: [{ label: "Solicitar Alta", path: "/restaurantes/solicitarAlta" }],
@@ -100,6 +100,9 @@ export default function RestauranteLayout() {
     return <Navigate to="/ListarPedidosSinConfirmar" replace />;
   }
 
+  const lista_Secciones: SidebarSection[] = isHabilitado
+    ? SECCIONES
+    : NO_Habilitado;
   // Effect para enviar al backend el estado del backend
   useEffect(() => {
     if (!token || !isHabilitado) return;
@@ -283,7 +286,7 @@ export default function RestauranteLayout() {
       />
       <div className="flex flex-1 overflow-hidden">
         {/* Le pasamos el estado real al Sidebar para que se bloquee visualmente */}
-        <Sidebar tipoUser="Restaurante" secciones={SECCIONES} />
+        <Sidebar tipoUser="Restaurante" secciones={lista_Secciones} />
 
         <main className="flex-1 flex flex-col overflow-y-auto relative">
           <Outlet />
