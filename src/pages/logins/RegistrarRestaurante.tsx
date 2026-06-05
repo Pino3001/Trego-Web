@@ -1,15 +1,13 @@
-import Header from "../../../components/body/Header.js";
-import logo from "../../../assets/tregoRestaurante.svg";
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import OTPInput from "../../../components/inicio/OTPInput.js";
-import {
-  TextInput,
-  type SeguridadPassword,
-} from "../../../components/TextInput.js";
-import TextoDivider from "../../../components/TextoDivider.js";
-import type { DTOLoginRegistro } from "../../../data/DTOLoginRegistro.js";
-import { apiRegistrarRestaurante } from "../../../api/apiRegistrarRestaurante.js";
+import { apiRegistrarRestaurante } from "../../api/apiRegistrarRestaurante.js";
+import { TextInput, type SeguridadPassword } from "../../components/TextInput.js";
+import type { DTOLoginRegistro } from "../../data/DTOLoginRegistro.js";
+import Header from "../../components/body/Header.js";
+import TextoDivider from "../../components/TextoDivider.js";
+import OTPInput from "../../components/inicio/OTPInput.js";
+import logo from "../../assets/tregoRestaurante.svg";
+
 
 type AuthStep = "INGRESO" | "VERI_CODIGO" | "LOADING";
 

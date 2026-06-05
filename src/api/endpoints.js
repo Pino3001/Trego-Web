@@ -28,6 +28,9 @@ export const ENDPOINTS = {
   // Usuarios
   USUARIO_DIRECCIONES: '/api/usuarios/obtenerDirecciones',
   USUARIO_GUARDAR_DIRECCION: '/api/usuarios/guardarDireccion', // falta endpoint backend
+  USUARIO_ACTUAL: '/api/usuarios/actual',
+  USUARIO_RECUPERAR_CONTRASENA: '/api/usuarios/recuperarContraseña',
+  USUARIO_ACTUALIZAR_CONTRASENA: '/api/usuarios/actualizarContraseña',
 
   // Auth
   AUTH_GOOGLE: '/api/auth/google',
