@@ -15,6 +15,7 @@ import {
   CATEGORIAS_PRODUCTO,
   type EnumCategoriaProducto,
 } from "../../../data/EnumCategoriaProducto.js";
+import { useIngredientes } from "../../../hooks/useIngredientes.js";
 
 interface AltaPlatoProps {
   foto: ImageField;
@@ -57,85 +58,24 @@ export default function AltaPlato({
   onChangeDescripcion,
   listaDeIngredientes,
 }: AltaPlatoProps) {
-  const [mostrarFormIngrediente, setMostrarFormIngrediente] = useState(false);
-  const [nuevoIngrediente, setNuevoIngrediente] = useState("");
-  const [listaIngredientes, setListaIngredientes] = useState<DTOIngrediente[]>(
-    [],
-  );
-  const [listaIngredientesBackend, setListaIngredientesBackend] = useState<
-    DTOIngrediente[]
-  >([]);
+  const {
+    listaIngredientesBackend,
+    listaIngredientes,
+    ingredienteSeleccionado,
+    nuevoIngrediente,
+    setNuevoIngrediente,
+    mostrarFormIngrediente,
+    setMostrarFormIngrediente,
+    agregarIngrediente,
+    quitarIngrediente,
+    crearIngredienteLocal,
+  } = useIngredientes({
+    onError: onChangeApiError,
+    onListaCambiada: listaDeIngredientes,
+  });
+
   const handleImageChange = (file: File | null) => {
     onChangeImage(file);
-  };
-  const [ingredienteSeleccionado, setIngredienteSeleccionado] = useState<
-    DTOIngrediente | undefined
-  >();
-
-  //Traer ingredientes desde el backend
-  useEffect(() => {
-    let cancelado = false;
-
-    const cargarIngredientes = async () => {
-      try {
-        const lista = await listarIngredientes();
-        if (!cancelado) {
-          setListaIngredientesBackend(lista);
-        }
-      } catch (e) {
-        if (!cancelado) {
-          const mensaje = e instanceof Error ? e.message : "Error inesperado";
-          onChangeApiError(mensaje);
-        }
-      }
-    };
-
-    cargarIngredientes();
-
-    return () => {
-      cancelado = true;
-    };
-  }, []);
-
-  const agregarIngrediente = (item: DTOIngrediente | undefined) => {
-    if (!item) return;
-    if (listaIngredientes.find((i) => i.idIngrediente === item.idIngrediente))
-      return; // evita duplicados
-    const nuevaLista = [...listaIngredientes, item];
-    setListaIngredientes(nuevaLista);
-    listaDeIngredientes(nuevaLista); // sincroniza con el padre
-  };
-
-  const quitarIngrediente = (ing: DTOIngrediente) => {
-    const nuevaLista = listaIngredientes.filter(
-      (i) => i.idIngrediente !== ing.idIngrediente,
-    );
-    setListaIngredientes(nuevaLista);
-    listaDeIngredientes(nuevaLista); // sincroniza con el padre
-  };
-
-  const crearIngredienteLocal = async () => {
-    const nombre = nuevoIngrediente.trim();
-    if (!nombre) return;
-
-    try {
-      const nuevo = await crearIngrediente(nombre); // backend responde con DTOIngrediente
-      // Agregar a la lista de ingredientes del backend para no volver a pedirla
-      setListaIngredientesBackend((prev) => [...prev, nuevo]);
-      // Opcional: también agregarlo automáticamente a la lista de seleccionados
-      agregarIngrediente(nuevo);
-      setIngredienteSeleccionado(nuevo);
-      setMostrarFormIngrediente(false);
-      setNuevoIngrediente("");
-    } catch (error) {
-      // Mostrar error (podés usar un estado local o un alert)
-      console.error(error);
-      alert(
-        error instanceof Error
-          ? error.message
-          : "Error al crear el ingrediente",
-      );
-    }
   };
 
   return (
@@ -236,11 +176,11 @@ export default function AltaPlato({
               items={listaIngredientesBackend}
               selected={ingredienteSeleccionado}
               onSelect={(item) => {
-                setIngredienteSeleccionado(item); // actualiza el input del buscador
-                agregarIngrediente(item); // agrega a la lista local
+                agregarIngrediente(item);
               }}
               mapToItem={(t) => ({ id: t.idIngrediente ?? 0, label: t.nombre })}
               placeholder="Buscar ingrediente"
+              label
             />
           </div>
           <button

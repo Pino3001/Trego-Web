@@ -2,6 +2,7 @@ import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface InputProps {
+  id?: string;
   placeholder: string;
   type?: "text" | "password" | "email";
   className?: string;
@@ -62,6 +63,7 @@ export const TextInput = ({
   showStrength = false,
   onChangeSeguridad,
   error,
+  id,
 }: InputProps) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -84,12 +86,13 @@ export const TextInput = ({
   return (
     <div className={`relative w-full ${className}`}>
       <input
+        id={id}
         type={inputType}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        className={`peer w-full h-13 border rounded-full px-5 outline-none
+        className={`peer w-full h-12 border rounded-full px-5 outline-none
                     focus:ring-1 transition-all duration-200 placeholder-transparent
                     ${
                       error

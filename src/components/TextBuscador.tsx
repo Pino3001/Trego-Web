@@ -1,6 +1,4 @@
-import { useEffect, useRef, useState } from "react";
-
-// ── Types ────────────────────────────────────────────────────────────────────
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export interface SearchItem {
   id: string | number;
@@ -8,15 +6,18 @@ export interface SearchItem {
 }
 
 interface TextSearchProps<T> {
+  id?: string;
   items: T[];
   placeholder?: string;
   colorStyle?: string;
   onSelect: (item: T | undefined) => void;
   selected?: T | undefined;
   mapToItem: (item: T) => SearchItem;
+  label?: boolean;
+  error?: string;
+  className?: string;
+  cancelable?: boolean;
 }
-
-// ── Helper: convierte colorStyle a color hex/tailwind para hover ─────────────
 
 const colorMap: Record<string, string> = {
   "trego-restaurante": "#fff3e0",
@@ -27,8 +28,6 @@ const colorMap: Record<string, string> = {
   "purple-500": "#faf5ff",
 };
 
-// ── Component ────────────────────────────────────────────────────────────────
-
 export const TextBuscador = <T,>({
   items,
   placeholder = "Buscar...",
@@ -36,26 +35,52 @@ export const TextBuscador = <T,>({
   onSelect,
   selected = undefined,
   mapToItem,
+  label = false,
+  error,
+  className,
+  cancelable,
+  id,
 }: TextSearchProps<T>) => {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const [dropdownDir, setDropdownDir] = useState<"down" | "up">("down");
 
-  const selectedMapped = selected ? mapToItem(selected) : undefined;
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // ✅ Fix: filtra solo cuando hay query, si no muestra todos
-  const filtered = query.length > 0
-    ? items.filter((item) =>
-        mapToItem(item).label.toLowerCase().includes(query.toLowerCase())
-      )
-    : items;
+  const selectedMapped = useMemo(() => {
+    if (!selected) return undefined;
+    const mapped = mapToItem(selected);
+    const existsInList = items.some((item) => mapToItem(item).id === mapped.id);
+    return existsInList ? mapped : undefined;
+  }, [selected, items, mapToItem]);
 
-  // Cierra el dropdown al hacer click fuera
+  // Fuente única de verdad: hay selección válida DENTRO de la lista actual
+  const hasValidSelection = !!(selected && selectedMapped);
+
+  const filtered =
+    query.length > 0
+      ? items.filter((item) =>
+          mapToItem(item).label.toLowerCase().includes(query.toLowerCase()),
+        )
+      : items;
+
+  const isFloating = isFocused || query.length > 0 || hasValidSelection;
+  const hoverBg = colorMap[colorStyle] ?? "#f3f4f6";
+
+  // ── Effects ───────────────────────────────────────────────────────────────
+
+  // Notifica al padre que su selected ya no existe en la lista actual
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    if (selected && !selectedMapped) {
+      onSelect(undefined);
+      setQuery("");
+    }
+  }, [selected, selectedMapped, onSelect]);
+
+  useEffect(() => {
+    const onClickOutside = (e: MouseEvent) => {
       if (
         wrapperRef.current &&
         !wrapperRef.current.contains(e.target as Node)
@@ -64,9 +89,19 @@ export const TextBuscador = <T,>({
         setIsFocused(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
+  const openDropdown = () => {
+    const rect = inputRef.current?.getBoundingClientRect();
+    if (rect) {
+      setDropdownDir(window.innerHeight - rect.bottom < 220 ? "up" : "down");
+    }
+    setIsOpen(true);
+  };
 
   const handleSelect = (item: T) => {
     onSelect(item);
@@ -75,91 +110,92 @@ export const TextBuscador = <T,>({
   };
 
   const handleClear = () => {
+    if (cancelable) return;
     onSelect(undefined);
     setQuery("");
     setIsOpen(false);
-    // ✅ Fix: devuelve el foco al input después de limpiar
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
-  const openDropdown = () => {
-    const rect = inputRef.current?.getBoundingClientRect();
-    if (rect) {
-      const spaceBelow = window.innerHeight - rect.bottom;
-      const dropdownHeight = 220;
-      setDropdownDir(spaceBelow < dropdownHeight ? "up" : "down");
-    }
-    setIsOpen(true);
-  };
-
-  // ✅ Fix: el placeholder flota solo cuando hay foco, query o selección real
-  const isFloating = isFocused || query.length > 0 || !!selected;
-
-  // ✅ Color de hover basado en colorStyle
-  const hoverBg = colorMap[colorStyle] ?? "#f3f4f6";
+  // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div ref={wrapperRef} className="relative w-full">
-      {/* Input */}
+      {/* ── Input ─────────────────────────────────────────────────────────── */}
       <div className="relative">
         <input
+          id={id}
           ref={inputRef}
           type="text"
-          // ✅ Fix: muestra label del seleccionado o query, nunca undefined
-          value={selectedMapped ? selectedMapped.label : query}
-          readOnly={!!selected}
+          value={hasValidSelection ? selectedMapped!.label : query}
+          readOnly={hasValidSelection}
           onChange={(e) => {
-            const newQuery = e.target.value;
-            setQuery(newQuery);
+            setQuery(e.target.value);
             if (selected) onSelect(undefined);
             openDropdown();
           }}
           onFocus={() => {
             setIsFocused(true);
-            // ✅ Fix: al enfocar con selección, limpia para permitir nueva búsqueda
-            if (selected) {
+            if (hasValidSelection) {
               setQuery(selectedMapped?.label ?? "");
               onSelect(undefined);
             }
             openDropdown();
           }}
           onBlur={() => setIsFocused(false)}
-          // ✅ Fix: placeholder vacío porque usamos floating label
           placeholder=""
           className={`
-            peer w-full h-13 border border-gray-300 rounded-full px-5 pr-10
-            outline-none
+            peer w-full h-12 border rounded-full px-5 pr-10
+            outline-none transition-all duration-200
+            ${error ? "border-red-400" : "border-gray-400"}
             focus:border-${colorStyle} focus:ring-1 focus:ring-${colorStyle}
-            transition-all duration-200
-            ${selected ? "cursor-default text-gray-700" : "text-gray-700"}
+            ${hasValidSelection ? "cursor-default" : "cursor-text"}
+            text-gray-700
           `}
         />
 
-        {/* ✅ Fix: Floating label — siempre visible, flota al enfocar */}
-        <label
-          onClick={() => inputRef.current?.focus()}
-          className={`
-            absolute left-5 pointer-events-none transition-all duration-200 select-none
-            ${
-              isFloating
-                ? `-top-2.5 text-xs text-${colorStyle} bg-white px-1 font-medium`
-                : "top-3.5 text-sm text-gray-400"
-            }
-          `}
-        >
-          {placeholder}
-        </label>
+        {/* Floating label */}
+        {label ? (
+          <label
+            className={`
+              absolute left-5 transition-all duration-200 pointer-events-none
+              ${
+                isFloating
+                  ? `-top-2 text-xs px-1 ${
+                      error
+                        ? "text-red-500 bg-red-50"
+                        : `text-${colorStyle} bg-white`
+                    }`
+                  : "top-3.5 text-base text-gray-500"
+              }
+              ${className ?? ""}
+            `}
+          >
+            {placeholder}
+          </label>
+        ) : (
+          <label
+            className={`
+              absolute left-5 transition-all duration-200 pointer-events-none
+              top-3.5 text-base
+              ${isFloating ? "text-transparent" : "text-gray-500"}
+              ${className ?? ""}
+            `}
+          >
+            {placeholder}
+          </label>
+        )}
 
-        {/* Icono derecho: limpiar o lupa */}
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
-          {selected ? (
+        {/* ✅ Ícono controlado por hasValidSelection (fuente única) */}
+        <div className="absolute right-4 inset-y-0 flex items-center">
+          {hasValidSelection ? (
             <button
               type="button"
               onMouseDown={(e) => {
-                e.preventDefault() // ✅ evita que onBlur se dispare antes
-                handleClear()
+                e.preventDefault();
+                handleClear();
               }}
-              className={`text-gray-400 hover:text-${colorStyle} transition-colors`}
+              className="inline-flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
               aria-label="Limpiar selección"
             >
               <svg
@@ -177,15 +213,14 @@ export const TextBuscador = <T,>({
               </svg>
             </button>
           ) : (
-            // ✅ Fix: botón de lupa despliega la lista al hacer click
             <button
               type="button"
               onMouseDown={(e) => {
-                e.preventDefault()
-                inputRef.current?.focus()
-                openDropdown()
+                e.preventDefault();
+                inputRef.current?.focus();
+                openDropdown();
               }}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="inline-flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
               aria-label="Buscar"
             >
               <svg
@@ -207,13 +242,17 @@ export const TextBuscador = <T,>({
         </div>
       </div>
 
-      {/* Dropdown */}
-      {isOpen && !selected && (
+      {/* ── Dropdown ──────────────────────────────────────────────────────── */}
+      {isOpen && !hasValidSelection && (
         <div
           className={`
-            absolute left-0 right-0 z-50 bg-white border border-gray-200
-            rounded-2xl shadow-lg overflow-hidden
-            ${dropdownDir === "up" ? "bottom-[calc(100%+6px)]" : "top-[calc(100%+6px)]"}
+            absolute left-0 right-0 z-50
+            bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden
+            ${
+              dropdownDir === "up"
+                ? "bottom-[calc(100%+6px)]"
+                : "top-[calc(100%+6px)]"
+            }
           `}
         >
           {filtered.length === 0 ? (
@@ -229,28 +268,26 @@ export const TextBuscador = <T,>({
                   <li
                     key={mapped.id}
                     onMouseDown={() => handleSelect(item)}
-                    // ✅ Fix: hover con color del colorStyle muy claro via style inline
-                    style={{ "--hover-bg": hoverBg } as React.CSSProperties}
                     className={`
                       px-4 py-3 text-sm cursor-pointer transition-colors
                       border-b border-gray-100 last:border-b-0
-                      ${isSelected
-                        ? `text-${colorStyle} font-semibold bg-gray-50`
-                        : "text-gray-700"
+                      ${
+                        isSelected
+                          ? `text-${colorStyle} font-semibold bg-gray-50`
+                          : "text-gray-700"
                       }
                     `}
                     onMouseEnter={(e) => {
-                      if (!isSelected) {
-                        (e.currentTarget as HTMLElement).style.backgroundColor = hoverBg;
-                      }
+                      if (!isSelected)
+                        (e.currentTarget as HTMLElement).style.backgroundColor =
+                          hoverBg;
                     }}
                     onMouseLeave={(e) => {
-                      if (!isSelected) {
-                        (e.currentTarget as HTMLElement).style.backgroundColor = "";
-                      }
+                      if (!isSelected)
+                        (e.currentTarget as HTMLElement).style.backgroundColor =
+                          "";
                     }}
                   >
-                    {/* ✅ Fix: items con mejor visual — icono + label */}
                     <div className="flex items-center gap-2">
                       <span
                         className={`w-1.5 h-1.5 rounded-full shrink-0 bg-${colorStyle}`}

@@ -1,0 +1,156 @@
+import { ArrowDownAZ, ArrowUpAZ, Trash2 } from "lucide-react";
+import type { DTOProducto } from "../../../data/DTOProducto.js";
+import { TextInput } from "../../../components/TextInput.js";
+import { TextBuscador } from "../../../components/TextBuscador.js";
+
+interface FiltrosPedidosProps {
+  labelBuscador?: string;
+  nombreID: string; // requerido porque el buscador siempre está
+  setNombreID: (valor: string) => void; // requerido
+  desplegableTipo: string;
+  filtroSelecte?: DTOProducto | undefined;
+  onChangeFiltroSelect?: (item: DTOProducto | undefined) => void;
+  listaFiltros?: DTOProducto[];
+  orden: "ASC" | "DESC";
+  setOrden: (nuevoOrden: "ASC" | "DESC") => void;
+  hayFiltros: boolean;
+  limpiarFiltros: () => void;
+  porFecha?: boolean;
+  fechaDesde?: string;
+  fechaHasta?: string;
+  onChangeFechaDesde?: ((i: string) => void) | undefined;
+  onChangeFechaHasta?: ((i: string) => void) | undefined;
+}
+
+export default function FiltrosPedidos({
+  nombreID,
+  setNombreID,
+  labelBuscador = "Buscar",
+  desplegableTipo,
+  filtroSelecte,
+  onChangeFiltroSelect,
+  listaFiltros,
+  orden,
+  setOrden,
+  hayFiltros,
+  limpiarFiltros,
+  porFecha,
+  fechaDesde,
+  fechaHasta,
+  onChangeFechaDesde,
+  onChangeFechaHasta,
+}: FiltrosPedidosProps) {
+  const toggleOrden = () => setOrden(orden === "ASC" ? "DESC" : "ASC");
+
+  return (
+    <div className="mb-6 flex flex-col w-full gap-5 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end sm:p-5">
+      {/* Buscador */}
+      <label
+        htmlFor="filtro-busqueda"
+        className="flex flex-1 flex-col gap-1 min-w-40 max-w-120"
+      >
+        <span className="text-sm font-medium text-gray-700">
+          {labelBuscador}
+        </span>
+        <TextInput
+          id={"filtro-busqueda"}
+          onChange={setNombreID}
+          value={nombreID}
+          type="text"
+          placeholder="Buscar nombre o ID"
+          label={false}
+          colorStyle="trego-restaurante"
+        />
+      </label>
+
+      {/* Select Filtros */}
+      {listaFiltros && onChangeFiltroSelect && (
+        <>
+          <label
+            htmlFor="filtro-producto"
+            className="flex flex-1 flex-col gap-1 min-w-40 max-w-120"
+          >
+            <span className="text-sm font-medium text-gray-700">
+              {desplegableTipo}
+            </span>
+            <TextBuscador<DTOProducto>
+              items={listaFiltros}
+              mapToItem={(i) => ({
+                id: i.idProducto?.toString() ?? "",
+                label: i.nombre,
+              })}
+              onSelect={onChangeFiltroSelect}
+              selected={filtroSelecte}
+              placeholder="Buscar Producto"
+              cancelable
+            />
+          </label>
+        </>
+      )}
+
+      {porFecha ? (
+        <>
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-gray-700">Desde</span>
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={(e) => onChangeFechaDesde?.(e.target.value)}
+              className="rounded-xl border h-12 border-gray-400 px-4 py-2.5 text-sm focus:border-trego-orange focus:outline-none focus:ring-2 focus:ring-orange-100"
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-medium text-gray-700">Hasta</span>
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={(e) => onChangeFechaHasta?.(e.target.value)}
+              className="rounded-xl border h-12 border-gray-400 px-4 py-2.5 text-sm focus:border-trego-orange focus:outline-none focus:ring-2 focus:ring-orange-100"
+            />
+          </label>
+        </>
+      ) : undefined}
+
+      {/* Botones de acción */}
+      <div className="flex items-end gap-6">
+        {/* Orden */}
+        <div className="flex flex-col gap-1 min-w-11">
+          <span className="text-sm font-medium text-gray-700">Orden</span>
+          <button
+            type="button"
+            onClick={toggleOrden}
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 transition-colors"
+            title={`Ordenar ${orden === "ASC" ? "descendente" : "ascendente"}`}
+          >
+            {orden === "ASC" ? (
+              <ArrowUpAZ className="h-5 w-5" />
+            ) : (
+              <ArrowDownAZ className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+
+        {/* Limpiar */}
+        <div className="flex flex-col gap-1 min-w-11">
+          <span className="text-sm font-medium text-gray-700 invisible">
+            Acción
+          </span>
+          <button
+            type="button"
+            onClick={limpiarFiltros}
+            disabled={!hayFiltros}
+            className={`flex h-11 w-11 items-center justify-center rounded-xl border transition-colors ${
+              hayFiltros
+                ? "border-red-100 bg-red-50 text-red-600 hover:bg-red-100"
+                : "border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed"
+            }`}
+            title="Limpiar filtros"
+          >
+            <Trash2 className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,22 +1,43 @@
 import { useEffect, useState } from "react";
 import type { NotificationState } from "../types/NotificationState.js";
 import { EnumEstadoPedido } from "../../../data/EnumEstadoPedido.js";
-import { usePedidos } from "../utilitis/funcionesListado.js";
 import { AlertCircle, CheckCircle, Search } from "lucide-react";
 import CardPedidoAconfirmar from "../componentes/CardPedidoAconfirmar.js";
+import { usePedidos } from "../../../hooks/usePedidoRestaurante.js";
+import FiltrosPedidos from "../componentes/FiltrosPedidos.js";
+import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
+import { useFiltrosPedidos } from "../../../hooks/useFiltrosPedidos.js";
+import type { DTOProducto } from "../../../data/DTOProducto.js";
 
 export default function ListarCancelados() {
-  const [searchTerm, setSearchTerm] = useState("");
   const [notification, setNotification] = useState<NotificationState>({
     show: false,
     message: "",
     type: "success",
   });
 
+  const { productos, loadingProductos, errorProductos, recargarProductos } =
+    useProductoRestaurante();
+
   // Obtener pedidos con estado "Solicitado"
   const { pedidos, loading, error, recargar } = usePedidos(
-    EnumEstadoPedido.Cancelado, 1000
+    EnumEstadoPedido.Cancelado,
+    1000,
   );
+
+  const {
+    searchTerm,
+    setSearchTerm,
+    orden,
+    setOrden,
+    pedidosFiltrados,
+    hayFiltros,
+    limpiarFiltros,
+    fechaDesde,
+    fechaHasta,
+    setFechaDesde,
+    setFechaHasta,
+  } = useFiltrosPedidos(pedidos);
 
   const showNotification = (message: string, type: "success" | "error") => {
     setNotification({ show: true, message, type });
@@ -27,12 +48,16 @@ export default function ListarCancelados() {
   };
 
   useEffect(() => {
+    if (errorProductos) showNotification(errorProductos, "error");
+  }, [errorProductos]);
+
+  useEffect(() => {
     if (error) showNotification(error, "error");
   }, [error]);
 
-  const pedidosFiltrados = pedidos.filter((pedido) =>
-    pedido.nombreCliente?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const handleLimpiarFiltros = () => {
+    limpiarFiltros();
+  };
 
   return (
     <div className="flex-1 w-full h-full p-4 md:p-8 overflow-y-auto bg-gray-50 text-gray-800 font-sans">
@@ -57,17 +82,21 @@ export default function ListarCancelados() {
         Pedidos a Confirmar
       </h1>
 
-      <div className="max-w-2xl mx-auto mb-8 relative group">
-        <Search
-          className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
-          size={20}
-        />
-        <input
-          type="text"
-          placeholder="Buscar por cliente..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white text-gray-700 rounded-2xl py-3.5 pl-12 pr-4 outline-none border border-gray-200 shadow-sm focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all"
+      <div className="max-w-5xl mx-auto mb-8 relative group">
+        <FiltrosPedidos
+          labelBuscador="Buscar por Nombre o ID"
+          nombreID={searchTerm}
+          setNombreID={setSearchTerm}
+          desplegableTipo="Producto Pedido"
+          orden={orden}
+          setOrden={setOrden}
+          hayFiltros={hayFiltros}
+          limpiarFiltros={handleLimpiarFiltros}
+          porFecha
+          fechaDesde={fechaDesde}
+          fechaHasta={fechaHasta}
+          onChangeFechaDesde={setFechaDesde}
+          onChangeFechaHasta={setFechaHasta}
         />
       </div>
 
@@ -88,10 +117,7 @@ export default function ListarCancelados() {
           </div>
         ) : (
           pedidosFiltrados.map((pedido) => (
-            <CardPedidoAconfirmar
-              key={pedido.idPedido}
-              pedido={pedido}
-            />
+            <CardPedidoAconfirmar key={pedido.idPedido} pedido={pedido} />
           ))
         )}
       </div>

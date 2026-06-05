@@ -7,21 +7,39 @@ import {
   reembolsarPedido,
 } from "../../../api/apiRestaurante.js";
 import type { NotificationState } from "../types/NotificationState.js";
-import { usePedidos } from "../utilitis/funcionesListado.js";
 import type { DTOPedido } from "../../../data/DTOPedido.js";
+import { usePedidos } from "../../../hooks/usePedidoRestaurante.js";
+import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
+import { filtrarPedidosPorProducto } from "../utilitis/funcionesListado.js";
+import type { DTOProducto } from "../../../data/DTOProducto.js";
+import { useFiltrosPedidos } from "../../../hooks/useFiltrosPedidos.js";
+import FiltrosPedidos from "../componentes/FiltrosPedidos.js";
 
 export default function ListarSinConfirmar() {
-  const [searchTerm, setSearchTerm] = useState("");
   const [notification, setNotification] = useState<NotificationState>({
     show: false,
     message: "",
     type: "success",
   });
-
   // Obtener pedidos con estado "Solicitado"
   const { pedidos, loading, error, recargar, removerPedidoLocal } = usePedidos(
-    EnumEstadoPedido.Pagado, 20  
+    EnumEstadoPedido.Pagado,
+    20,
   );
+  const { productos, loadingProductos, errorProductos, recargarProductos } =
+    useProductoRestaurante();
+
+  const {
+    searchTerm,
+    setSearchTerm,
+    productoSeleccionadoId,
+    setProductoSeleccionadoId,
+    orden,
+    setOrden,
+    pedidosFiltrados,
+    hayFiltros,
+    limpiarFiltros,
+  } = useFiltrosPedidos(pedidos);
 
   const showNotification = (message: string, type: "success" | "error") => {
     setNotification({ show: true, message, type });
@@ -30,6 +48,11 @@ export default function ListarSinConfirmar() {
       4000,
     );
   };
+  const [productoSelect, setProductoSelect] = useState<DTOProducto>();
+
+  useEffect(() => {
+    if (errorProductos) showNotification(errorProductos, "error");
+  }, [errorProductos]);
 
   useEffect(() => {
     if (error) showNotification(error, "error");
@@ -86,9 +109,10 @@ export default function ListarSinConfirmar() {
     }
   };
 
-  const pedidosFiltrados = pedidos.filter((pedido) =>
-    pedido.nombreCliente?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const handleLimpiarFiltros = () => {
+  limpiarFiltros();   
+  setProductoSelect(undefined); 
+};
 
   return (
     <div className="flex-1 w-full h-full p-4 md:p-8 overflow-y-auto bg-gray-50 text-gray-800 font-sans">
@@ -113,17 +137,22 @@ export default function ListarSinConfirmar() {
         Pedidos a Confirmar
       </h1>
 
-      <div className="max-w-2xl mx-auto mb-8 relative group">
-        <Search
-          className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
-          size={20}
-        />
-        <input
-          type="text"
-          placeholder="Buscar por cliente..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full bg-white text-gray-700 rounded-2xl py-3.5 pl-12 pr-4 outline-none border border-gray-200 shadow-sm focus:border-green-500 focus:ring-4 focus:ring-green-500/10 transition-all"
+      <div className="max-w-5xl mx-auto mb-8 relative group">
+        <FiltrosPedidos
+          labelBuscador="Buscar por Nombre o ID"
+          nombreID={searchTerm}
+          setNombreID={setSearchTerm}
+          desplegableTipo="Producto Pedido"
+          filtroSelecte={productoSelect}
+          onChangeFiltroSelect={(item) => {
+            (setProductoSelect(item),
+              setProductoSeleccionadoId(item?.idProducto));
+          }}
+          listaFiltros={productos}
+          orden={orden}
+          setOrden={setOrden}
+          hayFiltros={hayFiltros}
+          limpiarFiltros={handleLimpiarFiltros}
         />
       </div>
 
@@ -148,7 +177,7 @@ export default function ListarSinConfirmar() {
               key={pedido.idPedido}
               pedido={pedido}
               onConfirmar={handleConfirmar}
-              onCancelar={handleCancelar} 
+              onCancelar={handleCancelar}
             />
           ))
         )}

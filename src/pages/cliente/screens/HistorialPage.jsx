@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import { AlertCircle, CheckCircle2, History, Store } from "lucide-react";
 import { obtenerMisPedidos } from "../../../api/pedidosApi.js";
 import { listarRestaurantesTodos } from "../../../api/restaurantesApi.js";
-import Header from "../../../components/body/Header.js";
 import EmptyState from "../../../components/EmptyState.jsx";
 import RealizarReclamoModal from "../../../components/reclamos/RealizarReclamoModal.jsx";
 
