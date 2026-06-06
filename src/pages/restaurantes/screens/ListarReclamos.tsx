@@ -1,49 +1,39 @@
 import { useEffect, useState } from "react";
 import type { NotificationState } from "../types/NotificationState.js";
-import {
-  actualizarEstadoPedido,
-  listarPedidos,
-  reembolsarPedido,
-} from "../../../api/apiRestaurante.js";
 import { EnumEstadoPedido } from "../../../data/EnumEstadoPedido.js";
-import type { DTOPedido } from "../../../data/DTOPedido.js";
 import { AlertCircle, CheckCircle, Search } from "lucide-react";
 import CardPedidoAconfirmar from "../componentes/CardPedidoAconfirmar.js";
 import { usePedidos } from "../../../hooks/usePedidoRestaurante.js";
+import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
 import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
 import { useFiltrosPedidos } from "../../../hooks/useFiltrosPedidos.js";
-import type { DTOProducto } from "../../../data/DTOProducto.js";
-import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
 
-export default function ListarEnCamino() {
+export default function ListarReclamoss() {
   const [notification, setNotification] = useState<NotificationState>({
     show: false,
     message: "",
     type: "success",
   });
 
-  const { productos, loadingProductos, errorProductos, recargarProductos } =
-    useProductoRestaurante();
-
   // Obtener pedidos con estado "Solicitado"
-  const { pedidos, loading, error, recargar, removerPedidoLocal } = usePedidos(
-    EnumEstadoPedido.EnCamino,
-    180,
+  const { pedidos, loading, error, recargar } = usePedidos(
+    EnumEstadoPedido.Reembolsado,
+    1000,
   );
 
   const {
     searchTerm,
     setSearchTerm,
-    productoSeleccionadoId,
-    setProductoSeleccionadoId,
     orden,
     setOrden,
     pedidosFiltrados,
     hayFiltros,
     limpiarFiltros,
+    fechaDesde,
+    fechaHasta,
+    setFechaDesde,
+    setFechaHasta,
   } = useFiltrosPedidos(pedidos);
-
-  const [productoSelect, setProductoSelect] = useState<DTOProducto>();
 
   const showNotification = (message: string, type: "success" | "error") => {
     setNotification({ show: true, message, type });
@@ -53,51 +43,12 @@ export default function ListarEnCamino() {
     );
   };
 
-  const handleActualizarEstado = async (
-    pedido: DTOPedido,
-    nuevoEstado: EnumEstadoPedido,
-  ) => {
-    try {
-      if (nuevoEstado === EnumEstadoPedido.Cancelado) {
-        if (!pedido || !pedido.idPedido) {
-          showNotification("Sin pedido seleccionado.", "error");
-          return;
-        }
-        await reembolsarPedido(pedido);
-        removerPedidoLocal(pedido.idPedido);
-        showNotification("Pedido cancelado por el restaurante.", "error");
-      } else {
-        if (!pedido || !pedido.idPedido) {
-          showNotification("Sin pedido seleccionado.", "error");
-          return;
-        }
-        await actualizarEstadoPedido({ pedido, estado: nuevoEstado });
-        removerPedidoLocal(pedido.idPedido);
-        showNotification(
-          `Pedido #${pedido.idPedido} actualizado a ${nuevoEstado}.`,
-          "success",
-        );
-      }
-    } catch (error) {
-      const mensaje =
-        error instanceof Error
-          ? error.message
-          : "Error al actualizar el pedido.";
-      showNotification(mensaje, "error");
-    }
-  };
-
-  useEffect(() => {
-    if (errorProductos) showNotification(errorProductos, "error");
-  }, [errorProductos]);
-
   useEffect(() => {
     if (error) showNotification(error, "error");
   }, [error]);
 
   const handleLimpiarFiltros = () => {
     limpiarFiltros();
-    setProductoSelect(undefined);
   };
 
   return (
@@ -120,7 +71,7 @@ export default function ListarEnCamino() {
       )}
 
       <h1 className="text-2xl font-black text-gray-800 text-center mb-6 uppercase tracking-tight">
-        Pedidos a Confirmar
+        Reclamos de pedidos
       </h1>
 
       <div className="max-w-5xl mx-auto mb-8 relative group">
@@ -129,20 +80,15 @@ export default function ListarEnCamino() {
           nombreID={searchTerm}
           setNombreID={setSearchTerm}
           desplegableTipo="Producto Pedido"
-          filtroSelecte={productoSelect}
-          onChangeFiltroSelect={(item) => {
-            (setProductoSelect(item),
-              setProductoSeleccionadoId(item?.idProducto));
-          }}
-          listaFiltros={productos}
-          mapToItem={(i) => ({
-                id: i?.toString() ?? "",
-                label: i.nombre,
-              })}
           orden={orden}
           setOrden={setOrden}
           hayFiltros={hayFiltros}
           limpiarFiltros={handleLimpiarFiltros}
+          porFecha
+          fechaDesde={fechaDesde}
+          fechaHasta={fechaHasta}
+          onChangeFechaDesde={setFechaDesde}
+          onChangeFechaHasta={setFechaHasta}
         />
       </div>
 
@@ -151,7 +97,7 @@ export default function ListarEnCamino() {
           <div className="flex justify-center items-center py-12">
             <p className="text-gray-500 font-medium flex items-center gap-2">
               <span className="animate-spin h-5 w-5 border-2 border-green-600 border-t-transparent rounded-full"></span>
-              Cargando pedidos...
+              Cargando reclamos...
             </p>
           </div>
         ) : pedidosFiltrados.length === 0 ? (
@@ -163,11 +109,7 @@ export default function ListarEnCamino() {
           </div>
         ) : (
           pedidosFiltrados.map((pedido) => (
-            <CardPedidoAconfirmar
-              key={pedido.idPedido}
-              pedido={pedido}
-              onActualizarEstado={handleActualizarEstado}
-            />
+            <CardPedidoAconfirmar key={pedido.idPedido} pedido={pedido} />
           ))
         )}
       </div>

@@ -1,15 +1,16 @@
 import { useState } from "react";
-import Header from "../../../components/body/Header.js";
 import { TextInput } from "../../../components/TextInput.js";
-import Sidebar from "../../../components/body/Sidebar.js";
 import type { ImageField } from "../../../components/typos/ImageField.js";
 import ImageUploadField from "../../../components/ImagenUploadField.js";
 import type { DTORestaurante } from "../../../data/DTORestaurante.js";
 
-import AddressAutocomplete from "../../../components/DireccionAutocomplete.js";
+import DireccionAutocomplete from "../../../components/DireccionAutocomplete.js";
 import type { DireccionGeoapify } from "../../../data/DireccionGeoapify.js";
 import type { DTODireccion } from "../../../data/DTODireccion.js";
-import { enviarSolicitudAltaRestaurante, obtenerFirmaCloudinary } from "../../../api/apiRestaurante.js";
+import {
+  enviarSolicitudAltaRestaurante,
+  obtenerFirmaCloudinary,
+} from "../../../api/apiRestaurante.js";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -19,6 +20,8 @@ interface FormData {
   telefono: string;
   descripcion: string;
   direccion: string;
+  numeroP: string;
+  esquina: string;
 }
 
 type SubmitStep = "FORM" | "LOADING" | "SUCCESS";
@@ -30,7 +33,6 @@ function validateRUT(rut: string): boolean {
 }
 
 function validateTelefono(tel: string): boolean {
-  // Uruguay: +598 followed by 8 digits (after removing prefix spaces)
   const digits = tel.replace(/\D/g, "");
   return digits.length >= 11 && digits.startsWith("598");
 }
@@ -44,6 +46,8 @@ export default function SolicitarAltaRestaurante() {
     telefono: "",
     descripcion: "",
     direccion: "",
+    numeroP: "",
+    esquina: "",
   });
 
   const [errors, setErrors] = useState<
@@ -51,6 +55,9 @@ export default function SolicitarAltaRestaurante() {
   >({});
 
   const [direccionSeleccionada, setDireccionSeleccionada] =
+    useState<DireccionGeoapify | null>(null);
+
+  const [esquinaSeleccionada, setEsquinaSeleccionada] =
     useState<DireccionGeoapify | null>(null);
 
   const [imagePerfil, setImagePerfil] = useState<ImageField>({
@@ -135,37 +142,102 @@ export default function SolicitarAltaRestaurante() {
 
   // ── Validation ────────────────────────────────────────────────────────────
   const validate = (): boolean => {
+    console.log("=== INICIO VALIDACIÓN ===");
+    console.log("form:", form);
+    console.log("direccionSeleccionada:", direccionSeleccionada);
+    console.log("imagePerfil:", imagePerfil);
+    console.log("imagePortada:", imagePortada);
+
     const newErrors: typeof errors = {};
 
-    if (!form.nombre.trim()) newErrors.nombre = "El nombre es requerido";
+    // 1. Validación nombre
+    if (!form.nombre.trim()) {
+      newErrors.nombre = "El nombre es requerido";
+      console.log("❌ Error: nombre vacío");
+    } else {
+      console.log("✅ nombre OK:", form.nombre);
+    }
+
+    // 2. Validación RUT
     if (!form.rut.trim()) {
       newErrors.rut = "El RUT es requerido";
+      console.log("❌ Error: RUT vacío");
     } else if (!validateRUT(form.rut)) {
       newErrors.rut = "El RUT debe tener 12 dígitos";
+      console.log(
+        "❌ Error: RUT inválido (validateRUT retornó false)",
+        form.rut,
+      );
+    } else {
+      console.log("✅ RUT OK:", form.rut);
     }
+
+    // 3. Validación teléfono
     if (!form.telefono.trim()) {
       newErrors.telefono = "El teléfono es requerido";
+      console.log("❌ Error: teléfono vacío");
     } else if (!validateTelefono(form.telefono)) {
       newErrors.telefono = "Ingresá un número uruguayo válido (+598 XXXXXXXX)";
+      console.log(
+        "❌ Error: teléfono inválido (validateTelefono false)",
+        form.telefono,
+      );
+    } else {
+      console.log("✅ teléfono OK:", form.telefono);
     }
-    if (!form.descripcion.trim())
-      newErrors.descripcion = "La descripción es requerida";
-    if (!direccionSeleccionada)
-      newErrors.direccion = "La dirección es requerida";
 
+    // 4. Validación descripción
+    if (!form.descripcion.trim()) {
+      newErrors.descripcion = "La descripción es requerida";
+      console.log("❌ Error: descripción vacía");
+    } else {
+      console.log("✅ descripción OK:", form.descripcion);
+    }
+
+    // 5. Validación dirección
+    if (!direccionSeleccionada) {
+      newErrors.direccion = "La dirección es requerida";
+      console.log("❌ Error: direccionSeleccionada es null/undefined/false");
+    } else {
+      console.log("✅ dirección OK:", direccionSeleccionada);
+    }
+
+    if (!form.numeroP.trim()) {
+      newErrors.numeroP = "Numero de Puerta";
+    }
+
+    // 6. Validación imágenes
     const imgErrors = {
       perfil: !imagePerfil.cloudUrl && imagePerfil.uploadState !== "done",
       portada: !imagePortada.cloudUrl && imagePortada.uploadState !== "done",
     };
+    console.log("imgErrors calculado:", imgErrors);
+    console.log(
+      "  - imagePerfil.cloudUrl:",
+      imagePerfil.cloudUrl,
+      "uploadState:",
+      imagePerfil.uploadState,
+    );
+    console.log(
+      "  - imagePortada.cloudUrl:",
+      imagePortada.cloudUrl,
+      "uploadState:",
+      imagePortada.uploadState,
+    );
 
     setErrors(newErrors);
     setImageErrors(imgErrors);
 
-    return (
+    const isValid =
       Object.keys(newErrors).length === 0 &&
       !imgErrors.perfil &&
-      !imgErrors.portada
-    );
+      !imgErrors.portada;
+
+    console.log("Resumen de errores:", newErrors);
+    console.log("¿Validación exitosa?", isValid);
+    console.log("=== FIN VALIDACIÓN ===\n");
+
+    return isValid;
   };
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -177,12 +249,13 @@ export default function SolicitarAltaRestaurante() {
 
     try {
       const dir: DTODireccion = {
-        apartamento: 0,
+        tag: "", 
         calle: direccionSeleccionada?.calle || "",
-        esquina: direccionSeleccionada?.esquina || "",
+        numero: direccionSeleccionada?.numero?.toString() || "", 
+        apartamento: "", 
+        esquina: esquinaSeleccionada?.calle || "",
         latitud: direccionSeleccionada?.latitud || 0,
         longitud: direccionSeleccionada?.longitud || 0,
-        numero: direccionSeleccionada?.numero || 0,
       };
       const resto: DTORestaurante = {
         nombre: form.nombre,
@@ -222,6 +295,8 @@ export default function SolicitarAltaRestaurante() {
       telefono: "",
       descripcion: "",
       direccion: "",
+      numeroP: "",
+      esquina: "",
     });
     setErrors({});
     setImagePerfil({
@@ -242,184 +317,226 @@ export default function SolicitarAltaRestaurante() {
 
   return (
     <>
-        <div className="flex-1 flex flex-col items-center justify-start px-4 py-6 w-full">
-          <div className="w-full max-w-6xl">
-            <h1 className="text-3xl font-bold text-trego-restaurante text-center mb-4 tracking-tight">
-              Alta Restaurante
-            </h1>
+      <div className="flex-1 flex flex-col items-center justify-start px-4 py-6 w-full">
+        <div className="w-full max-w-6xl">
+          <h1 className="text-3xl font-bold text-trego-restaurante text-center mb-4 tracking-tight">
+            Alta Restaurante
+          </h1>
 
-            {/* ── SUCCESS ── */}
-            {step === "SUCCESS" && (
-              <div className="flex flex-col items-center gap-6 py-16">
-                <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
-                  <svg
-                    className="w-10 h-10 text-trego-restaurante"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
+          {/* ── SUCCESS ── */}
+          {step === "SUCCESS" && (
+            <div className="flex flex-col items-center gap-6 py-16">
+              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center">
+                <svg
+                  className="w-10 h-10 text-trego-restaurante"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800">
+                ¡Solicitud enviada!
+              </h2>
+              <p className="text-gray-500 text-center max-w-sm">
+                Nos comunicaremos a la brevedad. Recibirás un correo con
+                información sobre el proceso de verificación.
+              </p>
+            </div>
+          )}
+
+          {/* ── LOADING ── */}
+          {step === "LOADING" && (
+            <div className="flex flex-col items-center gap-4 py-16">
+              <div className="w-12 h-12 rounded-full border-4 border-green-200 border-t-trego-restaurante animate-spin" />
+              <p className="text-sm text-gray-400">Enviando solicitud...</p>
+            </div>
+          )}
+
+          {/* ── FORM ── */}
+          {step === "FORM" && (
+            <div className="bg-white w-full rounded-3xl shadow-lg  shadow-green-50 p-8 flex flex-col gap-8 justify-center">
+              {/* API Error */}
+              {apiError && (
+                <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 flex items-start gap-2">
+                  <span className="mt-0.5 shrink-0">⚠</span>
+                  <span>{apiError}</span>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800">
-                  ¡Solicitud enviada!
-                </h2>
-                <p className="text-gray-500 text-center max-w-sm">
-                  Nos comunicaremos a la brevedad. Recibirás un correo con
-                  información sobre el proceso de verificación.
-                </p>
-              </div>
-            )}
+              )}
 
-            {/* ── LOADING ── */}
-            {step === "LOADING" && (
-              <div className="flex flex-col items-center gap-4 py-16">
-                <div className="w-12 h-12 rounded-full border-4 border-green-200 border-t-trego-restaurante animate-spin" />
-                <p className="text-sm text-gray-400">Enviando solicitud...</p>
-              </div>
-            )}
-
-            {/* ── FORM ── */}
-            {step === "FORM" && (
-              <div className="bg-white w-full rounded-3xl shadow-lg  shadow-green-50 p-8 flex flex-col gap-8 justify-center">
-                {/* API Error */}
-                {apiError && (
-                  <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 flex items-start gap-2">
-                    <span className="mt-0.5 shrink-0">⚠</span>
-                    <span>{apiError}</span>
+              {/* Row 1: Images + descripcion */}
+              <div className="flex flex-row md:flex-row gap-4">
+                <div className="flex flex-col gap-15">
+                  {/* Images */}
+                  <div className="flex flex-row md:flex-row gap-20 shrink-0">
+                    <ImageUploadField
+                      label="Imagen de Perfil"
+                      imageField={imagePerfil}
+                      onImageChange={(f) => handleImageChange("perfil", f)}
+                      hasError={imageErrors.perfil}
+                    />
+                    <ImageUploadField
+                      label="Imagen de Portada"
+                      imageField={imagePortada}
+                      onImageChange={(f) => handleImageChange("portada", f)}
+                      hasError={imageErrors.portada}
+                    />
                   </div>
-                )}
 
-                {/* Row 1: Images + descripcion */}
-                <div className="flex flex-row md:flex-row gap-4">
-                  <div className="flex flex-col gap-15">
-                    {/* Images */}
-                    <div className="flex flex-row md:flex-row gap-20 shrink-0">
-                      <ImageUploadField
-                        label="Imagen de Perfil"
-                        imageField={imagePerfil}
-                        onImageChange={(f) => handleImageChange("perfil", f)}
-                        hasError={imageErrors.perfil}
-                      />
-                      <ImageUploadField
-                        label="Imagen de Portada"
-                        imageField={imagePortada}
-                        onImageChange={(f) => handleImageChange("portada", f)}
-                        hasError={imageErrors.portada}
-                      />
-                    </div>
-
-                    {/* Descripcion */}
-                    <div className="w-120 max-w-full -mt-5 mx-auto">
-                      <h1 className="text-sm font-semibold px-5">
-                        Descripción
-                      </h1>
-                      <textarea
-                        value={form.descripcion}
-                        onChange={(e) => set("descripcion")(e.target.value)}
-                        placeholder="Describe tu restaurante, productos y público objetivo..."
-                        rows={4}
-                        className="peer w-full border border-gray-400 rounded-3xl p-5 outline-none
+                  {/* Descripcion */}
+                  <div className="w-120 max-w-full -mt-5 mx-auto">
+                    <h1 className="text-sm font-semibold px-5">Descripción</h1>
+                    <textarea
+                      value={form.descripcion}
+                      onChange={(e) => set("descripcion")(e.target.value)}
+                      placeholder="Describe tu restaurante, productos y público objetivo..."
+                      rows={4}
+                      className="peer w-full border border-gray-400 rounded-3xl p-5 outline-none
                      focus:border-trego-restaurante focus:ring-1 focus:ring-trego-restaurante"
+                    />
+                    {errors.descripcion && (
+                      <p className="text-red-500 text-xs px-5 mt-1">
+                        {errors.descripcion}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Nombre + Razon Social + RUT + tel + dir*/}
+                <div className="flex-1 flex w-full justify-center">
+                  <div className="flex w-110 flex-col gap-5">
+                    <div>
+                      <h1 className="text-sm font-semibold px-5">Nombre</h1>
+                      <TextInput
+                        value={form.nombre}
+                        onChange={set("nombre")}
+                        placeholder="El Restaurante"
+                        colorStyle="trego-restaurante"
+                        label={false}
+                        error={errors.nombre ?? ""}
                       />
                     </div>
-                  </div>
 
-                  {/* Nombre + Razon Social + RUT + tel + dir*/}
-                  <div className="flex-1 flex w-full justify-center">
-                    <div className="flex w-110 flex-col gap-6">
-                      <div>
-                        <h1 className="text-sm font-semibold px-5">Nombre</h1>
-                        <TextInput
-                          value={form.nombre}
-                          onChange={set("nombre")}
-                          placeholder="El Restaurante"
-                          colorStyle="trego-restaurante"
-                          label={false}
-                        />
-                      </div>
-
-                      <div>
-                        <h1 className="text-sm font-semibold px-5">RUT</h1>
-                        <TextInput
-                          value={form.rut}
-                          onChange={set("rut")}
-                          placeholder="XXXXXXXXXXXX"
-                          colorStyle="trego-restaurante"
-                          label={false}
-                        />
-                      </div>
-                      <div>
-                        <h1 className="text-sm font-semibold px-5">
-                          Numero de telefono
-                        </h1>
-                        <TextInput
-                          value={form.telefono}
-                          onChange={set("telefono")}
-                          placeholder="+598 99 000 000"
-                          colorStyle="trego-restaurante"
-                          label={false}
-                        />
-                      </div>
-                      <div>
-                        <AddressAutocomplete
-                          label="Dirección"
-                          value={form.direccion}
-                          error={errors.direccion} // Si validaste que exista, le pasas el error aquí
+                    <div>
+                      <h1 className="text-sm font-semibold px-5">RUT</h1>
+                      <TextInput
+                        value={form.rut}
+                        onChange={set("rut")}
+                        placeholder="XXXXXXXXXXXX"
+                        colorStyle="trego-restaurante"
+                        label={false}
+                        error={errors.rut ?? ""}
+                      />
+                    </div>
+                    <div>
+                      <h1 className="text-sm font-semibold px-5">
+                        Numero de telefono
+                      </h1>
+                      <TextInput
+                        value={form.telefono}
+                        onChange={set("telefono")}
+                        placeholder="+598 99 000 000"
+                        colorStyle="trego-restaurante"
+                        label={false}
+                        error={errors.telefono ?? ""}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-5">
+                      <DireccionAutocomplete
+                        label="Dirección"
+                        value={form.direccion}
+                        error={errors.direccion ?? ""}
+                        onChangeText={(texto) => {
+                          // Si el usuario edita a mano, guardamos el texto y borramos el objeto validado
+                          setForm((prev) => ({ ...prev, direccion: texto }));
+                          setDireccionSeleccionada(null);
+                          setErrors((prev) => ({
+                            ...prev,
+                            direccion: undefined,
+                          }));
+                        }}
+                        onSelectAddress={(dirCompletada) => {
+                          // Cuando hace clic en una opción, guardamos el objeto validado
+                          setDireccionSeleccionada(dirCompletada);
+                          setForm((prev) => ({
+                            ...prev,
+                            numeroP: dirCompletada.numero.toString(),
+                          }));
+                        }}
+                      />
+                      <div className="flex gap-5">
+                        <div>
+                          <h1 className="text-sm font-semibold px-5">
+                            N. Puerta
+                          </h1>
+                          <TextInput
+                            value={form.numeroP}
+                            onChange={set("numeroP")}
+                            placeholder="N. Puerta"
+                            colorStyle="trego-restaurante"
+                            label={false}
+                            error={errors.numeroP ?? ""}
+                          />
+                        </div>
+                        <DireccionAutocomplete
+                          label="Esquina"
+                          value={form.esquina}
                           onChangeText={(texto) => {
                             // Si el usuario edita a mano, guardamos el texto y borramos el objeto validado
-                            setForm((prev) => ({ ...prev, direccion: texto }));
-                            setDireccionSeleccionada(null);
+                            setForm((prev) => ({ ...prev, esquina: texto }));
+                            setEsquinaSeleccionada(null);
                             setErrors((prev) => ({
                               ...prev,
-                              direccion: undefined,
+                              esquina: undefined,
                             }));
                           }}
                           onSelectAddress={(dirCompletada) => {
                             // Cuando hace clic en una opción, guardamos el objeto validado
-                            setDireccionSeleccionada(dirCompletada);
+                            setEsquinaSeleccionada(dirCompletada);
                           }}
                         />
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row gap-10 px-10 pt-2">
-                  <button
-                    onClick={handleSubmit}
-                    className="
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row gap-10 px-10 pt-2">
+                <button
+                  onClick={handleSubmit}
+                  className="
                       flex-1 py-3.5 px-6 rounded-3xl
                       bg-trego-restaurante hover:bg-green-700
                       text-white text-base font-bold
                       transition-all duration-200
                       shadow-md hover:shadow-green-200
                     "
-                  >
-                    Confirmar Solicitud
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    className="
+                >
+                  Confirmar Solicitud
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="
                       flex-1 py-3.5 px-6 rounded-3xl
                       bg-gray-100 hover:bg-gray-200
                       text-gray-600 text-base font-semibold
                       transition-all duration-200
                     "
-                  >
-                    Cancelar
-                  </button>
-                </div>
+                >
+                  Cancelar
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
+      </div>
     </>
   );
 }

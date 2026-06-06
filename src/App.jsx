@@ -28,6 +28,9 @@ import { FiltrosUIProvider } from "./context/FiltrosContext.js";
 import { BusquedaProvider } from "./context/BusquedaContext.js";
 import LoginRestaurante from "./pages/logins/LoginRestaurante.js";
 import RegistrarRestaurante from "./pages/logins/RegistrarRestaurante.js";
+import ListarProductos from "./pages/restaurantes/screens/ListarProductos.js";
+import ModificarProducto from "./pages/restaurantes/screens/ModificarProducto.js";
+import ListarReclamoss from "./pages/restaurantes/screens/ListarReclamos.js";
 
 export default function AppRouter() {
   return (
@@ -85,6 +88,10 @@ export default function AppRouter() {
             element={<ListarCancelados />}
           />
           <Route
+            path="/restaurantes/pedidos-reclamos"
+            element={<ListarReclamoss />}
+          />
+          <Route
             path="/restaurantes/solicitarAlta"
             element={<SolicitarAltaRestaurante />}
           />
@@ -96,6 +103,14 @@ export default function AppRouter() {
                 volverPath="/restaurantes/ListarPedidosSinConfirmar"
               />
             }
+          />
+          <Route
+            path="/restaurantes/ListarProductos"
+            element={<ListarProductos />}
+          />
+          <Route
+            path="/restaurantes/ListarProductos/:id"
+            element={<ModificarProducto />}
           />
         </Route>
 

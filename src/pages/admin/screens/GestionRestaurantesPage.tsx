@@ -12,8 +12,8 @@ function formatearHora(hora?: string): string | null {
 }
 
 function formatearHorario(restaurante: DTORestaurante): string {
-const apertura = formatearHora(restaurante.horaApertura ?? undefined);
-const cierre = formatearHora(restaurante.horaCierre ?? undefined);
+  const apertura = formatearHora(restaurante.horaApertura ?? undefined);
+  const cierre = formatearHora(restaurante.horaCierre ?? undefined);
   if (apertura && cierre) return `${apertura} - ${cierre}`;
   return "—";
 }
@@ -97,9 +97,7 @@ export default function GestionRestaurantesPage() {
 
     try {
       await administradorApi.habilitarRestaurante(seleccionado.idRestaurante);
-      setMensajeExito(
-        `"${seleccionado.nombre}" fue habilitado correctamente.`,
-      );
+      setMensajeExito(`"${seleccionado.nombre}" fue habilitado correctamente.`);
       removerDeLista(seleccionado.idRestaurante);
       window.dispatchEvent(new Event("trego-restaurante-gestionado"));
     } catch {
@@ -139,214 +137,197 @@ export default function GestionRestaurantesPage() {
   };
 
   return (
-    <>
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Solicitudes de alta
-          </h1>
-          <p className="mt-2 text-gray-500">
-            Revisá y aprobá los restaurantes pendientes de habilitación.
-          </p>
-        </div>
+<>
+  <div className="mx-auto w-5xl px-4 py-8 sm:px-6">
+    <div className="mb-8">
+      <h1 className="text-3xl text-center font-bold text-gray-900">Solicitudes de alta</h1>
+      <p className="mt-2 text-center text-gray-500">
+        Revisá y aprobá los restaurantes pendientes de habilitación.
+      </p>
+    </div>
 
-        {mensajeExito && (
-          <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-            {mensajeExito}
+    {mensajeExito && (
+      <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 shadow-sm">
+        {mensajeExito}
+      </div>
+    )}
+
+    {error && !seleccionado && (
+      <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 shadow-sm">
+        {error}
+      </div>
+    )}
+
+    {cargando ? (
+      <div className="flex flex-col items-center gap-4 py-20">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500" />
+        <p className="text-sm text-gray-400">Cargando solicitudes...</p>
+      </div>
+    ) : restaurantes.length === 0 ? (
+      <EmptyState
+        mensaje="No hay solicitudes pendientes"
+        onLimpiarFiltros={undefined}
+      />
+    ) : (
+      <ul className="grid gap-4 m-auto bg-white p-5 sm:grid-cols-2">
+        {restaurantes.map((restaurante) => (
+          <li key={restaurante.idRestaurante}>
+            <button
+              type="button"
+              onClick={() => {
+                setSeleccionado(restaurante);
+                setVistaModal("detalle");
+                setMotivo("");
+                setError(null);
+              }}
+              className="group w-full gap-5 rounded-2xl border flex border-gray-300 bg-white p-5 text-left shadow-sm transition-all duration-200 hover:border-orange-300 hover:shadow-md hover:shadow-orange-100"
+            >
+              <p className="truncate text-lg font-semibold text-gray-900 group-hover:text-orange-600">
+                Restaurante: {restaurante.nombre} 
+              </p>
+              {restaurante.categoria && (
+                <span className="mt-2 inline-block rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-600 transition-colors group-hover:bg-orange-100">
+                  {restaurante.categoria}
+                </span>
+              )}
+            </button>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+
+  {seleccionado && (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/10 p-4 backdrop-blur-sm sm:items-center"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget && !accionLoading) cerrarModal();
+      }}
+      role="presentation"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Detalle de ${seleccionado.nombre}`}
+        className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl transition-all duration-200"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {seleccionado.fotoPortada && (
+          <div className="overflow-hidden rounded-t-2xl">
+            <img
+              src={seleccionado.fotoPortada}
+              alt={`Portada de ${seleccionado.nombre}`}
+              className="w-full max-h-64 object-contain bg-gray-100 sm:max-h-72"
+            />
           </div>
         )}
 
-        {error && !seleccionado && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-            {error}
+        <div className="max-h-[calc(90vh-12rem)] overflow-y-auto p-6">
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {seleccionado.nombre}
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={cerrarModal}
+              disabled={accionLoading}
+              className="rounded-lg px-2 py-1 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+              aria-label="Cerrar"
+            >
+              ✕
+            </button>
           </div>
-        )}
 
-        {cargando ? (
-          <div className="flex flex-col items-center gap-4 py-20">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500" />
-            <p className="text-sm text-gray-400">Cargando solicitudes...</p>
-          </div>
-        ) : restaurantes.length === 0 ? (
-          <EmptyState mensaje="No hay solicitudes pendientes" onLimpiarFiltros={undefined} />
-        ) : (
-          <ul className="grid gap-4 sm:grid-cols-2">
-            {restaurantes.map((restaurante) => (
-              <li key={restaurante.idRestaurante}>
+          {error && (
+            <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 shadow-sm">
+              {error}
+            </div>
+          )}
+
+          {vistaModal === "detalle" ? (
+            <>
+              <dl className="grid gap-4 sm:grid-cols-2">
+                <CampoDetalle etiqueta="Nombre" valor={seleccionado.nombre ?? "—"} />
+                <CampoDetalle etiqueta="RUT" valor={seleccionado.rut ?? "—"} />
+                <CampoDetalle etiqueta="Teléfono" valor={seleccionado.telefono ?? "—"} />
+                <CampoDetalle etiqueta="Email" valor={seleccionado.email ?? "—"} />
+                <CampoDetalle
+                  etiqueta="Dirección"
+                  valor={formatearDireccion(seleccionado.direccion)}
+                />
+                <div className="sm:col-span-2">
+                  <CampoDetalle
+                    etiqueta="Descripción"
+                    valor={seleccionado.descripcion ?? "—"}
+                  />
+                </div>
+              </dl>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={() => {
-                    setSeleccionado(restaurante);
+                    setVistaModal("rechazar");
+                    setError(null);
+                  }}
+                  disabled={accionLoading}
+                  className="rounded-xl border border-red-200 px-5 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                >
+                  Rechazar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleHabilitar}
+                  disabled={accionLoading}
+                  className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 disabled:opacity-50"
+                >
+                  {accionLoading ? "Procesando..." : "Habilitar"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mb-3 text-sm text-gray-600">
+                Ingresá el motivo del rechazo. Se enviará por email al restaurante.
+              </p>
+              <textarea
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                rows={4}
+                placeholder="Motivo del rechazo..."
+                className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm transition placeholder:text-gray-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
+              />
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
                     setVistaModal("detalle");
                     setMotivo("");
                     setError(null);
                   }}
-                  className="w-full rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-orange-300 hover:shadow-md"
+                  disabled={accionLoading}
+                  className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
                 >
-                  <p className="truncate text-lg font-semibold text-gray-900">
-                    {restaurante.nombre}
-                  </p>
-                  {restaurante.categoria && (
-                    <span className="mt-2 inline-block rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-600">
-                      {restaurante.categoria}
-                    </span>
-                  )}
+                  Cancelar
                 </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {seleccionado && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget && !accionLoading) cerrarModal();
-          }}
-          role="presentation"
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Detalle de ${seleccionado.nombre}`}
-            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            {seleccionado.fotoPortada && (
-              <img
-                src={seleccionado.fotoPortada}
-                alt={`Portada de ${seleccionado.nombre}`}
-                className="h-40 w-full object-cover"
-              />
-            )}
-
-            <div className="p-6">
-              <div className="mb-6 flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {seleccionado.nombre}
-                  </h2>
-                </div>
                 <button
                   type="button"
-                  onClick={cerrarModal}
+                  onClick={handleRechazar}
                   disabled={accionLoading}
-                  className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                  aria-label="Cerrar"
+                  className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 disabled:opacity-50"
                 >
-                  ✕
+                  {accionLoading ? "Procesando..." : "Confirmar rechazo"}
                 </button>
               </div>
-
-              {error && (
-                <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                  {error}
-                </div>
-              )}
-
-              {vistaModal === "detalle" ? (
-                <>
-                  <dl className="grid gap-4 sm:grid-cols-2">
-
-                    <CampoDetalle
-                      etiqueta="RUT"
-                      valor={seleccionado.rut ?? "—"}
-                    />
-                    <CampoDetalle
-                      etiqueta="Teléfono"
-                      valor={seleccionado.telefono ?? "—"}
-                    />
-                    <CampoDetalle
-                      etiqueta="Email"
-                      valor={seleccionado.email ?? "—"}
-                    />
-                    <CampoDetalle
-                      etiqueta="Categoría"
-                      valor={seleccionado.categoria ?? "—"}
-                    />
-                    <CampoDetalle
-                      etiqueta="Horario"
-                      valor={formatearHorario(seleccionado)}
-                    />
-                    <div className="sm:col-span-2">
-                      <CampoDetalle
-                        etiqueta="Dirección"
-                        valor={formatearDireccion(seleccionado.direccion)}
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <CampoDetalle
-                        etiqueta="Descripción"
-                        valor={seleccionado.descripcion ?? "—"}
-                      />
-                    </div>
-                  </dl>
-
-                  <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setVistaModal("rechazar");
-                        setError(null);
-                      }}
-                      disabled={accionLoading}
-                      className="rounded-xl border border-red-200 px-5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
-                    >
-                      Rechazar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleHabilitar}
-                      disabled={accionLoading}
-                      className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-50"
-                    >
-                      {accionLoading ? "Procesando..." : "Habilitar"}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="mb-3 text-sm text-gray-600">
-                    Ingresá el motivo del rechazo. Se enviará por email al
-                    restaurante.
-                  </p>
-                  <textarea
-                    value={motivo}
-                    onChange={(e) => setMotivo(e.target.value)}
-                    rows={4}
-                    placeholder="Motivo del rechazo..."
-                    className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200"
-                  />
-
-                  <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setVistaModal("detalle");
-                        setMotivo("");
-                        setError(null);
-                      }}
-                      disabled={accionLoading}
-                      className="rounded-xl border border-gray-200 px-5 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRechazar}
-                      disabled={accionLoading}
-                      className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-                    >
-                      {accionLoading ? "Procesando..." : "Confirmar rechazo"}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+            </>
+          )}
         </div>
-      )}
-    </>
+      </div>
+    </div>
+  )}
+</>
   );
 }

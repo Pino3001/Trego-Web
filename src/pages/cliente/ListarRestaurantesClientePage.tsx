@@ -2,15 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import FiltersModal from "../../components/FiltersModal.jsx";
 import LocationPrompt from "../../components/LocationPrompt.jsx";
 import EmptyState from "../../components/EmptyState.jsx";
-import RestauranteClienteCard from "../../components/cliente/RestauranteClienteCard.tsx";
-import { IconRefresh } from "../../components/icons";
 import Header from "../../components/body/Header.js";
 import {
   leerPrefUbicacion,
   ubicacionPromptYaRespondido,
   useGeolocation,
 } from "../../hooks/useGeolocation.js";
-import { useRestaurantesCliente } from "../../hooks/useRestaurantesCliente.js";
+import { useRestaurantesCliente, type FiltrosRestauranteCliente } from "../../hooks/useRestaurantesCliente.js";
+import { IconRefresh } from "../../components/icons.jsx";
+import RestauranteClienteCard from "../../components/cliente/RestauranteClienteCard.js";
 
 const DEBOUNCE_MS = 400;
 
@@ -67,8 +67,8 @@ export default function ListarRestaurantesClientePage() {
     if (!geo.tieneUbicacion || !geo.coords) return;
     cargarPorDireccion({
       calle: "",
-      numero: 0,
-      apartamento: 0,
+      numero: "",
+      apartamento: "",
       esquina: "",
       latitud: geo.coords.latitud,
       longitud: geo.coords.longitud,
@@ -214,7 +214,7 @@ export default function ListarRestaurantesClientePage() {
         abierto={filtrosAbiertos}
         filtros={filtros}
         onCerrar={() => setFiltrosAbiertos(false)}
-        onAplicar={(nuevos) => aplicarFiltros(nuevos)}
+        onAplicar={(nuevos: FiltrosRestauranteCliente) => aplicarFiltros(nuevos)}
       />
     </div>
   );

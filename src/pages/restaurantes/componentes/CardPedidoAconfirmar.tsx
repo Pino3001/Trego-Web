@@ -10,6 +10,7 @@ import type { DTOPedido } from "../../../data/DTOPedido.js";
 import {
   formatearDireccion,
   tiempoTranscurrido,
+  toDateString,
 } from "../utilitis/funcionesListado.js";
 
 interface Props {
@@ -98,11 +99,11 @@ export default function CardPedidoAconfirmar({
           </div>
         ) : pedido.estado === EnumEstadoPedido.Cancelado ? (
           <div className="flex items-center gap-1.5 text-xs font-bold">
-            <span>Cancelado</span>
+            <span>Cancelado - Pedido el: {toDateString(pedido.fechaCreacion)}</span>
           </div>
         ) : (
           <div className="flex items-center gap-1.5 text-xs font-bold">
-            <span>Entregado</span>
+            <span>Entregado - Pedido el: {toDateString(pedido.fechaCreacion)}</span>
           </div>
         )}
       </div>

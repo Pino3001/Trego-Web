@@ -24,57 +24,42 @@ export function tiempoTranscurrido(horaCreacion: string | undefined): number {
   return Math.max(0, Math.floor((ahora - creado) / 60000));
 }
 
-export function usePedidos(estado: EnumEstadoPedido, intervaloSegundos = 15) {
-  const [pedidos, setPedidos] = useState<DTOPedido[]>([]);
-  // El loading ahora representará SOLO la carga inicial
-  const [loading, setLoading] = useState(true); 
-  const [error, setError] = useState<string | null>(null);
+/**
+ * Filtra los pedidos que contienen un producto con el idProducto dado.
+ * @param pedidos - array de DTOPedido
+ * @param idProducto - id del producto a buscar (number)
+ * @returns pedidos que incluyen ese producto
+ */
+export const filtrarPedidosPorProducto = (
+  pedidos: DTOPedido[],
+  idProducto: number | undefined,
+): DTOPedido[] => {
+  return pedidos.filter((pedido) =>
+    pedido.productos?.some((pp) => pp.producto?.idProducto === idProducto),
+  );
+};
 
-  // Añadimos un parámetro 'silencioso' que por defecto es falso
-  const fetchPedidos = async (silencioso = false) => {
-    // Si no es silencioso (carga inicial), mostramos el spinner
-    if (!silencioso) setLoading(true); 
-    setError(null);
-    
-    try {
-      const data = await listarPedidos({ estado });
-      // Aquí asumo que tu lógica original de errores se mantiene
-      const errores: DTOPedido[] = [];
-      
-      setPedidos(data);
-      if (errores.length > 0) {
-        setError(`${errores.length} pedido(s) ignorado(s) por no contener productos.`);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar pedidos");
-    } finally {
-      // Solo quitamos el loading si fue una carga principal
-      if (!silencioso) setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    // 1. Ejecutar la primera carga con spinner
-    fetchPedidos(false); 
-
-    // 2. Configurar el Polling (consultar cada X segundos en modo silencioso)
-    const intervalId = setInterval(() => {
-      fetchPedidos(true); // true = silencioso, actualiza datos sin mostrar spinner
-    }, intervaloSegundos * 1000);
-
-    // 3. Limpiar el intervalo cuando el usuario cambie de pantalla
-    return () => clearInterval(intervalId);
-  }, [estado]);
-
-  const removerPedidoLocal = (idPedido: number) => {
-    setPedidos((prevPedidos) => prevPedidos.filter((p) => p.idPedido !== idPedido));
-  };
-
-  return { 
-    pedidos, 
-    loading, 
-    error, 
-    recargar: () => fetchPedidos(false), // Recarga manual (con spinner)
-    removerPedidoLocal 
-  };
+/**
+ * Convierte un valor de fecha recibido del backend (posiblemente LocalDateTime)
+ * a un string 'YYYY-MM-DD' para comparación.
+ * Soporta formato ISO string ("2023-10-05T14:30:00") o array [año, mes, día, ...].
+ * Si no es una fecha válida, retorna null.
+ */
+export function toDateString(fecha: any): string | null {
+  if (!fecha) return null;
+  let date: Date;
+  if (Array.isArray(fecha) && fecha.length >= 3) {
+    // formato array: [year, month, day, ...]
+    date = new Date(fecha[0], fecha[1] - 1, fecha[2]);
+  } else if (typeof fecha === "string") {
+    date = new Date(fecha);
+  } else {
+    return null;
+  }
+  if (isNaN(date.getTime())) return null;
+  // Formatear a YYYY-MM-DD
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
