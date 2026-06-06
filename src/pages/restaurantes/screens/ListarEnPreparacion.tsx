@@ -12,7 +12,7 @@ import { usePedidos } from "../../../hooks/usePedidoRestaurante.js";
 import { useFiltrosPedidos } from "../../../hooks/useFiltrosPedidos.js";
 import type { DTOProducto } from "../../../data/DTOProducto.js";
 import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
-import FiltrosPedidos from "../componentes/FiltrosPedidos.js";
+import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
 
 export default function ListarEnPreparacion() {
   const [notification, setNotification] = useState<NotificationState>({
@@ -123,7 +123,7 @@ export default function ListarEnPreparacion() {
       </h1>
 
       <div className="max-w-5xl mx-auto mb-8 relative group">
-        <FiltrosPedidos
+        <FiltrosRestaurantes
           labelBuscador="Buscar por Nombre o ID"
           nombreID={searchTerm}
           setNombreID={setSearchTerm}
@@ -134,6 +134,10 @@ export default function ListarEnPreparacion() {
               setProductoSeleccionadoId(item?.idProducto));
           }}
           listaFiltros={productos}
+          mapToItem={(i) => ({
+                id: i?.toString() ?? "",
+                label: i.nombre,
+              })}
           orden={orden}
           setOrden={setOrden}
           hayFiltros={hayFiltros}

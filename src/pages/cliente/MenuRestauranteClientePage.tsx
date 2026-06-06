@@ -1,10 +1,7 @@
 import { Link, useParams } from "react-router";
 import { useEffect, type ReactNode } from "react";
 import RestauranteBanner from "../../components/menu/RestauranteBanner.jsx";
-import MenuFiltrosCliente from "../../components/cliente/MenuFiltrosCliente.tsx";
-import ProductoClienteCard from "../../components/cliente/ProductoClienteCard.tsx";
 import OfertaCard from "../../components/menu/OfertaCard.jsx";
-import { IconBack, IconTag } from "../../components/icons";
 import Header from "../../components/body/Header.js";
 import { useCarrito } from "../../context/CarritoContext.jsx";
 import { useMenuCliente } from "../../hooks/useMenuCliente.js";
@@ -13,6 +10,9 @@ import {
   restauranteParaUi,
 } from "../../utils/menuCliente.js";
 import type { DTOProducto } from "../../data/DTOProducto.js";
+import MenuFiltrosCliente from "../../components/cliente/MenuFiltrosCliente.js";
+import { IconBack, IconTag } from "../../components/icons.jsx";
+import ProductoClienteCard from "../../components/cliente/ProductoClienteCard.js";
 
 export default function MenuRestauranteClientePage() {
   const { id } = useParams();

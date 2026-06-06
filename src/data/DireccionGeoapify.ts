@@ -1,7 +1,7 @@
 export interface DireccionGeoapify {
   direccionCompleta: string;
   calle: string;
-  numero: number;
+  numero: string;
   esquina: string;
   latitud: number;
   longitud: number;

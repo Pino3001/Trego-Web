@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle, Search } from "lucide-react";
 import CardPedidoAconfirmar from "../componentes/CardPedidoAconfirmar.js";
 import type { NotificationState } from "../types/NotificationState.js";
 import { usePedidos } from "../../../hooks/usePedidoRestaurante.js";
-import FiltrosPedidos from "../componentes/FiltrosPedidos.js";
+import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
 import { useFiltrosPedidos } from "../../../hooks/useFiltrosPedidos.js";
 import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
 import type { DTOProducto } from "../../../data/DTOProducto.js";
@@ -83,7 +83,7 @@ export default function ListarEntregados() {
       </h1>
 
       <div className="max-w-5xl mx-auto mb-8 relative group">
-        <FiltrosPedidos
+        <FiltrosRestaurantes
           labelBuscador="Buscar por Nombre o ID"
           nombreID={searchTerm}
           setNombreID={setSearchTerm}

@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import type { NotificationState } from "../types/NotificationState.js";
-import { EnumEstadoPedido } from "../../../data/EnumEstadoPedido.js";
-import { AlertCircle, CheckCircle, Search } from "lucide-react";
-import CardPedidoAconfirmar from "../componentes/CardPedidoAconfirmar.js";
-import { usePedidos } from "../../../hooks/usePedidoRestaurante.js";
-import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
 import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
-import { useFiltrosPedidos } from "../../../hooks/useFiltrosPedidos.js";
+import { AlertCircle, CheckCircle } from "lucide-react";
+import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
+import { useFiltrosProductos } from "../../../hooks/useFiltrosProducto.js";
+import type { DTOIngrediente } from "../../../data/DTOIngrediente.js";
+import { useIngredientes } from "../../../hooks/useIngredientes.js";
+import ProductoCard from "../componentes/CardProducto.js";
+import { useNavigate } from "react-router";
 import type { DTOProducto } from "../../../data/DTOProducto.js";
+import ModificarProducto from "./ModificarProducto.js";
 
-export default function ListarCancelados() {
+export default function ListarProductos() {
+  const navigate = useNavigate();
   const [notification, setNotification] = useState<NotificationState>({
     show: false,
     message: "",
@@ -19,25 +22,23 @@ export default function ListarCancelados() {
   const { productos, loadingProductos, errorProductos, recargarProductos } =
     useProductoRestaurante();
 
-  // Obtener pedidos con estado "Solicitado"
-  const { pedidos, loading, error, recargar } = usePedidos(
-    EnumEstadoPedido.Cancelado,
-    1000,
-  );
-
   const {
-    searchTerm,
-    setSearchTerm,
-    orden,
-    setOrden,
-    pedidosFiltrados,
     hayFiltros,
+    ingredienteSeleccionadoId,
     limpiarFiltros,
-    fechaDesde,
-    fechaHasta,
-    setFechaDesde,
-    setFechaHasta,
-  } = useFiltrosPedidos(pedidos);
+    orden,
+    productosFiltrados,
+    searchTerm,
+    setIngredienteSeleccionadoId,
+    setOrden,
+    setSearchTerm,
+  } = useFiltrosProductos(productos);
+
+  const { listaIngredientesBackend } = useIngredientes();
+
+  const [ingredienteSelec, setIngredienteSelec] = useState<DTOIngrediente>();
+
+  const [productoSelect, setProductoSelect] = useState<DTOProducto>();
 
   const showNotification = (message: string, type: "success" | "error") => {
     setNotification({ show: true, message, type });
@@ -52,15 +53,25 @@ export default function ListarCancelados() {
   }, [errorProductos]);
 
   useEffect(() => {
-    if (error) showNotification(error, "error");
-  }, [error]);
+    if (errorProductos) showNotification(errorProductos, "error");
+  }, [errorProductos]);
 
   const handleLimpiarFiltros = () => {
     limpiarFiltros();
+    setIngredienteSelec(undefined);
   };
 
+  if (productoSelect) {
+    return (
+      <ModificarProducto
+        producto={productoSelect}
+        onReturn={() => setProductoSelect(undefined)}
+      />
+    );
+  }
+
   return (
-    <div className="flex-1 w-full h-full p-4 md:p-8 overflow-y-auto bg-gray-50 text-gray-800 font-sans">
+    <div className="flex-1 w-full h-full p-4 md:p-8 overflow-y-auto bg-gray-75 text-gray-800 font-sans">
       {notification.show && (
         <div
           className={`mb-4 p-4 rounded-xl flex items-center shadow-sm ${
@@ -87,38 +98,48 @@ export default function ListarCancelados() {
           labelBuscador="Buscar por Nombre o ID"
           nombreID={searchTerm}
           setNombreID={setSearchTerm}
-          desplegableTipo="Producto Pedido"
+          desplegableTipo="Ingredientes"
           orden={orden}
           setOrden={setOrden}
           hayFiltros={hayFiltros}
           limpiarFiltros={handleLimpiarFiltros}
-          porFecha
-          fechaDesde={fechaDesde}
-          fechaHasta={fechaHasta}
-          onChangeFechaDesde={setFechaDesde}
-          onChangeFechaHasta={setFechaHasta}
+          filtroSelecte={ingredienteSelec}
+          onChangeFiltroSelect={(item) => {
+            (setIngredienteSelec(item),
+              setIngredienteSeleccionadoId(item?.idIngrediente));
+          }}
+          listaFiltros={listaIngredientesBackend}
+          mapToItem={(i) => ({
+            id: i?.toString() ?? "",
+            label: i.nombre,
+          })}
         />
       </div>
 
-      <div className="max-w-5xl mx-auto flex flex-col gap-6 pb-10">
-        {loading ? (
+      <div className="max-w-5xl mx-auto pb-10">
+        {loadingProductos ? (
           <div className="flex justify-center items-center py-12">
             <p className="text-gray-500 font-medium flex items-center gap-2">
               <span className="animate-spin h-5 w-5 border-2 border-green-600 border-t-transparent rounded-full"></span>
-              Cargando pedidos...
+              Cargando Productos...
             </p>
           </div>
-        ) : pedidosFiltrados.length === 0 ? (
+        ) : productosFiltrados.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-300">
             <p className="text-gray-500 font-medium text-lg">
-              No hay pedidos pendientes de confirmación.
+              No hay productos encontrados.
             </p>
-            <p className="text-gray-400 text-sm mt-1">La cocina está al día.</p>
           </div>
         ) : (
-          pedidosFiltrados.map((pedido) => (
-            <CardPedidoAconfirmar key={pedido.idPedido} pedido={pedido} />
-          ))
+          // Grid de dos columnas: 1 columna en móviles, 2 en tablets/escritorio
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {productosFiltrados.map((prod) => (
+              <ProductoCard
+                producto={prod}
+                onClick={() => setProductoSelect(prod)}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>

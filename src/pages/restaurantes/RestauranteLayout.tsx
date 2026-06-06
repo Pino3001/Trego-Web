@@ -32,13 +32,13 @@ const SECCIONES: SidebarSection[] = [
   },
   {
     section: "Reclamos",
-    items: [{ label: "Ver Reclamos", path: "/restaurantes/reclamos" }],
+    items: [{ label: "Ver Reclamos", path: "/restaurantes/pedidos-reclamos" }],
   },
   {
     section: "Gestión",
     items: [
       { label: "Alta Producto", path: "/restaurantes/altaProducto" },
-      { label: "Modificar Producto", path: "/restaurantes/modificarProducto" },
+      { label: "Mis Productos", path: "/restaurantes/ListarProductos" },
     ],
   },
   {

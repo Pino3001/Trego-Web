@@ -1,16 +1,20 @@
 import { ArrowDownAZ, ArrowUpAZ, Trash2 } from "lucide-react";
 import type { DTOProducto } from "../../../data/DTOProducto.js";
 import { TextInput } from "../../../components/TextInput.js";
-import { TextBuscador } from "../../../components/TextBuscador.js";
+import {
+  TextBuscador,
+  type SearchItem,
+} from "../../../components/TextBuscador.js";
 
-interface FiltrosPedidosProps {
+interface FiltroRestoProps<T> {
   labelBuscador?: string;
   nombreID: string; // requerido porque el buscador siempre está
   setNombreID: (valor: string) => void; // requerido
   desplegableTipo: string;
-  filtroSelecte?: DTOProducto | undefined;
-  onChangeFiltroSelect?: (item: DTOProducto | undefined) => void;
-  listaFiltros?: DTOProducto[];
+  filtroSelecte?: T | undefined;
+  onChangeFiltroSelect?: (item: T | undefined) => void;
+  listaFiltros?: T[];
+  mapToItem?: (item: T) => SearchItem;
   orden: "ASC" | "DESC";
   setOrden: (nuevoOrden: "ASC" | "DESC") => void;
   hayFiltros: boolean;
@@ -22,7 +26,7 @@ interface FiltrosPedidosProps {
   onChangeFechaHasta?: ((i: string) => void) | undefined;
 }
 
-export default function FiltrosPedidos({
+export default function FiltrosRestaurantes<T>({
   nombreID,
   setNombreID,
   labelBuscador = "Buscar",
@@ -39,7 +43,8 @@ export default function FiltrosPedidos({
   fechaHasta,
   onChangeFechaDesde,
   onChangeFechaHasta,
-}: FiltrosPedidosProps) {
+  mapToItem,
+}: FiltroRestoProps<T>) {
   const toggleOrden = () => setOrden(orden === "ASC" ? "DESC" : "ASC");
 
   return (
@@ -64,7 +69,7 @@ export default function FiltrosPedidos({
       </label>
 
       {/* Select Filtros */}
-      {listaFiltros && onChangeFiltroSelect && (
+      {listaFiltros && onChangeFiltroSelect && mapToItem && (
         <>
           <label
             htmlFor="filtro-producto"
@@ -73,16 +78,12 @@ export default function FiltrosPedidos({
             <span className="text-sm font-medium text-gray-700">
               {desplegableTipo}
             </span>
-            <TextBuscador<DTOProducto>
+            <TextBuscador<T>
               items={listaFiltros}
-              mapToItem={(i) => ({
-                id: i.idProducto?.toString() ?? "",
-                label: i.nombre,
-              })}
+              mapToItem={mapToItem}
               onSelect={onChangeFiltroSelect}
               selected={filtroSelecte}
-              placeholder="Buscar Producto"
-              cancelable
+              placeholder="Buscar...."
             />
           </label>
         </>
@@ -133,8 +134,12 @@ export default function FiltrosPedidos({
 
         {/* Limpiar */}
         <div className="flex flex-col gap-1 min-w-11">
-          <span className="text-sm font-medium text-gray-700 invisible">
-            Acción
+          <span
+            className={`text-sm font-medium ${
+              hayFiltros ? "text-gray-700 " : "text-gray-300"
+            }`}
+          >
+            Limpiar
           </span>
           <button
             type="button"

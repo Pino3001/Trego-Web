@@ -5,17 +5,19 @@ import { crearIngrediente, listarIngredientes } from "../api/apiRestaurante.js";
 interface UseIngredientesOptions {
   onError?: (mensaje: string) => void;
   onListaCambiada?: (lista: DTOIngrediente[]) => void;
+  initialIngredientes?: DTOIngrediente[];
 }
 
 export function useIngredientes({
   onError,
   onListaCambiada,
+  initialIngredientes,
 }: UseIngredientesOptions = {}) {
   const [listaIngredientesBackend, setListaIngredientesBackend] = useState<
     DTOIngrediente[]
   >([]);
   const [listaIngredientes, setListaIngredientes] = useState<DTOIngrediente[]>(
-    [],
+    initialIngredientes ?? [],
   );
   const [ingredienteSeleccionado, setIngredienteSeleccionado] = useState<
     DTOIngrediente | undefined
@@ -49,7 +51,13 @@ export function useIngredientes({
   }, [listaIngredientes, onListaCambiada]);
 
   const agregarIngrediente = useCallback((item: DTOIngrediente | undefined) => {
-    if (!item) return;
+    // Si el item es undefined (el usuario le dio a la X), limpiamos el buscador
+    if (!item) {
+      setIngredienteSeleccionado(undefined);
+      return;
+    }
+
+    // Si hay un item válido, lo agregamos a la lista y lo marcamos como seleccionado
     setListaIngredientes((prev) => {
       if (prev.some((i) => i.idIngrediente === item.idIngrediente)) return prev;
       return [...prev, item];

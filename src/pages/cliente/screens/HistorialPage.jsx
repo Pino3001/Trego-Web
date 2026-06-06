@@ -119,6 +119,7 @@ export default function HistorialPage() {
       navigate("/login/cliente", { replace: true });
       return;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     cargarDatos();
   }, [cargarDatos, navigate]);
 

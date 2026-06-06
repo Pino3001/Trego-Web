@@ -5,5 +5,5 @@ export interface ImageField {
   file: File | null;
   previewUrl: string | null;
   uploadState: UploadState;
-  cloudUrl: string | null;
+  cloudUrl: string | null | undefined;
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 
 export interface SearchItem {
   id: string | number;
@@ -16,7 +16,6 @@ interface TextSearchProps<T> {
   label?: boolean;
   error?: string;
   className?: string;
-  cancelable?: boolean;
 }
 
 const colorMap: Record<string, string> = {
@@ -38,7 +37,6 @@ export const TextBuscador = <T,>({
   label = false,
   error,
   className,
-  cancelable,
   id,
 }: TextSearchProps<T>) => {
   const [query, setQuery] = useState("");
@@ -56,24 +54,28 @@ export const TextBuscador = <T,>({
     return existsInList ? mapped : undefined;
   }, [selected, items, mapToItem]);
 
-  // Fuente única de verdad: hay selección válida DENTRO de la lista actual
   const hasValidSelection = !!(selected && selectedMapped);
 
-  const filtered =
-    query.length > 0
-      ? items.filter((item) =>
-          mapToItem(item).label.toLowerCase().includes(query.toLowerCase()),
-        )
-      : items;
+  const showAllItems = query.length === 0 || (hasValidSelection && query === selectedMapped?.label);
+  
+  const filtered = showAllItems
+    ? items
+    : items.filter((item) =>
+        mapToItem(item).label.toLowerCase().includes(query.toLowerCase())
+      );
 
   const isFloating = isFocused || query.length > 0 || hasValidSelection;
   const hoverBg = colorMap[colorStyle] ?? "#f3f4f6";
 
   // ── Effects ───────────────────────────────────────────────────────────────
 
-  // Notifica al padre que su selected ya no existe en la lista actual
-  useEffect(() => {
-    if (selected && !selectedMapped) {
+useEffect(() => {
+    // Si desde el padre se eliminó la selección (ej. lo quitaron de la lista)
+    if (selected === undefined) {
+      setQuery("");
+    } 
+    // Si hay selección pero ya no existe en la lista de items
+    else if (selected && !selectedMapped) {
       onSelect(undefined);
       setQuery("");
     }
@@ -105,12 +107,11 @@ export const TextBuscador = <T,>({
 
   const handleSelect = (item: T) => {
     onSelect(item);
-    setQuery("");
+    setQuery(mapToItem(item).label);
     setIsOpen(false);
   };
 
   const handleClear = () => {
-    if (cancelable) return;
     onSelect(undefined);
     setQuery("");
     setIsOpen(false);
@@ -127,18 +128,17 @@ export const TextBuscador = <T,>({
           id={id}
           ref={inputRef}
           type="text"
-          value={hasValidSelection ? selectedMapped!.label : query}
-          readOnly={hasValidSelection}
+          autoComplete="off"
+          value={hasValidSelection && !isFocused ? selectedMapped!.label : query}
           onChange={(e) => {
             setQuery(e.target.value);
-            if (selected) onSelect(undefined);
+            if (hasValidSelection) onSelect(undefined);
             openDropdown();
           }}
           onFocus={() => {
             setIsFocused(true);
             if (hasValidSelection) {
-              setQuery(selectedMapped?.label ?? "");
-              onSelect(undefined);
+              setQuery(selectedMapped!.label);
             }
             openDropdown();
           }}
@@ -146,10 +146,9 @@ export const TextBuscador = <T,>({
           placeholder=""
           className={`
             peer w-full h-12 border rounded-full px-5 pr-10
-            outline-none transition-all duration-200
+            outline-none transition-all duration-200 cursor-text
             ${error ? "border-red-400" : "border-gray-400"}
             focus:border-${colorStyle} focus:ring-1 focus:ring-${colorStyle}
-            ${hasValidSelection ? "cursor-default" : "cursor-text"}
             text-gray-700
           `}
         />
@@ -186,7 +185,7 @@ export const TextBuscador = <T,>({
           </label>
         )}
 
-        {/* ✅ Ícono controlado por hasValidSelection (fuente única) */}
+        {/* Ícono limpiar / buscar */}
         <div className="absolute right-4 inset-y-0 flex items-center">
           {hasValidSelection ? (
             <button
@@ -243,7 +242,7 @@ export const TextBuscador = <T,>({
       </div>
 
       {/* ── Dropdown ──────────────────────────────────────────────────────── */}
-      {isOpen && !hasValidSelection && (
+      {isOpen && (
         <div
           className={`
             absolute left-0 right-0 z-50
@@ -267,7 +266,10 @@ export const TextBuscador = <T,>({
                 return (
                   <li
                     key={mapped.id}
-                    onMouseDown={() => handleSelect(item)}
+                    onMouseDown={(e) => {
+                      e.preventDefault(); 
+                      handleSelect(item);
+                    }}
                     className={`
                       px-4 py-3 text-sm cursor-pointer transition-colors
                       border-b border-gray-100 last:border-b-0

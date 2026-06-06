@@ -35,7 +35,8 @@ interface AltaPlatoProps {
   onChangeTiempoPrep: (tp: number) => void;
   descripcion: string;
   onChangeDescripcion: (desc: string) => void;
-  listaDeIngredientes: (items: DTOIngrediente[]) => void;
+  onChangeListaDeIngredientes: (items: DTOIngrediente[]) => void;
+  ingredientesIniciales?: DTOIngrediente[] | undefined;
 }
 
 export default function AltaPlato({
@@ -56,7 +57,8 @@ export default function AltaPlato({
   onChangeTiempoPrep,
   descripcion,
   onChangeDescripcion,
-  listaDeIngredientes,
+  onChangeListaDeIngredientes,
+  ingredientesIniciales,
 }: AltaPlatoProps) {
   const {
     listaIngredientesBackend,
@@ -71,7 +73,8 @@ export default function AltaPlato({
     crearIngredienteLocal,
   } = useIngredientes({
     onError: onChangeApiError,
-    onListaCambiada: listaDeIngredientes,
+    onListaCambiada: onChangeListaDeIngredientes,
+    initialIngredientes: ingredientesIniciales ?? [],
   });
 
   const handleImageChange = (file: File | null) => {
@@ -173,6 +176,7 @@ export default function AltaPlato({
         <div className="w-full max-w-2xl mx-auto flex gap-4">
           <div className="flex-1">
             <TextBuscador
+              id="Ingredientes listado"
               items={listaIngredientesBackend}
               selected={ingredienteSeleccionado}
               onSelect={(item) => {

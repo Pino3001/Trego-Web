@@ -13,7 +13,7 @@ import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js
 import { filtrarPedidosPorProducto } from "../utilitis/funcionesListado.js";
 import type { DTOProducto } from "../../../data/DTOProducto.js";
 import { useFiltrosPedidos } from "../../../hooks/useFiltrosPedidos.js";
-import FiltrosPedidos from "../componentes/FiltrosPedidos.js";
+import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
 
 export default function ListarSinConfirmar() {
   const [notification, setNotification] = useState<NotificationState>({
@@ -138,12 +138,16 @@ export default function ListarSinConfirmar() {
       </h1>
 
       <div className="max-w-5xl mx-auto mb-8 relative group">
-        <FiltrosPedidos
+        <FiltrosRestaurantes
           labelBuscador="Buscar por Nombre o ID"
           nombreID={searchTerm}
           setNombreID={setSearchTerm}
           desplegableTipo="Producto Pedido"
           filtroSelecte={productoSelect}
+          mapToItem={(i) => ({
+                id: i.toString() ?? "",
+                label: i.nombre,
+              })}
           onChangeFiltroSelect={(item) => {
             (setProductoSelect(item),
               setProductoSeleccionadoId(item?.idProducto));
