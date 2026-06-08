@@ -1,9 +1,10 @@
 import { Link, useParams } from 'react-router'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useMenuRestaurante } from '../../../hooks/useMenuRestaurante.js'
 import { useCarrito } from '../../../context/CarritoContext.jsx'
 import RestauranteBanner from '../../../components/menu/RestauranteBanner.jsx'
 import MenuSidebar from '../../../components/menu/MenuSidebar.jsx'
+import ComentariosRestaurantePanel from '../../../components/menu/ComentariosRestaurantePanel.jsx'
 import { IconBack, IconTag } from '../../../components/icons.jsx'
 import OfertaCard from '../../../components/menu/OfertaCard.jsx'
 import ProductoMenuCard from '../../../components/menu/ProductoMenuCard.jsx'
@@ -12,6 +13,8 @@ import ProductoMenuCard from '../../../components/menu/ProductoMenuCard.jsx'
 export default function RestauranteMenuPage() {
   const { id } = useParams()
   const { abrirDetalleProducto, validarRestauranteAbierto } = useCarrito()
+
+  const [resenasInfo, setResenasInfo] = useState(null)
 
   const {
     menu,
@@ -86,18 +89,36 @@ export default function RestauranteMenuPage() {
 
   const mostrarOfertas = ofertas.length > 0 && !categoria
 
+  const cantidadResenas =
+    resenasInfo?.cantidadResenas ?? menu.restaurante?.cantidadResenas ?? 0
+
+  const restauranteConResenas = menu.restaurante
+    ? {
+        ...menu.restaurante,
+        cantidadResenas,
+        calificacionProm:
+          cantidadResenas > 0 ? resenasInfo?.calificacionProm ?? null : null,
+      }
+    : menu.restaurante
+
   return (
     <PageShell>
       <NavBack />
-      <RestauranteBanner restaurante={menu.restaurante} />
+      <RestauranteBanner restaurante={restauranteConResenas} />
 
       <div className="mt-5 flex flex-col gap-5 lg:mt-6 lg:flex-row lg:items-start lg:gap-6">
-        <MenuSidebar
-          categoria={categoria}
-          onCategoriaChange={setCategoria}
-          ordenPrecio={ordenPrecio}
-          onOrdenChange={setOrdenPrecio}
-        />
+        <div className="flex w-full shrink-0 flex-col gap-4 lg:w-[240px]">
+          <MenuSidebar
+            categoria={categoria}
+            onCategoriaChange={setCategoria}
+            ordenPrecio={ordenPrecio}
+            onOrdenChange={setOrdenPrecio}
+          />
+          <ComentariosRestaurantePanel
+            idRestaurante={id}
+            onResenasActualizadas={setResenasInfo}
+          />
+        </div>
 
         <div className="min-w-0 flex-1">
           {mostrarOfertas && (

@@ -4,6 +4,10 @@ export const ENDPOINTS = {
   RESTAURANTES_TODOS: '/api/restaurantes/listar',
   RESTAURANTES_ZONA: '/api/restaurantes/listarXdirreccion', // falta endpoint backend
   RESTAURANTE_POR_ID: '/api/restaurantes/obtenerRestaurante/:id',
+  COMENTARIOS_AGREGAR: '/api/restaurantes/comentarios/agregar',
+  COMENTARIOS_LISTAR: '/api/restaurantes/comentarios/listar',
+  COMENTARIOS_YA_COMENTE: '/api/restaurantes/comentarios/yaComente',
+  CALIFICACION_OBTENER: '/api/restaurantes/calificacion/obtener/:id',
 
   // Menú y pedidos
   MENU_RESTAURANTE: '/api/pedido/restaurante/:id/verMenu',
@@ -41,13 +45,15 @@ export const ENDPOINTS = {
   AUTH_REGISTRO: '/api/auth/registro',
 
   // Restaurante — alta de local (formulario completo)
-  SOLICITUD_ALTA_RESTAURANTE: '/api/restaurantes/actualizar',
+  SOLICITUD_ALTA_RESTAURANTE: '/api/restaurantes/altaRestaurante',
   FIRMA_IMAGEN: `/api/usuarios/imagen/firma`,
   OBTENER_RESTAURANTE_ACTUAL: `/api/restaurantes/actual`,
   AGREGAR_PRODUCTO: "/api/productos/agregarProducto",
   LISTAR_INGREDIENTES: "/api/productos/listarIngredientes",
   AGREGAR_INGREDIENTE: `/api/productos/agregarIngrediente`,
   LISTAR_PRODUCTOS: '/api/productos/listarProductos',
+  MODIFICAR_PRODUCTO: '/api/productos/modificarProducto',
+  ELIMINAR_PRODUCTO: '/api/productos/eliminarProducto',
   LISTAR_PEDIDOS: `/api/pedido/listarPedidos`,
   LISTAR_SUBCATEGORIAS: `/api/subcategorias/listar`,
   CONFIRMAR_PEDIDO: `/api/pedido/confirmar`,

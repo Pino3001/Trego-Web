@@ -31,15 +31,25 @@ function soloFecha(iso) {
   return d.toISOString().slice(0, 10);
 }
 
+const ESTADOS_HISTORIAL = [
+  { valor: "Pagado", etiqueta: "Pagado" },
+  { valor: "EnPreparacion", etiqueta: "En preparación" },
+  { valor: "EnCamino", etiqueta: "En camino" },
+  { valor: "Entregado", etiqueta: "Entregado" },
+  { valor: "Cancelado", etiqueta: "Cancelado" },
+  { valor: "Reembolsado", etiqueta: "Reembolsado" },
+];
+
+const ESTADOS_SIN_RECLAMO = new Set(["Pagado", "Cancelado", "Reembolsado"]);
+
+function estadoPermiteReclamo(estado) {
+  return !!estado && !ESTADOS_SIN_RECLAMO.has(estado);
+}
+
 function etiquetaEstado(estado) {
-  const map = {
-    Pagado: "Pagado",
-    EnPreparacion: "En preparación",
-    EnCamino: "En camino",
-    Entregado: "Entregado",
-    Cancelado: "Cancelado",
-    Reembolsado: "Reembolsado",
-  };
+  const map = Object.fromEntries(
+    ESTADOS_HISTORIAL.map((e) => [e.valor, e.etiqueta]),
+  );
   return map[estado] ?? estado ?? "—";
 }
 
@@ -79,6 +89,7 @@ export default function HistorialPage() {
 
   const [busqueda, setBusqueda] = useState("");
   const [filtroRestauranteId, setFiltroRestauranteId] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
 
@@ -151,6 +162,10 @@ export default function HistorialPage() {
       lista = lista.filter((p) => p.idRestaurante === id);
     }
 
+    if (filtroEstado) {
+      lista = lista.filter((p) => p.estado === filtroEstado);
+    }
+
     const q = busqueda.trim().toLowerCase();
     if (q) {
       lista = lista.filter((p) =>
@@ -180,6 +195,7 @@ export default function HistorialPage() {
   }, [
     pedidos,
     filtroRestauranteId,
+    filtroEstado,
     busqueda,
     fechaDesde,
     fechaHasta,
@@ -198,17 +214,22 @@ export default function HistorialPage() {
   }, [pedidosFiltrados]);
 
   const hayFiltrosActivos =
-    !!busqueda.trim() || !!filtroRestauranteId || !!fechaDesde || !!fechaHasta;
+    !!busqueda.trim() ||
+    !!filtroRestauranteId ||
+    !!filtroEstado ||
+    !!fechaDesde ||
+    !!fechaHasta;
 
   const limpiarFiltros = () => {
     setBusqueda("");
     setFiltroRestauranteId("");
+    setFiltroEstado("");
     setFechaDesde("");
     setFechaHasta("");
   };
 
   function puedeReclamar(pedido) {
-    if (!pedido?.idPedido || pedido.estado !== "Entregado") return false;
+    if (!pedido?.idPedido || !estadoPermiteReclamo(pedido.estado)) return false;
     return !pedidosConReclamo.has(pedido.idPedido);
   }
 
@@ -307,6 +328,22 @@ export default function HistorialPage() {
                 {restaurantesEnHistorial.map((r) => (
                   <option key={r.id} value={String(r.id)}>
                     {r.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex min-w-[160px] flex-1 flex-col gap-1 sm:max-w-[200px]">
+              <span className="text-sm font-medium text-gray-700">Estado</span>
+              <select
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value)}
+                className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-trego-orange focus:outline-none focus:ring-2 focus:ring-orange-100"
+              >
+                <option value="">Todos</option>
+                {ESTADOS_HISTORIAL.map((e) => (
+                  <option key={e.valor} value={e.valor}>
+                    {e.etiqueta}
                   </option>
                 ))}
               </select>
@@ -416,7 +453,7 @@ export default function HistorialPage() {
                     </button>
                   )}
 
-                  {pedido.estado === "Entregado" &&
+                  {estadoPermiteReclamo(pedido.estado) &&
                     pedidosConReclamo.has(pedido.idPedido) && (
                       <p className="mt-3 text-center text-xs font-medium text-gray-500">
                         Ya registraste un reclamo para este pedido

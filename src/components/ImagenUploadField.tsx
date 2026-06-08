@@ -6,12 +6,14 @@ export default function ImageUploadField({
   imageField,
   onImageChange,
   hasError,
+  errorMessage,
   className
 }: {
   label: string;
   imageField: ImageField;
   onImageChange: (file: File) => void;
   hasError: boolean;
+  errorMessage?: string;
   className?: string
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -86,8 +88,8 @@ export default function ImageUploadField({
           }}
         />
       </div>
-      {hasError && (
-        <span className="text-xs text-red-500">La imagen es requerida</span>
+      {hasError && errorMessage && (
+        <span className="text-xs text-red-500">{errorMessage}</span>
       )}
     </div>
   );

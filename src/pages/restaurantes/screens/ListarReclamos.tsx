@@ -1,39 +1,85 @@
 import { useEffect, useState } from "react";
-import type { NotificationState } from "../types/NotificationState.js";
-import { EnumEstadoPedido } from "../../../data/EnumEstadoPedido.js";
-import { AlertCircle, CheckCircle, Search } from "lucide-react";
-import CardPedidoAconfirmar from "../componentes/CardPedidoAconfirmar.js";
-import { usePedidos } from "../../../hooks/usePedidoRestaurante.js";
+import { AlertCircle, CheckCircle } from "lucide-react";
 import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
-import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
-import { useFiltrosPedidos } from "../../../hooks/useFiltrosPedidos.js";
+import { CardReclamo, type Reclamo } from "../componentes/CardReclamo.js";
+import type { NotificationState } from "../types/NotificationState.js";
+import { resolverReclamo } from "../../../api/reclamosApi.js";
+import { useReclamos } from "../../../hooks/useReclamos.js";
+import type {
+  DTOReclamo,
+  ResolverReclamoPayload,
+} from "../../../data/DTOReclamo.js";
+import { EnumEstadoReclamo } from "../../../data/EnumEstadoReclamo.js";
+import type { SearchItem } from "../../../components/TextBuscador.js";
 
-export default function ListarReclamoss() {
+function mapDtoACard(dto: DTOReclamo): Reclamo {
+  const estado =
+    dto.estado === EnumEstadoReclamo.Resuelto
+      ? EnumEstadoReclamo.Resuelto
+      : dto.estado === EnumEstadoReclamo.Rechazado
+        ? EnumEstadoReclamo.Rechazado
+        : EnumEstadoReclamo.Pendiente;
+
+  return {
+    idReclamo: dto.idReclamo,
+    descripcion: dto.motivoReclamo ?? "Sin motivo registrado",
+    cliente: {
+      nombre: dto.nombreUsuario ?? "Cliente",
+      email: dto.emailUsuario ?? undefined,
+    },
+    idPedido: dto.idPedido,
+    fechaPedido: dto.fechaReclamo ?? new Date().toISOString(),
+    fechaReclamo: dto.fechaReclamo ?? new Date().toISOString(),
+    estado,
+    resolucion:
+      dto.estado === EnumEstadoReclamo.Resuelto
+        ? "Reintegro procesado"
+        : dto.motivoRechazo ?? undefined,
+    totalPedido:
+      dto.totalPedido != null && Number.isFinite(Number(dto.totalPedido))
+        ? Number(dto.totalPedido)
+        : undefined,
+  };
+}
+
+const ESTADO_DOT_COLOR: Record<EnumEstadoReclamo, string> = {
+  [EnumEstadoReclamo.Pendiente]: "bg-amber-400",
+  [EnumEstadoReclamo.Resuelto]: "bg-green-500",
+  [EnumEstadoReclamo.Rechazado]: "bg-red-500",
+};
+
+const mapEstadoAItem = (estado: EnumEstadoReclamo): SearchItem => ({
+  id: estado,
+  label: estado,
+  dotClassName: ESTADO_DOT_COLOR[estado],
+});
+
+export default function ListarReclamos() {
   const [notification, setNotification] = useState<NotificationState>({
     show: false,
     message: "",
     type: "success",
   });
 
-  // Obtener pedidos con estado "Solicitado"
-  const { pedidos, loading, error, recargar } = usePedidos(
-    EnumEstadoPedido.Reembolsado,
-    1000,
-  );
-
   const {
+    reclamos,
+    loading,
+    error,
     searchTerm,
     setSearchTerm,
+    estadoFiltro,
+    setEstadoFiltro,
+    fechaDesde,
+    setFechaDesde,
+    fechaHasta,
+    setFechaHasta,
     orden,
     setOrden,
-    pedidosFiltrados,
     hayFiltros,
     limpiarFiltros,
-    fechaDesde,
-    fechaHasta,
-    setFechaDesde,
-    setFechaHasta,
-  } = useFiltrosPedidos(pedidos);
+    estadosDisponibles,
+    recargar,
+  } = useReclamos();
 
   const showNotification = (message: string, type: "success" | "error") => {
     setNotification({ show: true, message, type });
@@ -47,8 +93,18 @@ export default function ListarReclamoss() {
     if (error) showNotification(error, "error");
   }, [error]);
 
-  const handleLimpiarFiltros = () => {
-    limpiarFiltros();
+  const handleResolver = async (
+    idReclamo: number,
+    payload: ResolverReclamoPayload,
+  ) => {
+    await resolverReclamo(idReclamo, payload);
+    showNotification(
+      payload.accion
+        ? "Reclamo aceptado. Se notificó al cliente y se procesó el reintegro."
+        : "Reclamo rechazado. Se notificó al cliente.",
+      "success",
+    );
+    await recargar();
   };
 
   return (
@@ -74,16 +130,20 @@ export default function ListarReclamoss() {
         Reclamos de pedidos
       </h1>
 
-      <div className="max-w-5xl mx-auto mb-8 relative group">
-        <FiltrosRestaurantes
-          labelBuscador="Buscar por Nombre o ID"
+      <div className="max-w-5xl mx-auto mb-8">
+        <FiltrosRestaurantes<EnumEstadoReclamo>
+          labelBuscador="Buscar por nombre o ID de pedido"
           nombreID={searchTerm}
           setNombreID={setSearchTerm}
-          desplegableTipo="Producto Pedido"
+          desplegableTipo="Estado del reclamo"
+          listaFiltros={estadosDisponibles}
+          filtroSelecte={estadoFiltro}
+          onChangeFiltroSelect={setEstadoFiltro}
+          mapToItem={mapEstadoAItem}
           orden={orden}
           setOrden={setOrden}
           hayFiltros={hayFiltros}
-          limpiarFiltros={handleLimpiarFiltros}
+          limpiarFiltros={limpiarFiltros}
           porFecha
           fechaDesde={fechaDesde}
           fechaHasta={fechaHasta}
@@ -96,20 +156,28 @@ export default function ListarReclamoss() {
         {loading ? (
           <div className="flex justify-center items-center py-12">
             <p className="text-gray-500 font-medium flex items-center gap-2">
-              <span className="animate-spin h-5 w-5 border-2 border-green-600 border-t-transparent rounded-full"></span>
+              <span className="animate-spin h-5 w-5 border-2 border-green-600 border-t-transparent rounded-full" />
               Cargando reclamos...
             </p>
           </div>
-        ) : pedidosFiltrados.length === 0 ? (
+        ) : reclamos.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-gray-300">
             <p className="text-gray-500 font-medium text-lg">
-              No hay pedidos pendientes de confirmación.
+              No hay reclamos para mostrar.
             </p>
-            <p className="text-gray-400 text-sm mt-1">La cocina está al día.</p>
+            <p className="text-gray-400 text-sm mt-1">
+              {hayFiltros
+                ? "Probá ajustando los filtros de búsqueda."
+                : "Cuando un cliente reclame un pedido, aparecerá acá."}
+            </p>
           </div>
         ) : (
-          pedidosFiltrados.map((pedido) => (
-            <CardPedidoAconfirmar key={pedido.idPedido} pedido={pedido} />
+          reclamos.map((dto) => (
+            <CardReclamo
+              key={dto.idReclamo}
+              reclamo={mapDtoACard(dto)}
+              onResolver={handleResolver}
+            />
           ))
         )}
       </div>

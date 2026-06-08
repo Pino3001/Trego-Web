@@ -30,7 +30,7 @@ import LoginRestaurante from "./pages/logins/LoginRestaurante.js";
 import RegistrarRestaurante from "./pages/logins/RegistrarRestaurante.js";
 import ListarProductos from "./pages/restaurantes/screens/ListarProductos.js";
 import ModificarProducto from "./pages/restaurantes/screens/ModificarProducto.js";
-import ListarReclamoss from "./pages/restaurantes/screens/ListarReclamos.js";
+import ListarReclamos from "./pages/restaurantes/screens/ListarReclamos.js";
 
 export default function AppRouter() {
   return (
@@ -89,7 +89,7 @@ export default function AppRouter() {
           />
           <Route
             path="/restaurantes/pedidos-reclamos"
-            element={<ListarReclamoss />}
+            element={<ListarReclamos />}
           />
           <Route
             path="/restaurantes/solicitarAlta"

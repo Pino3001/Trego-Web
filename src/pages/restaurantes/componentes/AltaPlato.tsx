@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import ImageUploadField from "../../../components/ImagenUploadField.js";
 import type { ImageField } from "../../../components/typos/ImageField.js";
 import type { DTOIngrediente } from "../../../data/DTOIngrediente.js";
@@ -6,10 +5,6 @@ import { TextSelector } from "../../../components/TextSelector.js";
 import { TextInput } from "../../../components/TextInput.js";
 import { TextInputNumber } from "../../../components/TextImputNumber.js";
 import { TextBuscador } from "../../../components/TextBuscador.js";
-import {
-  crearIngrediente,
-  listarIngredientes,
-} from "../../../api/apiRestaurante.js";
 import type { DTOSubcategoria } from "../../../data/DTOSubcategoria.js";
 import {
   CATEGORIAS_PRODUCTO,
@@ -70,6 +65,7 @@ export default function AltaPlato({
     setMostrarFormIngrediente,
     agregarIngrediente,
     quitarIngrediente,
+    limpiarIngredientes,
     crearIngredienteLocal,
   } = useIngredientes({
     onError: onChangeApiError,
@@ -80,6 +76,16 @@ export default function AltaPlato({
   const handleImageChange = (file: File | null) => {
     onChangeImage(file);
   };
+
+  const ingredientesDisponibles = listaIngredientesBackend.filter(
+    (ing) =>
+      !listaIngredientes.some(
+        (sel) =>
+          (ing.idIngrediente != null &&
+            sel.idIngrediente === ing.idIngrediente) ||
+          sel.nombre.trim().toLowerCase() === ing.nombre.trim().toLowerCase(),
+      ),
+  );
 
   return (
     <div className="bg-white rounded-3xl p-8 flex flex-col gap-3">
@@ -168,29 +174,39 @@ export default function AltaPlato({
       </div>
 
       {/* Ingredientes */}
-      <div className="flex flex-col px-10 gap-3">
-        <label className="text-sm text-center font-semibold text-gray-700">
-          Ingredientes Del Producto
-        </label>
+      <div className="flex flex-col px-10 gap-4">
+        <div className="flex items-center justify-between max-w-2xl mx-auto w-full">
+          <label className="text-sm font-semibold text-gray-700">
+            Ingredientes del producto
+          </label>
+          <span className="text-xs font-medium text-trego-restaurante bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
+            {listaIngredientes.length}{" "}
+            {listaIngredientes.length === 1 ? "agregado" : "agregados"}
+          </span>
+        </div>
 
-        <div className="w-full max-w-2xl mx-auto flex gap-4">
+        <div className="w-full max-w-2xl mx-auto flex gap-3">
           <div className="flex-1">
             <TextBuscador
               id="Ingredientes listado"
-              items={listaIngredientesBackend}
+              items={ingredientesDisponibles}
               selected={ingredienteSeleccionado}
               onSelect={(item) => {
                 agregarIngrediente(item);
               }}
-              mapToItem={(t) => ({ id: t.idIngrediente ?? 0, label: t.nombre })}
-              placeholder="Buscar ingrediente"
+              mapToItem={(t) => ({
+                id: t.idIngrediente ?? t.nombre,
+                label: t.nombre,
+              })}
+              placeholder="Buscar ingrediente existente"
               label
             />
           </div>
           <button
+            type="button"
             onClick={() => setMostrarFormIngrediente(true)}
-            title="Agregar ingrediente a la lista"
-            className="w-12 h-12 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition-colors shadow-sm shrink-0"
+            title="Crear ingrediente nuevo"
+            className="w-12 h-12 rounded-2xl bg-trego-restaurante hover:bg-green-700 text-white flex items-center justify-center transition-colors shadow-sm shrink-0"
           >
             <svg
               className="w-5 h-5"
@@ -209,62 +225,91 @@ export default function AltaPlato({
         </div>
 
         {mostrarFormIngrediente && (
-          <div className="flex gap-2 items-center max-w-2xl mx-auto w-full">
+          <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center max-w-2xl mx-auto w-full p-4 rounded-2xl border border-green-100 bg-green-50/50">
             <input
               type="text"
               value={nuevoIngrediente}
               onChange={(e) => setNuevoIngrediente(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && crearIngredienteLocal()}
-              placeholder="Nombre del ingrediente"
-              className="flex-1 border border-gray-300 rounded-3xl px-5 py-2.5 outline-none text-sm
+              placeholder="Nombre del ingrediente nuevo"
+              className="flex-1 border border-gray-300 rounded-3xl px-5 py-2.5 outline-none text-sm bg-white
                           focus:border-trego-restaurante focus:ring-1 focus:ring-trego-restaurante transition-all"
               autoFocus
             />
-            <button
-              onClick={crearIngredienteLocal}
-              className="px-4 py-2.5 rounded-3xl bg-trego-restaurante text-white text-sm font-semibold hover:bg-green-700 transition-colors"
-            >
-              Agregar
-            </button>
-            <button
-              onClick={() => {
-                setMostrarFormIngrediente(false);
-                setNuevoIngrediente("");
-              }}
-              className="px-4 py-2.5 rounded-3xl bg-gray-100 text-gray-600 text-sm hover:bg-gray-200 transition-colors"
-            >
-              Cancelar
-            </button>
+            <div className="flex gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={crearIngredienteLocal}
+                disabled={!nuevoIngrediente.trim()}
+                className="px-4 py-2.5 rounded-3xl bg-trego-restaurante text-white text-sm font-semibold hover:bg-green-700 transition-colors disabled:opacity-50"
+              >
+                Crear y agregar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMostrarFormIngrediente(false);
+                  setNuevoIngrediente("");
+                }}
+                className="px-4 py-2.5 rounded-3xl bg-white border border-gray-200 text-gray-600 text-sm hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         )}
 
-        {/* Lista de ingredientes seleccionados */}
-        <div className="border border-gray-200 rounded-2xl p-3 min-h-20 bg-gray-50  w-full">
-          <p className="text-xs font-semibold text-gray-500 mb-2 px-1">
-            Lista De Ingredientes
-          </p>
-          {listaIngredientes.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-4">
-              Ningún ingrediente agregado
+        <div className="max-w-2xl mx-auto w-full rounded-2xl border border-gray-200 bg-gray-50 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-200 bg-white flex items-center justify-between">
+            <p className="text-sm font-semibold text-gray-700">
+              Lista de ingredientes
             </p>
+            {listaIngredientes.length > 0 && (
+              <button
+                type="button"
+                onClick={limpiarIngredientes}
+                className="text-xs text-red-500 hover:text-red-700 font-medium"
+              >
+                Quitar todos
+              </button>
+            )}
+          </div>
+
+          {listaIngredientes.length === 0 ? (
+            <div className="px-4 py-8 text-center">
+              <p className="text-sm text-gray-500">
+                Todavía no agregaste ingredientes
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Buscá uno existente o creá uno nuevo con el botón +
+              </p>
+            </div>
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {listaIngredientes.map((ing) => (
-                <div
-                  key={ing.idIngrediente}
-                  className="flex items-center gap-1.5 bg-trego-orange border border-trego-orange rounded-full px-3 py-1 text-base font-medium text-white shadow-sm"
+            <ul className="divide-y divide-gray-200">
+              {listaIngredientes.map((ing, index) => (
+                <li
+                  key={ing.idIngrediente ?? `${ing.nombre}-${index}`}
+                  className="flex items-center justify-between gap-3 px-4 py-3 bg-white hover:bg-green-50/40 transition-colors"
                 >
-                  <span>{ing.nombre}</span>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="w-7 h-7 shrink-0 rounded-full bg-trego-restaurante/10 text-trego-restaurante text-xs font-bold flex items-center justify-center">
+                      {index + 1}
+                    </span>
+                    <span className="text-sm font-medium text-gray-800 truncate">
+                      {ing.nombre}
+                    </span>
+                  </div>
                   <button
+                    type="button"
                     onClick={() => quitarIngrediente(ing)}
-                    className="text-white hover:text-blue-600 transition-colors"
-                    title="Eliminar ingrediente"
+                    className="shrink-0 p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    title="Quitar ingrediente"
                   >
                     <svg
-                      className="w-3.5 h-3.5"
+                      className="w-4 h-4"
                       fill="none"
                       stroke="currentColor"
-                      strokeWidth={2.5}
+                      strokeWidth={2}
                       viewBox="0 0 24 24"
                     >
                       <path
@@ -274,9 +319,9 @@ export default function AltaPlato({
                       />
                     </svg>
                   </button>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       </div>

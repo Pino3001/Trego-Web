@@ -7,7 +7,7 @@ export default function MenuSidebar({
   onOrdenChange,
 }) {
   return (
-    <aside className="w-full shrink-0 rounded-2xl bg-trego-sidebar p-4 shadow-sm lg:w-[200px] lg:p-5">
+    <aside className="w-full rounded-2xl bg-trego-sidebar p-4 shadow-sm lg:p-5">
       <section className="mb-6">
         <h2 className="mb-3 text-[15px] font-bold text-gray-900">Categorias</h2>
         <ul className="space-y-0.5">

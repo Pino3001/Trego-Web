@@ -72,12 +72,16 @@ export const apiRegistrarRestaurante = {
         };
       }
 
-      // Si es 200
-      const userData: LoginResponseDTO = await response.json();
+      const data = await response.json();
       return {
         success: true,
         message: "Registro Exitoso",
-        login: userData,
+        login: {
+          token: data.jwtToken ?? data.token,
+          rol: data.rol,
+          nombre: data.nombre,
+          email: data.email,
+        },
       };
     } catch (error) {
       return {

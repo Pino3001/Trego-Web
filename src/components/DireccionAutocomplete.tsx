@@ -55,6 +55,7 @@ interface DireccionAutocompleteProps {
   value: string;
   onChangeText: (text: string) => void;
   onSelectAddress: (direccion: DireccionGeoapify) => void;
+  onClear?: () => void;
   error?: string;
 }
 
@@ -65,6 +66,7 @@ export default function DireccionAutocomplete({
   value,
   onChangeText,
   onSelectAddress,
+  onClear,
   error,
 }: DireccionAutocompleteProps) {
   const [sugerencias, setSugerencias] = useState<DireccionGeoapify[]>([]);
@@ -72,6 +74,7 @@ export default function DireccionAutocomplete({
   const [isSearching, setIsSearching] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [showNoResults, setShowNoResults] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const wrapperRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -98,6 +101,7 @@ export default function DireccionAutocomplete({
     onChangeText(text);
     setActiveIndex(-1);
     setShowNoResults(false);
+    setSearchError(null);
 
     if (debounceRef.current) clearTimeout(debounceRef.current);
 
@@ -118,7 +122,9 @@ export default function DireccionAutocomplete({
       } catch (err) {
         console.error("Error buscando dirección:", err);
         setSugerencias([]);
+        setIsOpen(false);
         setShowNoResults(false);
+        setSearchError("No se pudo buscar la dirección. Revisá que el backend esté corriendo.");
       } finally {
         setIsSearching(false);
       }
@@ -160,14 +166,17 @@ export default function DireccionAutocomplete({
     setIsOpen(false);
     setActiveIndex(-1);
     setShowNoResults(false);
+    setSearchError(null);
   };
 
   // ── Limpiar input ─────────────────────────────────────────────────────────
   const handleClear = () => {
     onChangeText("");
+    onClear?.();
     setSugerencias([]);
     setIsOpen(false);
     setShowNoResults(false);
+    setSearchError(null);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     inputRef.current?.focus();
   };
@@ -232,8 +241,12 @@ export default function DireccionAutocomplete({
         </div>
       </div>
 
-      {/* Error */}
-      {error && <span className="text-xs text-red-500 px-1">{error}</span>}
+      {/* Error de validación o búsqueda */}
+      {(error || searchError) && (
+        <span className="text-xs text-red-500 px-5 mt-1 block">
+          {error || searchError}
+        </span>
+      )}
 
       {/* Dropdown */}
       {showDropdown && (
@@ -302,7 +315,7 @@ export default function DireccionAutocomplete({
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 <line x1="8" y1="11" x2="14" y2="11" />
               </svg>
-              No se encontraron resultados
+              No se encontraron resultados. Escribí al menos 3 letras y elegí una opción de la lista.
             </li>
           )}
         </ul>

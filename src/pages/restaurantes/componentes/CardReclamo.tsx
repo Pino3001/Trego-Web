@@ -5,33 +5,14 @@ import {
   Phone,
   Mail,
   Calendar,
-  Check,
   Clock,
   ShoppingBag,
-  ChevronDown,
-  ChevronUp,
   Loader2,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
-
-// ─── Enums ───────────────────────────────────────────────────────────────────
-
-export enum EnumEstadoReclamo {
-  Pendiente = "Pendiente",
-  EnRevision = "En Revisión",
-  Resuelto = "Resuelto",
-  Rechazado = "Rechazado",
-}
-
-export enum EnumResolucion {
-  ReembolsoCompleto = "Reembolso Completo",
-  ReembolsoParcial = "Reembolso Parcial",
-  Reenvio = "Reenvío del Pedido",
-  DescuentoProximaCompra = "Descuento en Próxima Compra",
-  ReclamoInvalido = "Reclamo Inválido",
-  OtraResolucion = "Otra Resolución",
-}
-
-// ─── Interfaces ──────────────────────────────────────────────────────────────
+import { EnumEstadoReclamo } from "../../../data/EnumEstadoReclamo.js";
+import type { ResolverReclamoPayload } from "../../../data/DTOReclamo.js";
 
 export interface ClienteReclamo {
   nombre: string;
@@ -47,16 +28,24 @@ export interface Reclamo {
   fechaPedido: string | Date;
   fechaReclamo: string | Date;
   estado: EnumEstadoReclamo;
-  resolucion?: EnumResolucion | string;
+  resolucion?: string;
+  totalPedido?: number;
 }
 
 export interface CardReclamoProps {
   reclamo: Reclamo;
-  /** Callback para enviar la resolución al backend. Debe retornar una promesa. */
-  onEnviarResolucion?: (idReclamo: number, resolucion: string) => Promise<void>;
+  onResolver?: (
+    idReclamo: number,
+    payload: ResolverReclamoPayload,
+  ) => Promise<void>;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+const formatearMonto = (valor: number): string =>
+  new Intl.NumberFormat("es-AR", {
+    style: "currency",
+    currency: "ARS",
+    minimumFractionDigits: 2,
+  }).format(valor);
 
 const formatearFecha = (fecha: string | Date): string => {
   const d = new Date(fecha);
@@ -75,74 +64,77 @@ const minutosTranscurridos = (fecha: string | Date): number => {
   return Math.floor((ahora.getTime() - inicio.getTime()) / 60_000);
 };
 
-// ─── Opciones de resolución ───────────────────────────────────────────────────
-
-const OPCIONES_RESOLUCION: { id: EnumResolucion; label: string }[] = [
-  { id: EnumResolucion.ReembolsoCompleto,     label: "💸 Reembolso Completo" },
-  { id: EnumResolucion.ReembolsoParcial,      label: "💰 Reembolso Parcial" },
-  { id: EnumResolucion.Reenvio,               label: "🔄 Reenvío del Pedido" },
-  { id: EnumResolucion.DescuentoProximaCompra,label: "🎫 Descuento en Próxima Compra" },
-  { id: EnumResolucion.ReclamoInvalido,       label: "🚫 Reclamo Inválido" },
-  { id: EnumResolucion.OtraResolucion,        label: "📝 Otra Resolución" },
-];
-
-// ─── Estilos por estado ───────────────────────────────────────────────────────
-
 const ESTADO_STYLES: Record<
   EnumEstadoReclamo,
-  { header: string; badge: string; border: string; dot: string }
+  { header: string; badge: string; border: string }
 > = {
   [EnumEstadoReclamo.Pendiente]: {
     header: "bg-amber-500 text-white",
-    badge:  "bg-white text-amber-600",
+    badge: "bg-white text-amber-600",
     border: "border-amber-400",
-    dot:    "bg-amber-400",
-  },
-  [EnumEstadoReclamo.EnRevision]: {
-    header: "bg-blue-500 text-white",
-    badge:  "bg-white text-blue-600",
-    border: "border-blue-300",
-    dot:    "bg-blue-400",
   },
   [EnumEstadoReclamo.Resuelto]: {
     header: "bg-green-600 text-white",
-    badge:  "bg-white text-green-700",
+    badge: "bg-white text-green-700",
     border: "border-green-400",
-    dot:    "bg-green-500",
   },
   [EnumEstadoReclamo.Rechazado]: {
     header: "bg-gray-500 text-white",
-    badge:  "bg-white text-gray-600",
+    badge: "bg-white text-gray-600",
     border: "border-gray-300",
-    dot:    "bg-gray-400",
   },
 };
 
-// ─── Componente ───────────────────────────────────────────────────────────────
+type ModoResolucion = "aceptar" | "rechazar" | null;
 
-export function CardReclamo({ reclamo, onEnviarResolucion }: CardReclamoProps) {
-  const [resolucionSeleccionada, setResolucionSeleccionada] = useState<
-    string | undefined
-  >(reclamo.resolucion as string | undefined);
-  const [cargando, setCargando]     = useState(false);
-  const [desplegado, setDesplegado] = useState(false);
+export function CardReclamo({ reclamo, onResolver }: CardReclamoProps) {
+  const [cargando, setCargando] = useState(false);
+  const [modo, setModo] = useState<ModoResolucion>(null);
+  const [motivoRechazo, setMotivoRechazo] = useState("");
+  const [errorLocal, setErrorLocal] = useState<string | null>(null);
 
   const finalizado =
     reclamo.estado === EnumEstadoReclamo.Resuelto ||
     reclamo.estado === EnumEstadoReclamo.Rechazado;
 
-  const minutos    = minutosTranscurridos(reclamo.fechaReclamo);
-  const esCritico  = reclamo.estado === EnumEstadoReclamo.Pendiente && minutos > 60;
-  const styles     = ESTADO_STYLES[reclamo.estado];
+  const minutos = minutosTranscurridos(reclamo.fechaReclamo);
+  const esCritico =
+    reclamo.estado === EnumEstadoReclamo.Pendiente && minutos > 60;
+  const styles = ESTADO_STYLES[reclamo.estado];
+  const totalPedido = reclamo.totalPedido;
+  const montoFormateado =
+    totalPedido != null && Number.isFinite(totalPedido)
+      ? formatearMonto(totalPedido)
+      : null;
 
-  const handleEnviarResolucion = async () => {
-    if (!resolucionSeleccionada || !onEnviarResolucion) return;
+  const ejecutarResolucion = async (payload: ResolverReclamoPayload) => {
+    if (!onResolver) return;
+    setErrorLocal(null);
+    setCargando(true);
     try {
-      setCargando(true);
-      await onEnviarResolucion(reclamo.idReclamo, resolucionSeleccionada);
+      await onResolver(reclamo.idReclamo, payload);
+      setModo(null);
+      setMotivoRechazo("");
+    } catch (err) {
+      setErrorLocal(
+        err instanceof Error ? err.message : "No se pudo resolver el reclamo",
+      );
     } finally {
       setCargando(false);
     }
+  };
+
+  const confirmarAceptacion = () => {
+    void ejecutarResolucion({ accion: true });
+  };
+
+  const confirmarRechazo = () => {
+    const motivo = motivoRechazo.trim();
+    if (!motivo) {
+      setErrorLocal("Indicá el motivo del rechazo");
+      return;
+    }
+    void ejecutarResolucion({ accion: false, motivoRechazo: motivo });
   };
 
   return (
@@ -153,13 +145,11 @@ export function CardReclamo({ reclamo, onEnviarResolucion }: CardReclamoProps) {
           : `${styles.border} hover:border-gray-300`
       }`}
     >
-      {/* ── HEADER ─────────────────────────────────────────────────────────── */}
       <div
         className={`px-5 py-3 flex flex-wrap items-center justify-between gap-2 border-b ${
           esCritico ? "bg-red-500 text-white" : styles.header
         }`}
       >
-        {/* ID + estado */}
         <div className="flex items-center gap-3">
           <span
             className={`text-xs font-black px-2 py-0.5 rounded ${
@@ -169,11 +159,10 @@ export function CardReclamo({ reclamo, onEnviarResolucion }: CardReclamoProps) {
             RECLAMO #{reclamo.idReclamo}
           </span>
           <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-white/20">
-            {esCritico ? "🔴 URGENTE" : reclamo.estado}
+            {esCritico ? "URGENTE" : reclamo.estado}
           </span>
         </div>
 
-        {/* Tiempo transcurrido */}
         <div className="flex items-center gap-1.5 text-xs font-bold">
           <Clock
             size={14}
@@ -184,16 +173,12 @@ export function CardReclamo({ reclamo, onEnviarResolucion }: CardReclamoProps) {
         </div>
       </div>
 
-      {/* ── CUERPO ─────────────────────────────────────────────────────────── */}
       <div className="p-5 flex-1 flex flex-col md:flex-row gap-6 justify-between items-start">
-
-        {/* Columna izquierda: descripción + datos del pedido */}
         <div className="flex-1 w-full space-y-3">
           <h2 className="font-bold text-gray-900 text-center uppercase tracking-wide text-sm">
-            Descripción del Reclamo
+            Motivo del reclamo
           </h2>
 
-          {/* Descripción */}
           <div className="bg-red-50/50 border border-red-100 rounded-xl p-3 flex items-start gap-2">
             <AlertCircle size={16} className="text-red-400 mt-0.5 shrink-0" />
             <p className="text-sm text-gray-800 leading-relaxed">
@@ -201,7 +186,6 @@ export function CardReclamo({ reclamo, onEnviarResolucion }: CardReclamoProps) {
             </p>
           </div>
 
-          {/* Pedido + fecha del pedido */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex items-center gap-2">
               <ShoppingBag size={15} className="text-gray-400 shrink-0" />
@@ -219,38 +203,31 @@ export function CardReclamo({ reclamo, onEnviarResolucion }: CardReclamoProps) {
               <Calendar size={15} className="text-gray-400 shrink-0" />
               <div>
                 <span className="text-xs text-gray-400 font-bold block uppercase tracking-wider">
-                  Fecha Pedido
+                  Fecha reclamo
                 </span>
                 <span className="text-xs font-semibold text-gray-700">
-                  {formatearFecha(reclamo.fechaPedido)}
+                  {formatearFecha(reclamo.fechaReclamo)}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Fecha del reclamo */}
-          <div className="bg-gray-50 border border-gray-100 rounded-xl p-3 flex items-center gap-2">
-            <Clock size={15} className="text-gray-400 shrink-0" />
-            <div>
-              <span className="text-xs text-gray-400 font-bold block uppercase tracking-wider">
-                Fecha del Reclamo
-              </span>
-              <span className="text-xs font-semibold text-gray-700">
-                {formatearFecha(reclamo.fechaReclamo)}
-              </span>
-            </div>
-          </div>
+          {montoFormateado && (
+            <p className="text-sm text-gray-600">
+              Monto del pedido:{" "}
+              <strong className="text-gray-900">{montoFormateado}</strong>
+            </p>
+          )}
         </div>
 
-        {/* Columna derecha: datos del cliente */}
         <div className="w-full md:w-72 bg-gray-50/50 p-4 rounded-xl border border-gray-100 flex flex-col gap-3 text-sm h-full">
           <h2 className="font-bold text-gray-900 text-center uppercase tracking-wide text-xs">
-            Datos del Cliente
+            Cliente
           </h2>
 
           <div>
             <span className="text-xs text-gray-400 font-bold block uppercase tracking-wider">
-              Cliente
+              Nombre
             </span>
             <div className="flex items-center gap-1.5 font-semibold text-gray-800">
               <User size={15} className="text-gray-400 shrink-0" />
@@ -282,13 +259,14 @@ export function CardReclamo({ reclamo, onEnviarResolucion }: CardReclamoProps) {
             </div>
           )}
 
-          {/* Resolución aplicada (solo si está finalizado) */}
           {finalizado && reclamo.resolucion && (
             <div className="pt-3 border-t border-gray-200 mt-auto">
               <span className="text-xs text-gray-400 font-bold block uppercase tracking-wider">
-                Resolución Aplicada
+                {reclamo.estado === EnumEstadoReclamo.Rechazado
+                  ? "Motivo del rechazo"
+                  : "Resolución"}
               </span>
-              <span className="text-sm font-bold text-green-700 mt-0.5 block">
+              <span className="text-sm font-bold text-gray-700 mt-0.5 block">
                 {reclamo.resolucion}
               </span>
             </div>
@@ -296,56 +274,119 @@ export function CardReclamo({ reclamo, onEnviarResolucion }: CardReclamoProps) {
         </div>
       </div>
 
-      {/* ── BARRA INFERIOR: selector de resolución ─────────────────────────── */}
-      {!finalizado && onEnviarResolucion && (
-        <div className="border-t border-gray-100">
-          {/* Toggle desplegable */}
-          <button
-            onClick={() => setDesplegado((prev) => !prev)}
-            className="w-full px-5 py-3 bg-gray-50 flex items-center justify-between text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors"
-          >
-            <span>Resolver Reclamo</span>
-            {desplegado ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
+      {!finalizado && onResolver && (
+        <div className="border-t border-gray-100 bg-gray-50 px-5 py-4 space-y-3">
+          {errorLocal && (
+            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {errorLocal}
+            </p>
+          )}
 
-          {/* Panel de resolución */}
-          {desplegado && (
-            <div className="px-5 py-4 bg-gray-50 border-t border-gray-100 flex flex-wrap items-center gap-3 justify-end">
-              {/* Select estilizado */}
-              <div className="relative flex-1 min-w-52">
-                <select
-                  value={resolucionSeleccionada ?? ""}
-                  onChange={(e) =>
-                    setResolucionSeleccionada(e.target.value || undefined)
-                  }
-                  className="w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-700 bg-white border-2 border-gray-200 focus:border-green-500 focus:outline-none transition-colors appearance-none cursor-pointer pr-9"
-                >
-                  <option value="">Seleccionar resolución...</option>
-                  {OPCIONES_RESOLUCION.map((op) => (
-                    <option key={op.id} value={op.id}>
-                      {op.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={16}
-                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
-              </div>
-
-              {/* Botón de envío */}
+          {modo === null && (
+            <div className="flex flex-wrap gap-3 justify-end">
               <button
-                onClick={handleEnviarResolucion}
-                disabled={!resolucionSeleccionada || cargando}
-                className="px-5 py-2.5 rounded-xl text-sm font-black text-white bg-green-600 hover:bg-green-700 shadow-sm transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                type="button"
+                onClick={() => {
+                  setModo("rechazar");
+                  setErrorLocal(null);
+                }}
+                disabled={cargando}
+                className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 disabled:opacity-50"
               >
-                {cargando ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Check size={16} strokeWidth={3} />
-                )}
-                ENVIAR RESOLUCIÓN
+                <XCircle size={18} />
+                Rechazar reclamo
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setModo("aceptar");
+                  setErrorLocal(null);
+                }}
+                disabled={cargando}
+                className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-50"
+              >
+                <CheckCircle2 size={18} />
+                Aceptar y reintegrar
+              </button>
+            </div>
+          )}
+
+          {modo === "aceptar" && montoFormateado && (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-700">
+                Se aceptará el reclamo y se procesará un reintegro de{" "}
+                <strong>{montoFormateado}</strong> al cliente. Se le notificará
+                por email y en la app.
+              </p>
+              <div className="flex flex-wrap gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setModo(null)}
+                  disabled={cargando}
+                  className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmarAceptacion}
+                  disabled={cargando}
+                  className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-green-700 disabled:opacity-50"
+                >
+                  {cargando ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <CheckCircle2 size={16} />
+                  )}
+                  Confirmar aceptación
+                </button>
+              </div>
+            </div>
+          )}
+
+          {modo === "rechazar" && (
+            <div className="space-y-3">
+              <label className="block">
+                <span className="text-sm font-medium text-gray-700">
+                  Motivo del rechazo
+                </span>
+                <textarea
+                  value={motivoRechazo}
+                  onChange={(e) => {
+                    setMotivoRechazo(e.target.value);
+                    setErrorLocal(null);
+                  }}
+                  rows={3}
+                  placeholder="Explicá por qué se rechaza el reclamo..."
+                  className="mt-1 w-full rounded-xl border border-gray-300 px-3 py-2 text-sm focus:border-green-500 focus:outline-none focus:ring-2 focus:ring-green-100"
+                />
+              </label>
+              <div className="flex flex-wrap gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModo(null);
+                    setMotivoRechazo("");
+                  }}
+                  disabled={cargando}
+                  className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmarRechazo}
+                  disabled={cargando}
+                  className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {cargando ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <XCircle size={16} />
+                  )}
+                  Confirmar rechazo
+                </button>
+              </div>
             </div>
           )}
         </div>

@@ -37,6 +37,22 @@ function validateTelefono(tel: string): boolean {
   return digits.length >= 11 && digits.startsWith("598");
 }
 
+function validarImagen(
+  imageField: ImageField,
+  etiqueta: string,
+): string | undefined {
+  if (!imageField.file && !imageField.previewUrl) {
+    return `La ${etiqueta} es requerida`;
+  }
+  if (imageField.uploadState === "uploading") {
+    return `La ${etiqueta} se está subiendo. Esperá un momento`;
+  }
+  if (imageField.uploadState === "done" && imageField.cloudUrl) {
+    return undefined;
+  }
+  return `No se pudo subir la ${etiqueta}. Volvé a seleccionarla`;
+}
+
 export default function SolicitarAltaRestaurante() {
   const [step, setStep] = useState<SubmitStep>("FORM");
 
@@ -72,10 +88,10 @@ export default function SolicitarAltaRestaurante() {
     uploadState: "idle",
     cloudUrl: null,
   });
-  const [imageErrors, setImageErrors] = useState({
-    perfil: false,
-    portada: false,
-  });
+  const [imageErrors, setImageErrors] = useState<{
+    perfil?: string;
+    portada?: string;
+  }>({});
 
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -91,7 +107,7 @@ export default function SolicitarAltaRestaurante() {
     const setter = field === "perfil" ? setImagePerfil : setImagePortada;
 
     setter({ file, previewUrl, uploadState: "uploading", cloudUrl: null });
-    setImageErrors((p) => ({ ...p, [field]: false }));
+    setImageErrors((p) => ({ ...p, [field]: undefined }));
 
     try {
       const nombreSinExtension =
@@ -130,7 +146,10 @@ export default function SolicitarAltaRestaurante() {
     } catch (error) {
       console.error("Error en el proceso de imagen:", error);
       setter({ file, previewUrl, uploadState: "idle", cloudUrl: null });
-      setImageErrors((p) => ({ ...p, [field]: true }));
+      setImageErrors((p) => ({
+        ...p,
+        [field]: `No se pudo subir la imagen de ${field === "perfil" ? "perfil" : "portada"}. Intentá de nuevo`,
+      }));
     }
   };
 
@@ -142,102 +161,52 @@ export default function SolicitarAltaRestaurante() {
 
   // ── Validation ────────────────────────────────────────────────────────────
   const validate = (): boolean => {
-    console.log("=== INICIO VALIDACIÓN ===");
-    console.log("form:", form);
-    console.log("direccionSeleccionada:", direccionSeleccionada);
-    console.log("imagePerfil:", imagePerfil);
-    console.log("imagePortada:", imagePortada);
-
     const newErrors: typeof errors = {};
 
-    // 1. Validación nombre
     if (!form.nombre.trim()) {
       newErrors.nombre = "El nombre es requerido";
-      console.log("❌ Error: nombre vacío");
-    } else {
-      console.log("✅ nombre OK:", form.nombre);
+    } else if (form.nombre.trim().length < 3) {
+      newErrors.nombre = "El nombre debe tener al menos 3 caracteres";
     }
 
-    // 2. Validación RUT
     if (!form.rut.trim()) {
       newErrors.rut = "El RUT es requerido";
-      console.log("❌ Error: RUT vacío");
     } else if (!validateRUT(form.rut)) {
       newErrors.rut = "El RUT debe tener 12 dígitos";
-      console.log(
-        "❌ Error: RUT inválido (validateRUT retornó false)",
-        form.rut,
-      );
-    } else {
-      console.log("✅ RUT OK:", form.rut);
     }
 
-    // 3. Validación teléfono
     if (!form.telefono.trim()) {
       newErrors.telefono = "El teléfono es requerido";
-      console.log("❌ Error: teléfono vacío");
     } else if (!validateTelefono(form.telefono)) {
       newErrors.telefono = "Ingresá un número uruguayo válido (+598 XXXXXXXX)";
-      console.log(
-        "❌ Error: teléfono inválido (validateTelefono false)",
-        form.telefono,
-      );
-    } else {
-      console.log("✅ teléfono OK:", form.telefono);
     }
 
-    // 4. Validación descripción
     if (!form.descripcion.trim()) {
       newErrors.descripcion = "La descripción es requerida";
-      console.log("❌ Error: descripción vacía");
-    } else {
-      console.log("✅ descripción OK:", form.descripcion);
+    } else if (form.descripcion.trim().length < 20) {
+      newErrors.descripcion = "La descripción debe tener al menos 20 caracteres";
     }
 
-    // 5. Validación dirección
     if (!direccionSeleccionada) {
-      newErrors.direccion = "La dirección es requerida";
-      console.log("❌ Error: direccionSeleccionada es null/undefined/false");
-    } else {
-      console.log("✅ dirección OK:", direccionSeleccionada);
+      newErrors.direccion = "Seleccioná una dirección de la lista";
     }
 
     if (!form.numeroP.trim()) {
-      newErrors.numeroP = "Numero de Puerta";
+      newErrors.numeroP = "El número de puerta es requerido";
     }
 
-    // 6. Validación imágenes
-    const imgErrors = {
-      perfil: !imagePerfil.cloudUrl && imagePerfil.uploadState !== "done",
-      portada: !imagePortada.cloudUrl && imagePortada.uploadState !== "done",
-    };
-    console.log("imgErrors calculado:", imgErrors);
-    console.log(
-      "  - imagePerfil.cloudUrl:",
-      imagePerfil.cloudUrl,
-      "uploadState:",
-      imagePerfil.uploadState,
-    );
-    console.log(
-      "  - imagePortada.cloudUrl:",
-      imagePortada.cloudUrl,
-      "uploadState:",
-      imagePortada.uploadState,
-    );
+    const imgErrors: { perfil?: string; portada?: string } = {};
+    const perfilError = validarImagen(imagePerfil, "imagen de perfil");
+    const portadaError = validarImagen(imagePortada, "imagen de portada");
+    if (perfilError) imgErrors.perfil = perfilError;
+    if (portadaError) imgErrors.portada = portadaError;
 
     setErrors(newErrors);
     setImageErrors(imgErrors);
 
-    const isValid =
-      Object.keys(newErrors).length === 0 &&
-      !imgErrors.perfil &&
-      !imgErrors.portada;
-
-    console.log("Resumen de errores:", newErrors);
-    console.log("¿Validación exitosa?", isValid);
-    console.log("=== FIN VALIDACIÓN ===\n");
-
-    return isValid;
+    return (
+      Object.keys(newErrors).length === 0 && !perfilError && !portadaError
+    );
   };
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -249,13 +218,13 @@ export default function SolicitarAltaRestaurante() {
 
     try {
       const dir: DTODireccion = {
-        tag: "", 
-        calle: direccionSeleccionada?.calle || "",
-        numero: direccionSeleccionada?.numero?.toString() || "", 
-        apartamento: "", 
-        esquina: esquinaSeleccionada?.calle || "",
-        latitud: direccionSeleccionada?.latitud || 0,
-        longitud: direccionSeleccionada?.longitud || 0,
+        tag: "",
+        calle: direccionSeleccionada!.calle,
+        numero: form.numeroP.trim(),
+        apartamento: "",
+        esquina: esquinaSeleccionada?.calle || form.esquina.trim(),
+        latitud: direccionSeleccionada!.latitud,
+        longitud: direccionSeleccionada!.longitud,
       };
       const resto: DTORestaurante = {
         nombre: form.nombre,
@@ -311,7 +280,7 @@ export default function SolicitarAltaRestaurante() {
       uploadState: "idle",
       cloudUrl: null,
     });
-    setImageErrors({ perfil: false, portada: false });
+    setImageErrors({});
     setApiError(null);
   };
 
@@ -379,13 +348,19 @@ export default function SolicitarAltaRestaurante() {
                       label="Imagen de Perfil"
                       imageField={imagePerfil}
                       onImageChange={(f) => handleImageChange("perfil", f)}
-                      hasError={imageErrors.perfil}
+                      hasError={!!imageErrors.perfil}
+                      {...(imageErrors.perfil
+                        ? { errorMessage: imageErrors.perfil }
+                        : {})}
                     />
                     <ImageUploadField
                       label="Imagen de Portada"
                       imageField={imagePortada}
                       onImageChange={(f) => handleImageChange("portada", f)}
-                      hasError={imageErrors.portada}
+                      hasError={!!imageErrors.portada}
+                      {...(imageErrors.portada
+                        ? { errorMessage: imageErrors.portada }
+                        : {})}
                     />
                   </div>
 
@@ -453,7 +428,6 @@ export default function SolicitarAltaRestaurante() {
                         value={form.direccion}
                         error={errors.direccion ?? ""}
                         onChangeText={(texto) => {
-                          // Si el usuario edita a mano, guardamos el texto y borramos el objeto validado
                           setForm((prev) => ({ ...prev, direccion: texto }));
                           setDireccionSeleccionada(null);
                           setErrors((prev) => ({
@@ -461,12 +435,21 @@ export default function SolicitarAltaRestaurante() {
                             direccion: undefined,
                           }));
                         }}
+                        onClear={() => setDireccionSeleccionada(null)}
                         onSelectAddress={(dirCompletada) => {
-                          // Cuando hace clic en una opción, guardamos el objeto validado
                           setDireccionSeleccionada(dirCompletada);
                           setForm((prev) => ({
                             ...prev,
-                            numeroP: dirCompletada.numero.toString(),
+                            direccion: [dirCompletada.calle, dirCompletada.numero]
+                              .filter(Boolean)
+                              .join(" "),
+                            numeroP: dirCompletada.numero
+                              ? String(dirCompletada.numero)
+                              : prev.numeroP,
+                          }));
+                          setErrors((prev) => ({
+                            ...prev,
+                            direccion: undefined,
                           }));
                         }}
                       />
@@ -488,17 +471,16 @@ export default function SolicitarAltaRestaurante() {
                           label="Esquina"
                           value={form.esquina}
                           onChangeText={(texto) => {
-                            // Si el usuario edita a mano, guardamos el texto y borramos el objeto validado
                             setForm((prev) => ({ ...prev, esquina: texto }));
                             setEsquinaSeleccionada(null);
-                            setErrors((prev) => ({
-                              ...prev,
-                              esquina: undefined,
-                            }));
                           }}
+                          onClear={() => setEsquinaSeleccionada(null)}
                           onSelectAddress={(dirCompletada) => {
-                            // Cuando hace clic en una opción, guardamos el objeto validado
                             setEsquinaSeleccionada(dirCompletada);
+                            setForm((prev) => ({
+                              ...prev,
+                              esquina: dirCompletada.calle || dirCompletada.direccionCompleta,
+                            }));
                           }}
                         />
                       </div>
@@ -511,6 +493,10 @@ export default function SolicitarAltaRestaurante() {
               <div className="flex flex-col sm:flex-row gap-10 px-10 pt-2">
                 <button
                   onClick={handleSubmit}
+                  disabled={
+                    imagePerfil.uploadState === "uploading" ||
+                    imagePortada.uploadState === "uploading"
+                  }
                   className="
                       flex-1 py-3.5 px-6 rounded-3xl
                       bg-trego-restaurante hover:bg-green-700

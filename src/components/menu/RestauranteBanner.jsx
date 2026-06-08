@@ -27,7 +27,9 @@ export default function RestauranteBanner({ restaurante }) {
 
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 bg-trego-beige px-4 py-3 text-[13px] text-gray-800 sm:gap-x-10 sm:px-6">
         <span className="font-semibold text-gray-900">
-          {calificacionProm?.toFixed(1)} ({cantidadResenas ?? 0} Reseñas)
+          {(cantidadResenas ?? 0) > 0 && calificacionProm != null
+            ? `${calificacionProm.toFixed(1)} (${cantidadResenas} reseñas)`
+            : `Sin reseñas (${cantidadResenas ?? 0})`}
         </span>
         <span className="flex items-center gap-1.5 text-gray-700">
           <IconLocation className="h-4 w-4 shrink-0 text-gray-600" />

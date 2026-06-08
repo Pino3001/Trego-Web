@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ImageField } from "../../../components/typos/ImageField.js";
 import type { DTOSubcategoria } from "../../../data/DTOSubcategoria.js";
 import { EnumCategoriaProducto } from "../../../data/EnumCategoriaProducto.js";
@@ -7,10 +7,15 @@ import { EnumTipoProducto } from "../../../data/EnumTipoProducto.js";
 import AltaPlato from "../componentes/AltaPlato.js";
 import AltaArticulo from "../componentes/AltaArticulo.js";
 import AltaCombo from "../componentes/AltaCombo.js";
+import ConfirmarEliminarProductoModal from "../componentes/ConfirmarEliminarProductoModal.js";
 import type { DTOIngrediente } from "../../../data/DTOIngrediente.js";
 import { useSubCategorias } from "../../../hooks/useSubCategorias.js";
 import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
-import { obtenerFirmaCloudinary } from "../../../api/apiRestaurante.js";
+import {
+  eliminarProducto,
+  modificarProducto,
+  obtenerFirmaCloudinary,
+} from "../../../api/apiRestaurante.js";
 
 type StepState = "FORM" | "LOADING" | "SUCCESS";
 
@@ -25,6 +30,9 @@ export default function ModificarProducto({
   onReturn,
 }: ModificarProductoProps) {
   const [step, setStep] = useState<StepState>("FORM");
+  const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
+  const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { subcategorias, subcategoriaSeleccionada, seleccionarSubcategoria } =
@@ -58,9 +66,17 @@ export default function ModificarProducto({
     producto.plato?.tiempoPreparacionMinutos,
   );
   // Lista de ingredientes que contiene el Plato
-  const [listaIngredientes, setListaIngredientes] = useState<
-    DTOIngrediente[] | undefined
-  >(producto.ingredientes);
+  const [listaIngredientes, setListaIngredientes] = useState<DTOIngrediente[]>(
+    producto.ingredientes ?? [],
+  );
+  const listaIngredientesRef = useRef<DTOIngrediente[]>(
+    producto.ingredientes ?? [],
+  );
+
+  const handleListaIngredientesChange = useCallback((lista: DTOIngrediente[]) => {
+    listaIngredientesRef.current = lista;
+    setListaIngredientes(lista);
+  }, []);
 
   // Estados para Combo
   // Productos que conforman el Combo a modificar -- Viene como lista de numeros
@@ -172,7 +188,7 @@ export default function ModificarProducto({
     const errs: Record<string, string> = {};
     if (!nombre.trim()) errs.nombre = "El nombre es obligatorio.";
     if (precio < 0 || isNaN(precio)) errs.precio = "Ingrese un precio válido.";
-    if (!foto.file) errs.foto = "La imagen es obligatoria.";
+    if (!foto.cloudUrl && !foto.file) errs.foto = "La imagen es obligatoria.";
 
     if (producto.tipo === EnumTipoProducto.Plato) {
       // Plato con ingredientes
@@ -190,60 +206,97 @@ export default function ModificarProducto({
   };
 
   const handleSubmit = async () => {
-    /*     setApiError(null);
+    setApiError(null);
     if (!validate()) return;
     setStep("LOADING");
     try {
-      const subca: DTOSubcategoria = {
-        categoria: EnumCategoriaProducto.Bebida,
-      };
-
       if (!foto.cloudUrl) {
-        setApiError("Foto no cargada correctamente!.");
+        setApiError("Foto no cargada correctamente.");
+        setStep("FORM");
         return;
       }
-      if (!subcategoria?.idSubCategoria) {
-        setApiError("Sin sub-categoria seleccionada!.");
+      if (!subcategoriaSelect?.idSubCategoria) {
+        setApiError("Sin sub-categoría seleccionada.");
+        setStep("FORM");
         return;
       }
+      if (!producto.idProducto) {
+        setApiError("El producto no tiene id válido.");
+        setStep("FORM");
+        return;
+      }
+
       const data: DTOProducto = {
-        nombre: nombre,
-        descripcion: descripcion,
-        precio: precio,
-        subCategoria: subca,
+        idProducto: producto.idProducto,
+        nombre,
+        descripcion,
+        precio,
         urlImagen: foto.cloudUrl,
         categoria: categoriaProducto ?? EnumCategoriaProducto.Bebida,
-        idSubCategoria: subcategoria.idSubCategoria,
-        tipo: tipo?.label,
+        idSubCategoria: subcategoriaSelect.idSubCategoria,
+        tipo: producto.tipo,
       };
 
-      switch (tipo.label) {
+      switch (producto.tipo) {
         case EnumTipoProducto.Plato:
-          ((data.ingredientes = listaIngredientes),
-            (data.plato = {
-              tiempoPreparacionMinutos: tiempoPreparacion,
+          data.ingredientes = listaIngredientesRef.current
+            .filter((i) => i.idIngrediente != null)
+            .map((i) => ({
+              idIngrediente: i.idIngrediente!,
+              nombre: i.nombre,
+              idRestaurante: i.idRestaurante ?? producto.idRestaurante ?? 0,
             }));
+          data.plato = {
+            tiempoPreparacionMinutos: tiempoPreparacion ?? 0,
+          };
           break;
         case EnumTipoProducto.Combo:
           data.combo = {
-            productosIncluidosIds: productosCombo.map((p) => p.idProducto ?? 0),
+            productosIncluidosIds: productosDelCombo.map(
+              (p) => p.idProducto ?? 0,
+            ),
           };
           break;
       }
-      await agregarProducto(data);
 
+      await modificarProducto(data);
       setStep("SUCCESS");
-    } catch {
-      setApiError("Error al guardar el producto.");
+    } catch (err) {
+      setApiError(
+        err instanceof Error ? err.message : "Error al guardar el producto.",
+      );
       setStep("FORM");
-    } */
+    }
   };
 
-  /**
-   * Cancela la accion, Vuelve al listado de productos
-   */
-  const handleCancel = () => {
-    setStep("FORM");
+  const handleAbrirModalEliminar = () => {
+    if (!producto.idProducto) return;
+    setErrorEliminar(null);
+    setMostrarModalEliminar(true);
+  };
+
+  const handleCerrarModalEliminar = () => {
+    if (eliminando) return;
+    setMostrarModalEliminar(false);
+    setErrorEliminar(null);
+  };
+
+  const handleConfirmarEliminar = async () => {
+    if (!producto.idProducto) return;
+
+    setEliminando(true);
+    setErrorEliminar(null);
+    try {
+      await eliminarProducto(producto.idProducto);
+      setMostrarModalEliminar(false);
+      onReturn();
+    } catch (err) {
+      setErrorEliminar(
+        err instanceof Error ? err.message : "Error al eliminar el producto.",
+      );
+    } finally {
+      setEliminando(false);
+    }
   };
 
   return (
@@ -295,18 +348,16 @@ export default function ModificarProducto({
               </svg>
             </div>
             <h2 className="text-2xl font-bold text-gray-800">
-              ¡Producto agregado!
+              ¡Producto modificado!
             </h2>
             <p className="text-gray-500 text-center max-w-sm">
-              El producto ya está disponible en tu menú.
+              Los cambios ya están guardados en tu menú.
             </p>
             <button
-              onClick={() => {
-                setStep("FORM");
-              }}
+              onClick={onReturn}
               className="mt-2 px-8 py-3 rounded-3xl bg-trego-restaurante text-white font-bold hover:bg-green-700 transition-colors"
             >
-              Agregar otro producto
+              Volver al listado
             </button>
           </div>
         )}
@@ -337,7 +388,7 @@ export default function ModificarProducto({
                 onChangeSubCategoria={setSubcategoriaSelect}
                 onChangeTiempoPrep={setTiempoPreparacion}
                 onChangeImage={handleImageChange}
-                onChangeListaDeIngredientes={setListaIngredientes}
+                onChangeListaDeIngredientes={handleListaIngredientesChange}
                 error={errors}
                 onChangeApiError={setApiError}
                 categoria={categoriaProducto}
@@ -345,7 +396,7 @@ export default function ModificarProducto({
                   setCategoriaProducto(item ?? EnumCategoriaProducto.Otros)
                 }
                 subcategorias={subcategorias}
-                ingredientesIniciales={producto.ingredientes}
+                ingredientesIniciales={listaIngredientes}
               />
             )}
 
@@ -418,7 +469,8 @@ export default function ModificarProducto({
                 Modificar Producto
               </button>
               <button
-                onClick={handleCancel}
+                type="button"
+                onClick={handleAbrirModalEliminar}
                 className="flex-1 py-3.5 px-6 rounded-3xl bg-trego-orange hover:bg-trego-cart text-white text-base font-semibold transition-all duration-200"
               >
                 Eliminar Producto
@@ -427,6 +479,16 @@ export default function ModificarProducto({
           </div>
         )}
       </div>
+
+      <ConfirmarEliminarProductoModal
+        abierto={mostrarModalEliminar}
+        nombreProducto={producto.nombre}
+        urlImagen={producto.urlImagen ?? null}
+        eliminando={eliminando}
+        error={errorEliminar}
+        onCerrar={handleCerrarModalEliminar}
+        onConfirmar={handleConfirmarEliminar}
+      />
     </>
   );
 }
