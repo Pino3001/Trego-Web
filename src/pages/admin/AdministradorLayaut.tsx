@@ -37,9 +37,14 @@ export const SECCIONES_ADMIN: SidebarSection[] = [
   {
     section: "Sistema",
     items: [
-      { 
-        label: "Estadísticas", 
-        disabled: true
+      {
+        label: "Crear administrador",
+        path: "/admin/administradores/crear",
+        end: true,
+      },
+      {
+        label: "Estadísticas",
+        disabled: true,
       },
     ],
   },
