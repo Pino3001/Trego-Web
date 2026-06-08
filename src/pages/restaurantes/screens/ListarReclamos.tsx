@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
 import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
 import { CardReclamo, type Reclamo } from "../componentes/CardReclamo.js";
 import type { NotificationState } from "../types/NotificationState.js";
@@ -25,7 +25,7 @@ function mapDtoACard(dto: DTOReclamo): Reclamo {
     descripcion: dto.motivoReclamo ?? "Sin motivo registrado",
     cliente: {
       nombre: dto.nombreUsuario ?? "Cliente",
-      email: dto.emailUsuario ?? undefined,
+      email: dto.emailUsuario ?? "",
     },
     idPedido: dto.idPedido,
     fechaPedido: dto.fechaReclamo ?? new Date().toISOString(),
@@ -34,11 +34,11 @@ function mapDtoACard(dto: DTOReclamo): Reclamo {
     resolucion:
       dto.estado === EnumEstadoReclamo.Resuelto
         ? "Reintegro procesado"
-        : dto.motivoRechazo ?? undefined,
+        : dto.motivoRechazo ?? "",
     totalPedido:
       dto.totalPedido != null && Number.isFinite(Number(dto.totalPedido))
         ? Number(dto.totalPedido)
-        : undefined,
+        : 0,
   };
 }
 
@@ -126,9 +126,23 @@ export default function ListarReclamos() {
         </div>
       )}
 
-      <h1 className="text-2xl font-black text-gray-800 text-center mb-6 uppercase tracking-tight">
-        Reclamos de pedidos
-      </h1>
+      <div className="flex w-full justify-between">
+        <div></div>
+        <h1 className="text-2xl font-black text-gray-800 text-center mb-6 uppercase tracking-tight">
+          Reclamos de pedidos
+        </h1>
+        <button
+          type="button"
+          onClick={recargar}
+          disabled={loading} 
+          className={`shrink-0 flex items-center justify-center w-8 h-8 
+              text-trego-restaurante hover:opacity-80 transition-colors
+              ${loading ? "animate-spin opacity-60 cursor-wait" : ""}`}
+          aria-label="Recargar"
+        >
+          <RefreshCw size={32} />
+        </button>
+      </div>
 
       <div className="max-w-5xl mx-auto mb-8">
         <FiltrosRestaurantes<EnumEstadoReclamo>

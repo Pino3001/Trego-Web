@@ -14,7 +14,9 @@ interface MenuUsuarioProps {
   onCerrarSesion: () => void;
   onToggleRestaurante?: ((hora?: string) => void) | undefined;
   horaCierre?: string | undefined;
+  horaApertura?: string | undefined;
   onChangeHoraCierre?: ((item: string | undefined) => void) | undefined;
+  onChangeHoraApertura?: ((item: string | undefined) => void) | undefined;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -40,17 +42,28 @@ export default function MenuUsuario({
   onCerrarSesion,
   onToggleRestaurante,
   horaCierre,
+  horaApertura,
   onChangeHoraCierre,
+  onChangeHoraApertura,
 }: MenuUsuarioProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorApertura, setErrorApertura] = useState<string | null>(null);
   const [internalHora, setInternalHora] = useState(horaCierre ?? "");
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [internalHoraApertura, setInternalHoraApertura] = useState(
+    horaApertura ?? "",
+  );
+  const cierreRef = useRef<HTMLInputElement>(null);
+  const aperturaRef = useRef<HTMLInputElement>(null);
 
   // Sincronizar estado interno cuando la prop cambia (ej. carga inicial)
   useEffect(() => {
     setInternalHora(horaCierre ?? "");
   }, [horaCierre]);
+
+  useEffect(() => {
+    setInternalHoraApertura(horaApertura ?? "");
+  }, [horaApertura]);
 
   // Validar antes de intentar abrir
   const handleToggle = () => {
@@ -67,15 +80,27 @@ export default function MenuUsuario({
       setError("Debes ingresar una hora de cierre");
       return;
     }
-    setError(null);
-    onToggleRestaurante?.(internalHora); // 👈 acá se la pasamos
-  };
 
-  const TIME_PATTERN = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!internalHoraApertura || internalHoraApertura.trim() === "") {
+      setErrorApertura("Debes ingresar una hora de Apertura");
+      return;
+    }
+
+    setError(null);
+    setErrorApertura(null);
+    onToggleRestaurante?.(internalHora);
+    onChangeHoraApertura?.(internalHoraApertura)
+  };
 
   const handleHoraChange = (value: string) => {
     setInternalHora(value);
     setError(null);
+    // ❌ Se elimina la propagación inmediata al padre
+  };
+
+  const handleHoraAperturaChange = (value: string) => {
+    setInternalHoraApertura(value);
+    setErrorApertura(null);
     // ❌ Se elimina la propagación inmediata al padre
   };
 
@@ -86,6 +111,7 @@ export default function MenuUsuario({
     }
     // ✅ Solo aquí se comunica la hora al padre
     onChangeHoraCierre?.(internalHora);
+    onChangeHoraApertura?.(internalHoraApertura);
     setIsEditing(false);
     setError(null);
   };
@@ -95,15 +121,16 @@ export default function MenuUsuario({
     setIsEditing(true);
     // Enfocar el input después de que se renderice
     setTimeout(() => {
-      inputRef.current?.focus();
+      cierreRef.current?.focus();
     }, 50);
   };
 
   // Determinar si el input debe estar deshabilitado
   const isInputDisabled = restauranteAbierto === true && !isEditing;
+  const isInputDisabledApertura = restauranteAbierto === true && !isEditing;
 
   return (
-    <div className="absolute right-0 mt-2 w-72 rounded-2xl border border-gray-100 bg-white shadow-xl z-50 frame-fade-in overflow-hidden">
+    <div className="absolute right-0 mt-2 w-86 rounded-2xl border border-gray-100 bg-white shadow-xl z-50 frame-fade-in overflow-hidden">
       {/* ── Encabezado con avatar ── */}
       <div className="flex items-center gap-3.5 p-4 pb-3.5 border-b border-gray-100">
         {avatarUrl ? (
@@ -136,7 +163,7 @@ export default function MenuUsuario({
               onClick={handleToggle}
               onKeyDown={(e) => e.key === "Enter" && handleToggle()}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
-                !restauranteAbierto && (!internalHora || internalHora === "")
+                !restauranteAbierto && (!internalHora.trim() || !internalHoraApertura.trim())
                   ? "opacity-50 cursor-not-allowed"
                   : "hover:bg-gray-50"
               }`}
@@ -166,38 +193,54 @@ export default function MenuUsuario({
                 />
               </div>
             </div>
-            <div className="flex flex-row w-full gap-6 px-3 py-2.5 items-center">
+            <div className="flex flex-row w-full gap-2 px-3 py-2 items-center">
               <div className="w-full">
                 <DateTimeInput
-                  ref={inputRef} // Necesitas forwardRef en DateTimeInput
+                  ref={aperturaRef}
+                  mode="time"
+                  label="Hora Apertura"
+                  onChange={handleHoraAperturaChange}
+                  value={internalHoraApertura}
+                  disabled={isInputDisabledApertura}
+                  error={errorApertura ?? false}
+                  className="text-sm px-1 py-1"
+                />
+              </div>
+              <div className="w-full">
+                <DateTimeInput
+                  ref={cierreRef}
                   mode="time"
                   label="Hora Cierre"
                   onChange={handleHoraChange}
                   value={internalHora}
                   disabled={isInputDisabled}
-                  error={error ?? false} // Asumiendo que DateTimeInput acepta prop "error"
+                  error={error ?? false}
+                  className="text-sm px-1 py-1"
                 />
               </div>
-              {restauranteAbierto === true &&
-                (isEditing ? (
-                  <button
-                    type="button"
-                    onClick={handleSaveEdit}
-                    className="shrink-0 text-emerald-600 hover:text-emerald-700 transition-colors"
-                    aria-label="Guardar hora"
-                  >
-                    <Check size={32} />
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={startEdit}
-                    className="shrink-0 text-trego-restaurante hover:opacity-80 transition-colors"
-                    aria-label="Editar hora de cierre"
-                  >
-                    <Edit size={32} />
-                  </button>
-                ))}
+              <div className="shrink-0">
+                <button
+                  type="button"
+                  onClick={isEditing ? handleSaveEdit : startEdit}
+                  className={`flex items-center justify-center transition-colors ${
+                    restauranteAbierto
+                      ? isEditing
+                        ? "text-emerald-600 hover:text-emerald-700"
+                        : "text-trego-restaurante hover:opacity-80"
+                      : "invisible pointer-events-none"
+                  }`}
+                  aria-label={
+                    !restauranteAbierto
+                      ? undefined
+                      : isEditing
+                        ? "Guardar hora"
+                        : "Editar hora de cierre"
+                  }
+                  disabled={!restauranteAbierto}
+                >
+                  {isEditing ? <Check size={32} /> : <Edit size={32} />}
+                </button>
+              </div>
             </div>
             <hr className="border-gray-100 my-1 mx-1" />
           </>

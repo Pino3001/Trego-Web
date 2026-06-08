@@ -73,6 +73,7 @@ export default function RestauranteLayout() {
   // --- Estados del toggle y hora de cierre ---
   const [restauranteAbierto, setRestauranteAbierto] = useState<boolean>(false);
   const [horaCierre, setHoraCierre] = useState<string | undefined>(undefined);
+  const [horaApertura, setHoraApertura] = useState<string | undefined>(undefined);
   const [isLoadingToggle, setIsLoadingToggle] = useState(false);
   const [cambio, setCambio] = useState<boolean>(false);
   const [mostrarAvisoCierre, setMostrarAvisoCierre] = useState(false);
@@ -110,6 +111,7 @@ export default function RestauranteLayout() {
   const lista_Secciones: SidebarSection[] = isHabilitado
     ? SECCIONES
     : NO_Habilitado;
+
   // Effect para enviar al backend el estado del backend
   useEffect(() => {
     if (!token) return;
@@ -130,9 +132,10 @@ export default function RestauranteLayout() {
         const data = await obtenerActual();
         setRestauranteAbierto(data.abierto ?? false);
         if (data.horaCierre) {
-          // El backend devuelve "HH:mm:ss", convertimos a "HH:mm" para el input
           const horaSinSegundos = data.horaCierre.slice(0, 5);
+          const horaAperturaSinSegundos = data.horaApertura?.slice(0, 5);
           setHoraCierre(horaSinSegundos);
+          setHoraApertura(horaAperturaSinSegundos)
           setCambio(false);
         } else {
           setHoraCierre(undefined);
@@ -197,7 +200,7 @@ export default function RestauranteLayout() {
 
   const handleLogout = async () => {
     // Si el local está abierto, lo cerramos antes de salir
-    if (restauranteAbierto) {
+/*     if (restauranteAbierto) {
       try {
         await cerrarLocal();
         // Actualizamos el estado local para reflejar el cierre
@@ -206,7 +209,7 @@ export default function RestauranteLayout() {
         console.error("Error al cerrar el local automáticamente:", error);
         // Opcional: mostrar un mensaje de error, pero aún así continuamos con el logout
       }
-    }
+    } */
 
     try {
       await apiAuth.cerrarSesion();
@@ -301,6 +304,8 @@ export default function RestauranteLayout() {
         onVerPerfil={() => navigate("/restaurantes/perfil/contraseña")}
         horaCierre={horaCierre}
         onChangeHoraCierre={handleChangeHoraCierre}
+        horaApertura={horaApertura}
+        onChangeHoraApertura={setHoraApertura}
         restauranteAbierto={restauranteAbierto}
         onToggleRestauranteAbierto={handleToggleRestaurante}
         onLogout={handleLogout}

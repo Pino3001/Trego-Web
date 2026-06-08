@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { actualizarEstadoPedido } from "../../../api/apiRestaurante.js";
 import { EnumEstadoPedido } from "../../../data/EnumEstadoPedido.js";
-import { AlertCircle, CheckCircle, Search } from "lucide-react";
+import { AlertCircle, CheckCircle, RefreshCw, Search } from "lucide-react";
 import CardPedidoAconfirmar from "../componentes/CardPedidoAconfirmar.js";
 import type { NotificationState } from "../types/NotificationState.js";
 import { usePedidos } from "../../../hooks/usePedidoRestaurante.js";
@@ -78,9 +78,23 @@ export default function ListarEntregados() {
         </div>
       )}
 
-      <h1 className="text-2xl font-black text-gray-800 text-center mb-6 uppercase tracking-tight">
-        Pedidos a Confirmar
-      </h1>
+      <div className="flex w-full justify-between">
+        <div></div>
+        <h1 className="text-2xl font-black text-gray-800 text-center mb-6 uppercase tracking-tight">
+          Pedidos entregados
+        </h1>
+        <button
+          type="button"
+          onClick={recargar}
+          disabled={loading} 
+          className={`shrink-0 flex items-center justify-center w-8 h-8 
+              text-trego-restaurante hover:opacity-80 transition-colors
+              ${loading ? "animate-spin opacity-60 cursor-wait" : ""}`}
+          aria-label="Recargar"
+        >
+          <RefreshCw size={32} />
+        </button>
+      </div>
 
       <div className="max-w-5xl mx-auto mb-8 relative group">
         <FiltrosRestaurantes
