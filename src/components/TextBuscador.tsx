@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 export interface SearchItem {
   id: string | number;
   label: string;
+  dotClassName?: string;
 }
 
 interface TextSearchProps<T> {
@@ -292,7 +293,9 @@ useEffect(() => {
                   >
                     <div className="flex items-center gap-2">
                       <span
-                        className={`w-1.5 h-1.5 rounded-full shrink-0 bg-${colorStyle}`}
+                        className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                          mapped.dotClassName ?? `bg-${colorStyle}`
+                        }`}
                       />
                       <span>{mapped.label}</span>
                     </div>

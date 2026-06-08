@@ -1,4 +1,5 @@
 import type { DTOProducto } from "../../../data/DTOProducto.js";
+import { EnumTipoProducto } from "../../../data/EnumTipoProducto.js";
 
 const TIPO_STYLES = {
   Plato: {
@@ -43,11 +44,11 @@ interface ProductoCardPropd {
 }
 
 export default function ProductoCard({ producto, onClick }: ProductoCardPropd) {
-  const ingredientesStr = (producto.ingredientes || [])
+  const ingredientes = (producto.ingredientes ?? [])
     .map((i) => (typeof i === "string" ? i : i.nombre))
-    .filter(Boolean)
-    .join(" · ");
+    .filter(Boolean);
 
+  const esPlato = producto.tipo === EnumTipoProducto.Plato;
   const tipoStyle = TIPO_STYLES[producto.tipo] || TIPO_DEFAULT;
   const noDisponible = producto.disponible === false;
 
@@ -55,7 +56,7 @@ export default function ProductoCard({ producto, onClick }: ProductoCardPropd) {
     <div
       onClick={onClick}
       className={`
-    flex gap-3 p-2.5 h-28 rounded-[14px] overflow-hidden relative
+    flex gap-3 p-2.5 min-h-28 rounded-[14px] overflow-hidden relative
     transition-all duration-180 ease-in-out
     border shadow-[0_1px_3px_rgba(0,0,0,0.02)] 
     ${
@@ -129,15 +130,36 @@ export default function ProductoCard({ producto, onClick }: ProductoCardPropd) {
           </span>
         </div>
 
-        {/* Fila 3: Ingredientes */}
-        <p className="m-0 text-[11px] text-gray-400 font-normal overflow-hidden text-ellipsis whitespace-nowrap tracking-[0.01em]">
-          <em className="italic text-gray-500">Ingredientes: </em>
-          {ingredientesStr ? (
-            ingredientesStr
-          ) : (
-            <em className="italic text-gray-300">N / H</em>
-          )}
-        </p>
+        {/* Fila 3: Ingredientes (solo platos) */}
+        {esPlato ? (
+          <div className="flex flex-col gap-1 min-h-[28px]">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+              Ingredientes
+            </span>
+            {ingredientes.length > 0 ? (
+              <div className="flex flex-wrap gap-1 max-h-10 overflow-hidden">
+                {ingredientes.map((nombre, idx) => (
+                  <span
+                    key={`${producto.idProducto}-${nombre}-${idx}`}
+                    className="text-[10px] font-medium text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5 leading-tight"
+                  >
+                    {nombre}
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span className="text-[11px] italic text-gray-300">
+                Sin ingredientes cargados
+              </span>
+            )}
+          </div>
+        ) : (
+          <p className="m-0 text-[11px] text-gray-300 italic">
+            {producto.tipo === EnumTipoProducto.Combo
+              ? "Combo de productos"
+              : "Artículo sin ingredientes"}
+          </p>
+        )}
       </div>
 
       {/* Badge "No disponible" */}

@@ -26,43 +26,35 @@ export default function RegistrarRestaurante() {
   const [codigoVeri, setCodigoVeri] = useState<string>("");
 
   const verificarCodigo = async () => {
-    setStep("LOADING");
     if (codigoVeri.length !== 6) {
       setError("Ingresá el código de 6 dígitos.");
       return;
     }
 
+    setError(null);
+    setStep("LOADING");
+
     try {
-      // Validamos el código de 6 dígitos con Firebase
       const result = await apiRegistrarRestaurante.confirmarRegistro(
         email,
         codigoVeri,
       );
 
-      if (result.success) {
-        const token = result.login?.token;
-        if (token) {
-          localStorage.setItem("jwtToken", token);
-          window.dispatchEvent(new Event("trego-sesion-iniciada"));
-        }
+      if (result.success && result.login?.token) {
+        localStorage.setItem("jwtToken", result.login.token);
+        localStorage.setItem("restauranteHabilitado", "false");
+        window.dispatchEvent(new Event("trego-sesion-iniciada"));
         navigate("/restaurantes/solicitarAlta");
-        return;
-      } else {
-        setError(result.message);
-        setStep("VERI_CODIGO");
-      }
-    } catch (err: unknown) {
-      // Manejo de errores de la API de Spring Boot
-      if (
-        err instanceof Error &&
-        err.message === "Código inválido o expirado."
-      ) {
-        setError("Acceso denegado. Codigo invalido.");
-        setStep("VERI_CODIGO");
         return;
       }
 
-      setError(" Error desconocido");
+      setError(
+        result.message ||
+          "No se pudo verificar el código. Pedí uno nuevo e intentá de nuevo.",
+      );
+      setStep("VERI_CODIGO");
+    } catch {
+      setError("Ocurrió un error inesperado al conectar con el servidor.");
       setStep("VERI_CODIGO");
     }
   };
@@ -224,8 +216,14 @@ export default function RegistrarRestaurante() {
                     Código de verificación
                   </h1>
                   <p className="text-sm text-gray-500 mt-1">
-                    Revisa tu correo electrónico
+                    En desarrollo, revisá la consola del backend (no llega por email)
                   </p>
+                  {error ? (
+                    <div className="mt-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 flex gap-2">
+                      <span className="mt-0.5 shrink-0">⚠</span>
+                      <span>{error}</span>
+                    </div>
+                  ) : null}
                 </>
               )}
               {step === "LOADING" && (

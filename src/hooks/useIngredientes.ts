@@ -50,29 +50,62 @@ export function useIngredientes({
     onListaCambiada?.(listaIngredientes);
   }, [listaIngredientes, onListaCambiada]);
 
-  const agregarIngrediente = useCallback((item: DTOIngrediente | undefined) => {
-    // Si el item es undefined (el usuario le dio a la X), limpiamos el buscador
-    if (!item) {
-      setIngredienteSeleccionado(undefined);
-      return;
-    }
+  const yaEstaEnLista = useCallback(
+    (lista: DTOIngrediente[], item: DTOIngrediente) =>
+      lista.some(
+        (i) =>
+          (item.idIngrediente != null &&
+            i.idIngrediente === item.idIngrediente) ||
+          i.nombre.trim().toLowerCase() === item.nombre.trim().toLowerCase(),
+      ),
+    [],
+  );
 
-    // Si hay un item válido, lo agregamos a la lista y lo marcamos como seleccionado
-    setListaIngredientes((prev) => {
-      if (prev.some((i) => i.idIngrediente === item.idIngrediente)) return prev;
-      return [...prev, item];
-    });
-    setIngredienteSeleccionado(item);
-  }, []);
+  const agregarIngrediente = useCallback(
+    (item: DTOIngrediente | undefined) => {
+      if (!item) {
+        setIngredienteSeleccionado(undefined);
+        return;
+      }
+
+      setListaIngredientes((prev) => {
+        if (yaEstaEnLista(prev, item)) return prev;
+        const next = [...prev, item];
+        onListaCambiada?.(next);
+        return next;
+      });
+
+      // Limpiamos el buscador para poder agregar otro al instante
+      setIngredienteSeleccionado(undefined);
+    },
+    [yaEstaEnLista, onListaCambiada],
+  );
 
   const quitarIngrediente = useCallback((ing: DTOIngrediente) => {
-    setListaIngredientes((prev) =>
-      prev.filter((i) => i.idIngrediente !== ing.idIngrediente),
-    );
+    setListaIngredientes((prev) => {
+      const next = prev.filter((i) =>
+        ing.idIngrediente != null
+          ? i.idIngrediente !== ing.idIngrediente
+          : i.nombre.trim().toLowerCase() !== ing.nombre.trim().toLowerCase(),
+      );
+      onListaCambiada?.(next);
+      return next;
+    });
     setIngredienteSeleccionado((prev) =>
-      prev?.idIngrediente === ing.idIngrediente ? undefined : prev,
+      prev &&
+        ((ing.idIngrediente != null &&
+          prev.idIngrediente === ing.idIngrediente) ||
+          prev.nombre.trim().toLowerCase() === ing.nombre.trim().toLowerCase())
+        ? undefined
+        : prev,
     );
-  }, []);
+  }, [onListaCambiada]);
+
+  const limpiarIngredientes = useCallback(() => {
+    setListaIngredientes([]);
+    onListaCambiada?.([]);
+    setIngredienteSeleccionado(undefined);
+  }, [onListaCambiada]);
 
   const crearIngredienteLocal = useCallback(async () => {
     const nombre = nuevoIngrediente.trim();
@@ -102,6 +135,7 @@ export function useIngredientes({
     setMostrarFormIngrediente,
     agregarIngrediente,
     quitarIngrediente,
+    limpiarIngredientes,
     crearIngredienteLocal,
   };
 }

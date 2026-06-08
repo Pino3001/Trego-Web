@@ -65,7 +65,10 @@ export default function ListarProductos() {
     return (
       <ModificarProducto
         producto={productoSelect}
-        onReturn={() => setProductoSelect(undefined)}
+        onReturn={() => {
+          setProductoSelect(undefined);
+          recargarProductos();
+        }}
       />
     );
   }
@@ -90,7 +93,7 @@ export default function ListarProductos() {
       )}
 
       <h1 className="text-2xl font-black text-gray-800 text-center mb-6 uppercase tracking-tight">
-        Pedidos a Confirmar
+        Mis Productos
       </h1>
 
       <div className="max-w-5xl mx-auto mb-8 relative group">

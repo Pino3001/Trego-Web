@@ -171,6 +171,46 @@ export async function listarProductos(): Promise<DTOProducto[]> {
   return response.json();
 }
 
+export async function modificarProducto(producto: DTOProducto): Promise<DTOProducto> {
+  const response = await fetchConAuth(ENDPOINTS.MODIFICAR_PRODUCTO, {
+    method: "PATCH",
+    body: JSON.stringify(producto),
+  });
+
+  if (!response.ok) {
+    let mensaje = `Error ${response.status}`;
+    try {
+      const errorData = await response.json();
+      mensaje =
+        errorData.message || errorData.error || JSON.stringify(errorData);
+    } catch {
+      mensaje = await response.text().catch(() => "Error desconocido");
+    }
+    throw new Error(mensaje);
+  }
+
+  return response.json();
+}
+
+export async function eliminarProducto(idProducto: number): Promise<void> {
+  const response = await fetchConAuth(
+    `${ENDPOINTS.ELIMINAR_PRODUCTO}/${idProducto}`,
+    { method: "DELETE" },
+  );
+
+  if (!response.ok) {
+    let mensaje = `Error ${response.status}`;
+    try {
+      const errorData = await response.json();
+      mensaje =
+        errorData.message || errorData.error || JSON.stringify(errorData);
+    } catch {
+      mensaje = await response.text().catch(() => "Error desconocido");
+    }
+    throw new Error(mensaje);
+  }
+}
+
 /**
  * Obtiene los pedidos del restaurante autenticado, opcionalmente filtrados por estado y/o producto.
  * @param filtros - Objeto opcional con `estado` y/o `idProducto`.
