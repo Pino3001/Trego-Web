@@ -75,4 +75,7 @@ export const ENDPOINTS = {
 
   // Administrador — clientes
   CLIENTES_TODOS: '/api/clientes',
+
+  // Administrador — alta de administradores
+  ADMIN_CREAR_ADMINISTRADOR: '/api/administradores/CrearAdministrador',
 }
