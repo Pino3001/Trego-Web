@@ -18,6 +18,7 @@ import ListarCancelados from "./pages/restaurantes/screens/ListarCancelados.js";
 import GestionRestaurantesPage from "./pages/admin/screens/GestionRestaurantesPage.js";
 import ListarRestaurantesPage from "./pages/admin/screens/ListarRestaurantesPage.js";
 import ListarClientesPage from "./pages/admin/screens/ListarClientesPage.js";
+import CrearAdministradorPage from "./pages/admin/screens/CrearAdministradorPage.js";
 import AdministradorLayaut from "./pages/admin/AdministradorLayaut.js";
 import RestauranteMenuPage from "./pages/cliente/screens/RestauranteMenuPage.jsx";
 import HomePage from "./pages/cliente/screens/HomePage.jsx";
@@ -131,6 +132,10 @@ export default function AppRouter() {
             element={<ListarRestaurantesPage />}
           />
           <Route path="/admin/clientes" element={<ListarClientesPage />} />
+          <Route
+            path="/admin/administradores/crear"
+            element={<CrearAdministradorPage />}
+          />
           <Route
             path="/admin/perfil/contraseña"
             element={
