@@ -301,7 +301,8 @@ export default function RestauranteLayout() {
         tipoUser="Restaurante"
         perfilNombre={perfilNombre}
         perfilEmail={perfilEmail}
-        onVerPerfil={() => navigate("/restaurantes/perfil/contraseña")}
+        onCambiarContraseña={() => navigate("/restaurantes/perfil/contraseña")}
+        onVerPerfil={() => navigate("/perfil/restaurante")}
         horaCierre={horaCierre}
         onChangeHoraCierre={handleChangeHoraCierre}
         horaApertura={horaApertura}

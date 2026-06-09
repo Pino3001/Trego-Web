@@ -87,3 +87,13 @@ export async function obtenerDireccionesGuardadas() {
   if (!Array.isArray(lista)) return []
   return lista.map(mapearDireccionUi)
 }
+
+export async function obtenerPerfil() {
+  const response = await fetchConAuth(ENDPOINTS.USUARIO_ACTUAL)
+  if (!response.ok) {
+    if (response.status === 401) throw new Error('UNAUTHORIZED')
+    throw new Error('No se pudo cargar el perfil')
+  }
+  const data = await response.json()
+  return data
+}

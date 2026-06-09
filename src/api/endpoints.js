@@ -35,6 +35,12 @@ export const ENDPOINTS = {
   USUARIO_ACTUAL: '/api/usuarios/actual',
   USUARIO_RECUPERAR_CONTRASENA: '/api/usuarios/recuperarContraseña',
   USUARIO_ACTUALIZAR_CONTRASENA: '/api/usuarios/actualizarContraseña',
+  USUARIO_PERFIL: '/api/usuarios/perfil',
+  USUARIO_AGREGAR_DIRECCION: "/api/usuarios/agregarDireccion",
+  USUARIO_ACTUALIZAR_DIRECCION:"/api/usuarios/actualizarDireccion",
+  CLIENTE_MODIFICAR_PERFIL: "/api/clientes/actualizar",
+  CLIENTE_ACTUAL: "/api/clientes/actual",
+  RESTAURANTE_MODIFICAR_PERFIL: "/api/restaurantes/actualizar",
 
   // Auth
   AUTH_GOOGLE: '/api/auth/google',
@@ -53,7 +59,7 @@ export const ENDPOINTS = {
   AGREGAR_INGREDIENTE: `/api/productos/agregarIngrediente`,
   LISTAR_PRODUCTOS: '/api/productos/listarProductos',
   MODIFICAR_PRODUCTO: '/api/productos/modificarProducto',
-  ELIMINAR_PRODUCTO: '/api/productos/eliminarProducto',
+  DESHABILITAR_PRODUCTO: '/api/productos',
   LISTAR_PEDIDOS: `/api/pedido/listarPedidos`,
   LISTAR_SUBCATEGORIAS: `/api/subcategorias/listar`,
   CONFIRMAR_PEDIDO: `/api/pedido/confirmar`,

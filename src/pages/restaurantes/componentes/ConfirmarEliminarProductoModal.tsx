@@ -36,11 +36,10 @@ export default function ConfirmarEliminarProductoModal({
           </div>
 
           <h2 className="text-xl font-bold tracking-tight text-gray-900 sm:text-2xl">
-            ¿Eliminar producto?
+            ¿Deshabilitar producto?
           </h2>
           <p className="mt-2 text-sm text-gray-500">
-            Esta acción no se puede deshacer. El producto dejará de aparecer en
-            tu menú.
+            El producto ya no sera visible para los clientes.
           </p>
         </div>
 
@@ -60,7 +59,7 @@ export default function ConfirmarEliminarProductoModal({
           </div>
           <div className="min-w-0 text-left">
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-              Producto a eliminar
+              Producto a deshabilitar
             </p>
             <p className="truncate text-base font-bold text-gray-900">
               {nombreProducto}
@@ -72,7 +71,7 @@ export default function ConfirmarEliminarProductoModal({
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <span>
             Si este producto forma parte de un combo, revisá que tu menú siga
-            completo después de eliminarlo.
+            completo después de deshabilitarlo.
           </span>
         </div>
 
@@ -100,10 +99,10 @@ export default function ConfirmarEliminarProductoModal({
             {eliminando ? (
               <span className="inline-flex items-center justify-center gap-2">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                Eliminando...
+                Procesando...
               </span>
             ) : (
-              "Sí, eliminar"
+              "Sí, deshabilitar"
             )}
           </button>
         </div>

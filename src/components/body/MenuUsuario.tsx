@@ -1,6 +1,7 @@
-import { Check, ChevronRight, Edit, LogOut, Store, User } from "lucide-react";
+import { Check, ChevronRight, Edit, Key, LogOut, Store, User } from "lucide-react";
 import { DateTimeInput } from "../DateTimeInput.js";
 import { useEffect, useRef, useState } from "react";
+import { getInitials } from "../../utils/funcionesFormateo.js";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -10,7 +11,8 @@ interface MenuUsuarioProps {
   tipoUser: string;
   avatarUrl?: string;
   restauranteAbierto?: boolean | undefined;
-  onVerPerfil: () => void;
+  onVerPerfil?: () => void;
+  onCambiarContrasenia?: () => void;
   onCerrarSesion: () => void;
   onToggleRestaurante?: ((hora?: string) => void) | undefined;
   horaCierre?: string | undefined;
@@ -18,18 +20,6 @@ interface MenuUsuarioProps {
   onChangeHoraCierre?: ((item: string | undefined) => void) | undefined;
   onChangeHoraApertura?: ((item: string | undefined) => void) | undefined;
 }
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function getInitials(nombre: string): string {
-  return nombre
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
-}
-
 // ─── Componente ───────────────────────────────────────────────────────────────
 
 export default function MenuUsuario({
@@ -45,6 +35,7 @@ export default function MenuUsuario({
   horaApertura,
   onChangeHoraCierre,
   onChangeHoraApertura,
+  onCambiarContrasenia,
 }: MenuUsuarioProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,7 +80,7 @@ export default function MenuUsuario({
     setError(null);
     setErrorApertura(null);
     onToggleRestaurante?.(internalHora);
-    onChangeHoraApertura?.(internalHoraApertura)
+    onChangeHoraApertura?.(internalHoraApertura);
   };
 
   const handleHoraChange = (value: string) => {
@@ -140,7 +131,7 @@ export default function MenuUsuario({
             className="w-22 h-22 rounded-full object-cover shrink-0"
           />
         ) : (
-          <div className="w-22 h-22 rounded-full bg-blue-50 flex items-center justify-center text-base font-medium text-blue-600 flex-shrink-0 select-none">
+          <div className="w-22 h-22 rounded-full bg-blue-50 flex items-center justify-center text-base font-medium text-blue-600 shrink-0 select-none">
             {getInitials(nombre)}
           </div>
         )}
@@ -163,7 +154,8 @@ export default function MenuUsuario({
               onClick={handleToggle}
               onKeyDown={(e) => e.key === "Enter" && handleToggle()}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors ${
-                !restauranteAbierto && (!internalHora.trim() || !internalHoraApertura.trim())
+                !restauranteAbierto &&
+                (!internalHora.trim() || !internalHoraApertura.trim())
                   ? "opacity-50 cursor-not-allowed"
                   : "hover:bg-gray-50"
               }`}
@@ -246,18 +238,33 @@ export default function MenuUsuario({
           </>
         )}
 
-        {/* Perfil / contraseña */}
-        <button
-          type="button"
-          onClick={onVerPerfil}
-          className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-gray-50 transition-colors"
-        >
-          <User size={32} className="text-gray-400 shrink-0" />
-          <span className="flex-1 text-sm font-medium text-gray-800">
-            {tipoUser === "Cliente" ? "Ver perfil" : "Cambiar contraseña"}
-          </span>
-          <ChevronRight size={16} className="text-gray-300 shrink-0" />
-        </button>
+        {onVerPerfil ? (
+          <button
+            type="button"
+            onClick={onVerPerfil}
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-gray-50 transition-colors"
+          >
+            <User size={32} className="text-gray-400 shrink-0" />
+            <span className="flex-1 text-sm font-medium text-gray-800">
+              Ver perfil
+            </span>
+            <ChevronRight size={16} className="text-gray-300 shrink-0" />
+          </button>
+        ) : undefined}
+
+        {onCambiarContrasenia ? (
+          <button
+            type="button"
+            onClick={onCambiarContrasenia}
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-gray-50 transition-colors"
+          >
+            <Key size={32} className="text-gray-400 shrink-0" />
+            <span className="flex-1 text-sm font-medium text-gray-800">
+              Cambiar Contraseña
+            </span>
+            <ChevronRight size={16} className="text-gray-300 shrink-0" />
+          </button>
+        ) : undefined}
 
         <hr className="border-gray-100 my-1 mx-1" />
 

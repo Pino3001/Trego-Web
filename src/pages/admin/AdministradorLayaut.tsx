@@ -118,7 +118,7 @@ export default function AdministradorLayaut() {
         tipoUser="Administrador"
         perfilNombre={perfilNombre}
         perfilEmail={perfilEmail}
-        onVerPerfil={() => navigate("/admin/perfil/contraseña")}
+        onCambiarContraseña={() => navigate("/admin/perfil/contraseña")}
         onLogout={handleLogout}
       />
       <div className="flex flex-1 overflow-hidden">

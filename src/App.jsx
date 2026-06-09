@@ -31,6 +31,8 @@ import RegistrarRestaurante from "./pages/logins/RegistrarRestaurante.js";
 import ListarProductos from "./pages/restaurantes/screens/ListarProductos.js";
 import ModificarProducto from "./pages/restaurantes/screens/ModificarProducto.js";
 import ListarReclamos from "./pages/restaurantes/screens/ListarReclamos.js";
+import PerfilCliente from "./pages/perfil/PerfilScreen.js";
+import PerfilRestauranteScreen from "./pages/perfil/PerfilRestauranteScreen.js";
 
 export default function AppRouter() {
   return (
@@ -96,6 +98,10 @@ export default function AppRouter() {
             element={<SolicitarAltaRestaurante />}
           />
           <Route
+            path="/perfil/restaurante"
+            element={<PerfilRestauranteScreen />}
+          />
+          <Route
             path="/restaurantes/perfil/contraseña"
             element={
               <CambiarContraseñaPage
@@ -151,6 +157,7 @@ export default function AppRouter() {
           <Route path="/restaurante/:id" element={<RestauranteMenuPage />} />
           <Route path="/restaurantes" element={<HomePage />} />
           <Route path="/Historial" element={<HistorialPage />} />
+          <Route path="/perfil/cliente" element={<PerfilCliente />} />
         </Route>
       </Routes>
     </BrowserRouter>

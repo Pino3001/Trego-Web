@@ -19,8 +19,8 @@ export interface DTORestaurante {
   radioEntrega?: number;
   habilitado?: boolean;
   abierto?: boolean;
-  horaApertura?: string | null;  // Formato "HH:mm:ss"
-  horaCierre?: string | null;    // Formato "HH:mm:ss"
+  horaApertura?: string | null;
+  horaCierre?: string | null;
   productos?: DTOProducto[];
   ingredientesDisponibles?: DTOIngrediente[];
 }

@@ -39,7 +39,7 @@ export default function ClienteLayaut() {
   const token = localStorage.getItem("jwtToken");
 
   if (!token) {
-    return <Navigate to="/login/Cliente" replace />;
+    return <Navigate to="/login/cliente" replace />;
   }
 
   // cerrar sesion
@@ -50,9 +50,13 @@ export default function ClienteLayaut() {
       console.error("Error al revocar el token en el servidor:", error);
     } finally {
       limpiarSesion();
-      navigate("/login/Cliente");
+      navigate("/login/cliente");
     }
   };
+
+  const handleVerPerfil = () => {
+    navigate("/perfil/cliente")
+  }
 
   // Si pasa todas las reglas, renderizamos la pantalla normal
   return (
@@ -69,6 +73,7 @@ export default function ClienteLayaut() {
         cantidadTotal={cantidadTotal}
         noMostrarbuscador={noMostrarBuscador}
         navigateTo={"/restaurantes"}
+        onVerPerfil={handleVerPerfil}
       />
 
       <main className="flex-1 flex flex-col overflow-y-auto relative">

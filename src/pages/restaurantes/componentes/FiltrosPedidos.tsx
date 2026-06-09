@@ -5,6 +5,7 @@ import {
   TextBuscador,
   type SearchItem,
 } from "../../../components/TextBuscador.js";
+import { TextSelector } from "../../../components/TextSelector.js";
 
 interface FiltroRestoProps<T> {
   labelBuscador?: string;
@@ -24,6 +25,10 @@ interface FiltroRestoProps<T> {
   fechaHasta?: string;
   onChangeFechaDesde?: ((i: string) => void) | undefined;
   onChangeFechaHasta?: ((i: string) => void) | undefined;
+  estadoFiltro?: "TODOS" | "HABILITADOS" | "DESHABILITADOS";
+  onChangeEstadoFiltro?: (
+    estado: "TODOS" | "HABILITADOS" | "DESHABILITADOS",
+  ) => void;
 }
 
 export default function FiltrosRestaurantes<T>({
@@ -44,6 +49,8 @@ export default function FiltrosRestaurantes<T>({
   onChangeFechaDesde,
   onChangeFechaHasta,
   mapToItem,
+  estadoFiltro,
+  onChangeEstadoFiltro,
 }: FiltroRestoProps<T>) {
   const toggleOrden = () => setOrden(orden === "ASC" ? "DESC" : "ASC");
 
@@ -54,7 +61,7 @@ export default function FiltrosRestaurantes<T>({
         htmlFor="filtro-busqueda"
         className="flex flex-1 flex-col gap-1 min-w-40 max-w-120"
       >
-        <span className="text-sm font-medium text-gray-700">
+        <span className="text-sm font-medium text-center text-gray-700">
           {labelBuscador}
         </span>
         <TextInput
@@ -75,7 +82,7 @@ export default function FiltrosRestaurantes<T>({
             htmlFor="filtro-producto"
             className="flex flex-1 flex-col gap-1 min-w-40 max-w-120"
           >
-            <span className="text-sm font-medium text-gray-700">
+            <span className="text-sm font-medium text-center text-gray-700">
               {desplegableTipo}
             </span>
             <TextBuscador<T>
@@ -92,7 +99,7 @@ export default function FiltrosRestaurantes<T>({
       {porFecha ? (
         <>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-gray-700">Desde</span>
+            <span className="text-sm font-medium text-center text-gray-700">Desde</span>
             <input
               type="date"
               value={fechaDesde}
@@ -102,7 +109,7 @@ export default function FiltrosRestaurantes<T>({
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-gray-700">Hasta</span>
+            <span className="text-sm font-medium text-center text-gray-700">Hasta</span>
             <input
               type="date"
               value={fechaHasta}
@@ -131,6 +138,29 @@ export default function FiltrosRestaurantes<T>({
             )}
           </button>
         </div>
+
+        {onChangeEstadoFiltro && (
+          <div className="flex flex-col gap-1 min-w-40 max-w-120 flex-1">
+            <span className="text-sm font-medium text-center text-gray-700">Estado</span>
+            <TextSelector<"TODOS" | "HABILITADOS" | "DESHABILITADOS">
+              items={["TODOS", "HABILITADOS", "DESHABILITADOS"]}
+              placeholder=""
+              selected={estadoFiltro}
+              onSelect={(item) => onChangeEstadoFiltro(item ?? "TODOS")}
+              mapToItem={(item) => ({
+                id: item,
+                label:
+                  item === "TODOS"
+                    ? "Todos"
+                    : item === "HABILITADOS"
+                      ? "Habilitados"
+                      : "Deshabilitados",
+              })}
+              className="h-11.5!"
+              colorStyle="trego-restaurante"
+            />
+          </div>
+        )}
 
         {/* Limpiar */}
         <div className="flex flex-col gap-1 min-w-11">

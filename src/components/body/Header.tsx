@@ -28,6 +28,7 @@ interface HeaderProps {
   onAbrirCarrito?: () => void;
   noMostrarbuscador?: boolean;
   navigateTo?: string;
+  onCambiarContraseña: () => void;
 }
 
 export default function Header(props: HeaderProps) {
@@ -56,6 +57,7 @@ export default function Header(props: HeaderProps) {
     navigateTo,
     horaApertura,
     onChangeHoraApertura,
+    onCambiarContraseña,
   } = props;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -178,6 +180,10 @@ export default function Header(props: HeaderProps) {
                     onChangeHoraCierre={onChangeHoraCierre}
                     horaApertura={horaApertura}
                     onChangeHoraApertura={onChangeHoraApertura}
+                    onCambiarContrasenia={() => {
+                      setMenuAbierto(false);
+                      onCambiarContraseña?.();
+                    }}
                   />
                 </>
               )}
