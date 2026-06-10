@@ -11,6 +11,8 @@ interface TextInputNumberProps {
   error?: string | undefined;
   min?: number;
   max?: number;
+  disabled?: boolean;
+  className?: string
 }
 
 export const TextInputNumber = ({
@@ -23,6 +25,8 @@ export const TextInputNumber = ({
   error,
   min,
   max,
+  disabled = false,
+  className
 }: TextInputNumberProps) => {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -50,7 +54,9 @@ export const TextInputNumber = ({
             ? "border-red-400 focus:border-red-400 focus:ring-1 focus:ring-red-300 bg-red-50"
             : `border-gray-400 focus:border-${colorStyle} focus:ring-1 focus:ring-${colorStyle} bg-white`
           }
+            ${className}
         `}
+        disabled={disabled}
       />
 
       {/* Floating label */}

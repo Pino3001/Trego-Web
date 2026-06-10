@@ -17,6 +17,7 @@ import {
   modificarProducto,
   obtenerFirmaCloudinary,
 } from "../../../api/apiRestaurante.js";
+import AltaOferta from "./AltaOferta.js";
 
 type StepState = "FORM" | "LOADING" | "SUCCESS";
 
@@ -41,7 +42,7 @@ export default function ModificarProducto({
   const { subcategorias, subcategoriaSeleccionada, seleccionarSubcategoria } =
     useSubCategorias();
   const { productos } = useProductoRestaurante();
-
+  const [ofertaNueva, setNuevaOferta] = useState<boolean>(false);
   // Nombre del producto a modificar
   const [nombre, setNombre] = useState(producto.nombre);
   // Precio del producto a modificar
@@ -374,6 +375,15 @@ export default function ModificarProducto({
     }
   };
 
+  if (ofertaNueva) {
+    return (
+      <AltaOferta
+        producto={producto}
+        onCancelar={() => setNuevaOferta(false)}
+      />
+    );
+  }
+
   return (
     <>
       <div className="w-full max-w-5xl mx-auto px-10 py-8 min-h-screen bg-gray-75">
@@ -447,7 +457,15 @@ export default function ModificarProducto({
 
         {/* FORM */}
         {step === "FORM" && (
-          <div className="bg-white rounded-3xl shadow-lg shadow-green-50 p-8 flex flex-col gap-1">
+          <div className="bg-white rounded-3xl shadow-lg shadow-green-50 p-2 flex flex-col gap-1">
+            <div className="ml-auto">
+              <button
+                onClick={() => setNuevaOferta(!ofertaNueva)}
+                className="py-2.5 px-6 rounded-3xl border border-trego-admin text-trego-admin hover:bg-trego-admin hover:text-white text-base font-semibold transition-all duration-200"
+              >
+                Agregar oferta
+              </button>
+            </div>
             {/* Renderizado condicional según tipo.id */}
             {producto.tipo === EnumTipoProducto.Plato && (
               <AltaPlato
@@ -555,7 +573,7 @@ export default function ModificarProducto({
                 <button
                   type="button"
                   onClick={handleAbrirModalEliminar}
-                  className="flex-1 py-3.5 px-6 rounded-3xl bg-trego-orange hover:bg-trego-cart text-white text-base font-semibold transition-all duration-200"
+                  className="flex-1 py-3.5 px-6 rounded-3xl border border-trego-orange text-trego-orange hover:bg-trego-orange hover:text-white  text-base font-semibold transition-all duration-200"
                 >
                   Deshabilitar Producto
                 </button>

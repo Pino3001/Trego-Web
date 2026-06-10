@@ -132,7 +132,7 @@ export default function ProductoCard({ producto, onClick }: ProductoCardPropd) {
 
         {/* Fila 3: Ingredientes (solo platos) */}
         {esPlato ? (
-          <div className="flex flex-col gap-1 min-h-[28px]">
+          <div className="flex flex-col gap-1 min-h-7">
             <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-400">
               Ingredientes
             </span>
@@ -166,8 +166,8 @@ export default function ProductoCard({ producto, onClick }: ProductoCardPropd) {
       {noDisponible && (
         <div
           className="
-        absolute top-2 right-2 text-[9px] font-bold text-gray-400
-        bg-gray-100 border border-gray-200 py-0.5 px-2
+        absolute top-2 text-[9px] font-bold text-gray-600
+        bg-gray-200 border border-gray-400 py-0.5 px-2
         rounded-full uppercase tracking-[0.08em]
       "
         >
