@@ -1,6 +1,7 @@
 import type { DTOAbrirCerrarLocalRequest } from "../data/DTOAbrirCerrarLocalRequest.js";
 import type { DTOFirma } from "../data/DTOFirma.js";
 import type { DTOIngrediente } from "../data/DTOIngrediente.js";
+import type { DTOOferta } from "../data/DTOOferta.js";
 import type { DTOPedido } from "../data/DTOPedido.js";
 import type { DTOProducto } from "../data/DTOProducto.js";
 import type { DTORestaurante } from "../data/DTORestaurante.js";
@@ -526,4 +527,35 @@ export async function modificarRestaurantePerfil(
   }
 
   return response.json();
+}
+
+/**
+ * Crea una nueva oferta para el restaurante autenticado.
+ * @param request - Datos de la oferta (DTOOferta)
+ * @param idProducto - ID del producto al que se asocia la oferta
+ * @returns Promise con la oferta creada (DTOOferta)
+ * @throws Error si la respuesta no es exitosa
+ */
+export async function crearOferta(
+  request: DTOOferta,
+  idProducto: number
+): Promise<DTOOferta> {
+  const response = await fetchConAuth(`${ENDPOINTS.CREAR_OFERTA}?idProducto=${idProducto}`, {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    let errorMessage = `Error ${response.status}: ${response.statusText}`;
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch {
+      errorMessage = await response.text().catch(() => errorMessage);
+    }
+    throw new Error(errorMessage);
+  }
+
+  const data: DTOOferta = await response.json();
+  return data;
 }

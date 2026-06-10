@@ -34,6 +34,7 @@ import ModificarProducto from "./pages/restaurantes/screens/ModificarProducto.js
 import ListarReclamos from "./pages/restaurantes/screens/ListarReclamos.js";
 import PerfilCliente from "./pages/perfil/PerfilScreen.js";
 import PerfilRestauranteScreen from "./pages/perfil/PerfilRestauranteScreen.js";
+import AltaOferta from "./pages/restaurantes/screens/AltaOferta.js";
 
 export default function AppRouter() {
   return (
@@ -119,6 +120,7 @@ export default function AppRouter() {
             path="/restaurantes/ListarProductos/:id"
             element={<ModificarProducto />}
           />
+          <Route path="/restaurantes/alta-oferta" element={<AltaOferta />} />
         </Route>
 
         {/* --- RUTAS ADMIN (LAYOUT CON SIDEBAR) --- */}

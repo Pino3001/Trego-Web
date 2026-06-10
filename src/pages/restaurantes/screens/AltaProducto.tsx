@@ -392,7 +392,7 @@ export default function AltaProducto() {
               </button>
               <button
                 onClick={handleCancel}
-                className="flex-1 py-3.5 px-6 rounded-3xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-base font-semibold transition-all duration-200"
+                className="flex-1 py-3.5 px-6 rounded-3xl border border-trego-orange text-trego-orange hover:bg-trego-orange hover:text-white  text-base font-semibold transition-all duration-200"
               >
                 Cancelar
               </button>
