@@ -14,7 +14,10 @@ interface HeaderProps {
   abrirPerfil?: boolean;
   tipoUser?: "Cliente" | "Restaurante" | "Administrador";
   children?: ReactNode;
-  onToggleRestauranteAbierto?: (hora?: string) => void;
+  onToggleRestauranteAbierto?: (
+    horaCierre?: string,
+    horaApertura?: string,
+  ) => void;
   restauranteAbierto?: boolean;
   horaCierre?: string | undefined;
   onChangeHoraCierre?: (item: string | undefined) => void;
@@ -172,8 +175,8 @@ export default function Header(props: HeaderProps) {
                       onVerPerfil?.();
                     }}
                     onCerrarSesion={() => onLogout?.()}
-                    onToggleRestaurante={(hora) =>
-                      onToggleRestauranteAbierto?.(hora)
+                    onToggleRestaurante={(horaCierre, horaApertura) =>
+                      onToggleRestauranteAbierto?.(horaCierre, horaApertura)
                     }
                     restauranteAbierto={restauranteAbierto}
                     horaCierre={horaCierre}

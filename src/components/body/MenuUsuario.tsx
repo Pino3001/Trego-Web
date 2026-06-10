@@ -14,7 +14,7 @@ interface MenuUsuarioProps {
   onVerPerfil?: () => void;
   onCambiarContrasenia?: () => void;
   onCerrarSesion: () => void;
-  onToggleRestaurante?: ((hora?: string) => void) | undefined;
+  onToggleRestaurante?: ((horaCierre?: string, horaApertura?: string) => void) | undefined;
   horaCierre?: string | undefined;
   horaApertura?: string | undefined;
   onChangeHoraCierre?: ((item: string | undefined) => void) | undefined;
@@ -57,16 +57,14 @@ export default function MenuUsuario({
   }, [horaApertura]);
 
   // Validar antes de intentar abrir
-  const handleToggle = () => {
+const handleToggle = () => {
     setIsEditing(false);
 
     if (restauranteAbierto) {
-      // Cerrar: no necesita hora
-      onToggleRestaurante?.(); // sin argumentos
+      onToggleRestaurante?.(); 
       return;
     }
 
-    // Abrir: validar y pasar la hora directamente
     if (!internalHora || internalHora.trim() === "") {
       setError("Debes ingresar una hora de cierre");
       return;
@@ -79,7 +77,9 @@ export default function MenuUsuario({
 
     setError(null);
     setErrorApertura(null);
-    onToggleRestaurante?.(internalHora);
+    
+    onToggleRestaurante?.(internalHora, internalHoraApertura);
+    onChangeHoraCierre?.(internalHora);
     onChangeHoraApertura?.(internalHoraApertura);
   };
 

@@ -12,6 +12,7 @@ import { apiAuth } from "../../api/apiAuth.js";
 import { limpiarSesion } from "../../utils/sesion.js";
 import { obtenerUsuarioActual } from "../../api/usuariosApi.js";
 import type { SidebarSection } from "../../components/body/utilities/DataSidebar.js";
+import type { DTOAbrirCerrarLocalRequest } from "../../data/DTOAbrirCerrarLocalRequest.js";
 
 const SECCIONES: SidebarSection[] = [
   {
@@ -73,12 +74,13 @@ export default function RestauranteLayout() {
   // --- Estados del toggle y hora de cierre ---
   const [restauranteAbierto, setRestauranteAbierto] = useState<boolean>(false);
   const [horaCierre, setHoraCierre] = useState<string | undefined>(undefined);
-  const [horaApertura, setHoraApertura] = useState<string | undefined>(undefined);
+  const [horaApertura, setHoraApertura] = useState<string | undefined>(
+    undefined,
+  );
   const [isLoadingToggle, setIsLoadingToggle] = useState(false);
   const [cambio, setCambio] = useState<boolean>(false);
   const [mostrarAvisoCierre, setMostrarAvisoCierre] = useState(false);
   const [avisoDescartado, setAvisoDescartado] = useState(false);
-  const horaGuardadaRef = useRef<string | undefined>(horaCierre);
   const [tiempoRestante, setTiempoRestante] = useState<{
     minutos: number;
     segundos: number;
@@ -105,7 +107,7 @@ export default function RestauranteLayout() {
 
   // Regla C: Si SÍ está habilitado y por error va a /solicitarAlta, lo mandamos a sus pedidos.
   if (isHabilitado && location.pathname === "/restaurantes/solicitarAlta") {
-    return <Navigate to="/ListarPedidosSinConfirmar" replace />;
+    return <Navigate to="/restaurantes/ListarPedidosSinConfirmar" replace />;
   }
 
   const lista_Secciones: SidebarSection[] = isHabilitado
@@ -135,7 +137,7 @@ export default function RestauranteLayout() {
           const horaSinSegundos = data.horaCierre.slice(0, 5);
           const horaAperturaSinSegundos = data.horaApertura?.slice(0, 5);
           setHoraCierre(horaSinSegundos);
-          setHoraApertura(horaAperturaSinSegundos)
+          setHoraApertura(horaAperturaSinSegundos);
           setCambio(false);
         } else {
           setHoraCierre(undefined);
@@ -150,11 +152,12 @@ export default function RestauranteLayout() {
   }, [token, isHabilitado, cambio]);
 
   // Funcion para cambiar estado (Abierto/Cerrado) restaurante
-  const handleToggleRestaurante = async (horaDesdeMenu?: string) => {
+const handleToggleRestaurante = async (horaDesdeMenu?: string, aperturaDesdeMenu?: string) => {
     if (!token || !isHabilitado) return;
 
-    // Determiná qué hora usar: la que viene del menú (prioritaria) o la del estado
     const horaEfectiva = horaDesdeMenu ?? horaCierre;
+    // 👇 Capturamos la apertura instantánea que viene del menú
+    const aperturaEfectiva = aperturaDesdeMenu ?? horaApertura; 
 
     if (!restauranteAbierto && (!horaEfectiva || horaEfectiva.trim() === "")) {
       console.warn("No se puede abrir sin una hora de cierre");
@@ -166,16 +169,17 @@ export default function RestauranteLayout() {
       if (restauranteAbierto) {
         await cerrarLocal();
         setRestauranteAbierto(false);
-        setCambio(true);
       } else {
-        // Asegurate de enviar "HH:mm" o "HH:mm:ss" según lo que espere tu API
-        await abrirLocal(horaEfectiva!); // acá sabés que no es undefined
+        const hora: DTOAbrirCerrarLocalRequest = {
+          horaApertura: aperturaEfectiva ?? "", // 👇 Usamos la efectiva aquí
+          horaCierre: horaEfectiva ?? "",
+        };
+        await abrirLocal(hora!);
         setRestauranteAbierto(true);
-        setCambio(true);
-        // Si la hora vino del menú, actualizá también el estado local
-        if (horaDesdeMenu !== undefined) {
-          setHoraCierre(horaDesdeMenu);
-        }
+        
+        // Sincronizamos el estado de React con lo que ingresó el usuario
+        if (horaDesdeMenu !== undefined) setHoraCierre(horaDesdeMenu);
+        if (aperturaDesdeMenu !== undefined) setHoraApertura(aperturaDesdeMenu);
       }
     } catch (error) {
       console.error("Error al alternar estado:", error);
@@ -200,7 +204,7 @@ export default function RestauranteLayout() {
 
   const handleLogout = async () => {
     // Si el local está abierto, lo cerramos antes de salir
-/*     if (restauranteAbierto) {
+    /*     if (restauranteAbierto) {
       try {
         await cerrarLocal();
         // Actualizamos el estado local para reflejar el cierre
@@ -238,6 +242,10 @@ export default function RestauranteLayout() {
       const ahora = new Date();
       const cierreHoy = new Date(ahora);
       cierreHoy.setHours(h, m, 0, 0);
+
+      if (cierreHoy.getTime() < ahora.getTime()) {
+        cierreHoy.setDate(cierreHoy.getDate() + 1);
+      }
 
       const diffSegundos = Math.floor(
         (cierreHoy.getTime() - ahora.getTime()) / 1000,

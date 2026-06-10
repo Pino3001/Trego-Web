@@ -1,3 +1,4 @@
+import type { DTOAbrirCerrarLocalRequest } from "../data/DTOAbrirCerrarLocalRequest.js";
 import type { DTOFirma } from "../data/DTOFirma.js";
 import type { DTOIngrediente } from "../data/DTOIngrediente.js";
 import type { DTOPedido } from "../data/DTOPedido.js";
@@ -399,10 +400,10 @@ export async function reembolsarPedido(pedido: DTOPedido): Promise<DTOPedido> {
  * @returns Nada.
  * @throws Error con el mensaje del backend si falla (400/409/500).
  */
-export async function abrirLocal(cierre: string): Promise<void> {
+export async function abrirLocal(cierre: DTOAbrirCerrarLocalRequest): Promise<void> {
   const response = await fetchConAuth(`${ENDPOINTS.ABRIR_LOCAL}`, {
     method: "PATCH",
-    body: JSON.stringify({ horaCierre: cierre }),
+    body: JSON.stringify(cierre),
   });
 
   if (!response.ok) {
