@@ -101,6 +101,7 @@ export function mapearLineaCarritoAItem(linea) {
     fotoPlato: p.urlImagen ?? p.fotoPlato,
     cantidad: linea.cantidad ?? 1,
     comentarios: linea.observaciones ?? '',
+    ingredientes: p.ingredientes ?? [],
     ingredientesQuitados: (linea.ingredientesAQuitar ?? []).map((i) => i.nombre ?? i),
   }
 }
@@ -315,9 +316,10 @@ export function ingredientesAQuitarParaApi(ingredientesQuitados, producto) {
   return quitados
     .map((entry) => {
       const nombre = typeof entry === 'string' ? entry : entry?.nombre
+      const normalizar = (texto) => String(texto ?? '').trim().toLowerCase()
       const match = catalogo.find(
         (i) =>
-          (nombre && i.nombre === nombre) ||
+          (nombre && normalizar(i.nombre) === normalizar(nombre)) ||
           (entry?.idIngrediente != null && i.idIngrediente === entry.idIngrediente),
       )
       const idIngrediente = match?.idIngrediente ?? entry?.idIngrediente ?? null
