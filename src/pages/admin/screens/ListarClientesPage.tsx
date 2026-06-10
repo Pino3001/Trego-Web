@@ -3,6 +3,7 @@ import type { DTODireccion } from "../../../data/DTODireccion.js";
 import type { DTOClienteResponse } from "../../../data/DTOClienteResponse.js";
 import { administradorApi } from "../../../api/administradorApi.js";
 import EmptyState from "../../../components/EmptyState.jsx";
+import AccionesEstadoCuenta from "../components/AccionesEstadoCuenta.js";
 
 
 type FiltroEstado = "todos" | "habilitados" | "deshabilitados";
@@ -72,6 +73,21 @@ export default function ListarClientesPage() {
   const [busqueda, setBusqueda] = useState("");
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>("todos");
   const [orden, setOrden] = useState<OrdenLista>("az");
+  const [mensajeExito, setMensajeExito] = useState<string | null>(null);
+
+  const cerrarModal = () => {
+    setSeleccionado(null);
+  };
+
+  const handleEstadoActualizado = async (
+    nombre: string,
+    estabaHabilitado: boolean,
+  ) => {
+    const accion = estabaHabilitado ? "deshabilitada" : "habilitada";
+    setMensajeExito(`La cuenta de "${nombre}" fue ${accion} correctamente.`);
+    cerrarModal();
+    await cargarDatos();
+  };
 
   const cargarDatos = useCallback(async () => {
     setCargando(true);
@@ -140,6 +156,12 @@ export default function ListarClientesPage() {
             Vista general de clientes registrados en la plataforma.
           </p>
         </div>
+
+        {mensajeExito && (
+          <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+            {mensajeExito}
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
@@ -268,7 +290,7 @@ export default function ListarClientesPage() {
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setSeleccionado(null);
+            if (e.target === e.currentTarget) cerrarModal();
           }}
           role="presentation"
         >
@@ -312,7 +334,7 @@ export default function ListarClientesPage() {
 
                 <button
                   type="button"
-                  onClick={() => setSeleccionado(null)}
+                  onClick={cerrarModal}
                   className="rounded-lg px-2 py-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                   aria-label="Cerrar"
                 >
@@ -360,6 +382,20 @@ export default function ListarClientesPage() {
                   </dd>
                 </div>
               </dl>
+
+              {seleccionado.id != null && (
+                <AccionesEstadoCuenta
+                  idUsuario={seleccionado.id}
+                  nombre={seleccionado.nombre ?? "Cliente"}
+                  habilitado={seleccionado.habilitado ?? false}
+                  onEstadoActualizado={() =>
+                    handleEstadoActualizado(
+                      seleccionado.nombre ?? "Cliente",
+                      seleccionado.habilitado ?? false,
+                    )
+                  }
+                />
+              )}
             </div>
           </div>
         </div>
