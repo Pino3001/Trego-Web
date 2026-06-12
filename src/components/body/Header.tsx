@@ -31,7 +31,7 @@ interface HeaderProps {
   onAbrirCarrito?: () => void;
   noMostrarbuscador?: boolean;
   navigateTo?: string;
-  onCambiarContraseña: () => void;
+  onCambiarContraseña?: () => void;
 }
 
 export default function Header(props: HeaderProps) {

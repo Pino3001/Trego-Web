@@ -1,5 +1,18 @@
-import type { DTOProducto } from "./DTOProducto.js";
+export interface ProductoIncluido {
+  id: number;
+  nombre: string;
+}
 
 export interface DTOCombo {
-  productosIncluidosIds?: number[];
+  productosIncluidos?: ProductoIncluido[];
+}
+
+export function obtenerConteoPorNombre(
+  productos: ProductoIncluido[],
+): Record<string, number> {
+  const conteo: Record<string, number> = {};
+  for (const { nombre } of productos) {
+    conteo[nombre] = (conteo[nombre] || 0) + 1;
+  }
+  return conteo;
 }

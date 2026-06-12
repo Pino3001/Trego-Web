@@ -6,12 +6,12 @@ import {
   useNavigate,
 } from "react-router";
 import { apiAuth } from "../../api/apiAuth.js";
-import { limpiarSesion } from "../../utils/sesion.js";
 import Header from "../../components/body/Header.js";
-import { useCarrito } from "../../context/CarritoContext.jsx";
 import { useFiltros } from "../../context/FiltrosContext.js";
 import CarritoUIRoot from "../../components/carrito/CarritoUIRoot.js";
 import { useBusqueda } from "../../context/BusquedaContext.js";
+import { limpiarSesion } from "../../utils/sesion.js";
+import { useCarrito } from "../../context/CarritoContext.js";
 
 export default function ClienteLayaut() {
   const navigate = useNavigate();

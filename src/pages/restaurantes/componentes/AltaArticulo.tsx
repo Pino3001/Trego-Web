@@ -94,6 +94,7 @@ export default function AltaArticulo({
               onSelect={(item) =>
                 onChangeCategoria(item?.id as EnumCategoriaProducto)
               }
+              error={error.categoria ?? ""}
             />
 
             <TextSelector
@@ -106,6 +107,7 @@ export default function AltaArticulo({
               })}
               selected={subcategoria}
               onSelect={onChangeSubCategoria}
+              error={error.subcategoria ?? ""}
             />
           </div>
         </div>

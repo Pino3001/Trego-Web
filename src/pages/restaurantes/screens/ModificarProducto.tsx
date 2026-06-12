@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ImageField } from "../../../components/typos/ImageField.js";
-import type { DTOSubcategoria } from "../../../data/DTOSubcategoria.js";
 import { EnumCategoriaProducto } from "../../../data/EnumCategoriaProducto.js";
 import type { DTOProducto } from "../../../data/DTOProducto.js";
 import { EnumTipoProducto } from "../../../data/EnumTipoProducto.js";
@@ -9,7 +8,6 @@ import AltaArticulo from "../componentes/AltaArticulo.js";
 import AltaCombo from "../componentes/AltaCombo.js";
 import ConfirmarEliminarProductoModal from "../componentes/ConfirmarEliminarProductoModal.js";
 import type { DTOIngrediente } from "../../../data/DTOIngrediente.js";
-import { useSubCategorias } from "../../../hooks/useSubCategorias.js";
 import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
 import {
   deshabilitarProducto,
@@ -18,6 +16,7 @@ import {
   obtenerFirmaCloudinary,
 } from "../../../api/apiRestaurante.js";
 import AltaOferta from "./AltaOferta.js";
+import { useSubCategorias } from "../../../hooks/useSubCategorias.js";
 
 type StepState = "FORM" | "LOADING" | "SUCCESS";
 
@@ -39,14 +38,19 @@ export default function ModificarProducto({
   const [errorEliminar, setErrorEliminar] = useState<string | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const { subcategorias, subcategoriaSeleccionada, seleccionarSubcategoria } =
-    useSubCategorias();
+  const {
+    subcategoriasFiltradas,
+    categoriaFiltro,
+    setCategoriaFiltro,
+    subcategoriaSeleccionada,
+    seleccionarSubcategoria,
+  } = useSubCategorias({ onError: (msg) => setApiError("Error: " + msg) });
   const { productos } = useProductoRestaurante();
   const [ofertaNueva, setNuevaOferta] = useState<boolean>(false);
   // Nombre del producto a modificar
-  const [nombre, setNombre] = useState(producto.nombre);
+  const [nombre, setNombre] = useState(producto.nombre ?? "");
   // Precio del producto a modificar
-  const [precio, setPrecio] = useState(producto.precio);
+  const [precio, setPrecio] = useState<number>(producto.precio ?? 0);
   // Foto del producto a modificar
   const [foto, setFoto] = useState<ImageField>({
     file: null,
@@ -54,15 +58,8 @@ export default function ModificarProducto({
     cloudUrl: producto.urlImagen,
     uploadState: "idle",
   });
-  // Categoria del Producto seleccionado
-  const [categoriaProducto, setCategoriaProducto] =
-    useState<EnumCategoriaProducto>(producto.categoria);
   // Descripcion del producto a modificar
-  const [descripcion, setDescripcion] = useState(producto.descripcion);
-  // SubCategoria del producto seleccionado a modificar
-  const [subcategoriaSelect, setSubcategoriaSelect] = useState<
-    DTOSubcategoria | undefined
-  >(producto.subCategoria);
+  const [descripcion, setDescripcion] = useState(producto.descripcion ?? "");
 
   // Estados para Plato (con ingredientes)
   // Tiempo de preparacion del Plato
@@ -85,10 +82,14 @@ export default function ModificarProducto({
     [],
   );
 
+  useEffect(() => {
+    setCategoriaFiltro(producto.categoria);
+    seleccionarSubcategoria(producto.subCategoria);
+  }, []);
   // Estados para Combo
   // Productos que conforman el Combo a modificar -- Viene como lista de numeros
   const [idProductosCombo, setIdProductosCombo] = useState<Number[]>(
-    producto.combo?.productosIncluidosIds ?? [],
+    producto.combo?.productosIncluidos?.map((p) => p.id) ?? [],
   );
   // Productos completos pertenecientes al combo
   const productosDelCombo = useMemo(() => {
@@ -193,8 +194,11 @@ export default function ModificarProducto({
    */
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
-    if (!nombre.trim()) errs.nombre = "El nombre es obligatorio.";
-    if (precio < 0 || isNaN(precio)) errs.precio = "Ingrese un precio válido.";
+    if (!nombre?.trim()) errs.nombre = "El nombre es obligatorio.";
+    const precioNumerico = Number(precio);
+    if (isNaN(precioNumerico) || precioNumerico < 0) {
+      errs.precio = "Ingrese un precio válido.";
+    }
     if (!foto.cloudUrl && !foto.file) errs.foto = "La imagen es obligatoria.";
 
     if (producto.tipo === EnumTipoProducto.Plato) {
@@ -207,6 +211,12 @@ export default function ModificarProducto({
       productosDelCombo.length === 0
     ) {
       errs.combo = "Seleccione al menos un producto para el combo.";
+    }
+    if (!foto.cloudUrl) {
+      errs.foto = "Foto no cargada correctamente!.";
+    }
+    if (!subcategoriaSeleccionada?.idSubCategoria) {
+      errs.subcategoria = "Sin sub-categoria seleccionada!.";
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -222,7 +232,7 @@ export default function ModificarProducto({
         setStep("FORM");
         return;
       }
-      if (!subcategoriaSelect?.idSubCategoria) {
+      if (!subcategoriaSeleccionada?.idSubCategoria) {
         setApiError("Sin sub-categoría seleccionada.");
         setStep("FORM");
         return;
@@ -234,14 +244,14 @@ export default function ModificarProducto({
       }
 
       const data: DTOProducto = {
-        idProducto: producto.idProducto,
+        idProducto: producto.idProducto ?? 0,
         nombre,
         descripcion,
         precio,
-        urlImagen: foto.cloudUrl,
-        categoria: categoriaProducto ?? EnumCategoriaProducto.Bebida,
-        idSubCategoria: subcategoriaSelect.idSubCategoria,
-        tipo: producto.tipo,
+        urlImagen: foto.cloudUrl ?? "",
+        categoria: categoriaFiltro ?? EnumCategoriaProducto.Bebida,
+        idSubCategoria: subcategoriaSeleccionada.idSubCategoria,
+        tipo: producto.tipo ?? EnumTipoProducto.Articulo,
       };
 
       switch (producto.tipo) {
@@ -259,9 +269,10 @@ export default function ModificarProducto({
           break;
         case EnumTipoProducto.Combo:
           data.combo = {
-            productosIncluidosIds: productosDelCombo.map(
-              (p) => p.idProducto ?? 0,
-            ),
+            productosIncluidos: productosDelCombo.map((p) => ({
+              id: p.idProducto ?? 0,
+              nombre: p.nombre ?? "",
+            })),
           };
           break;
       }
@@ -291,7 +302,7 @@ export default function ModificarProducto({
         setStep("FORM");
         return;
       }
-      if (!subcategoriaSelect?.idSubCategoria) {
+      if (!subcategoriaSeleccionada?.idSubCategoria) {
         setApiError("Sin sub-categoría seleccionada.");
         setStep("FORM");
         return;
@@ -308,9 +319,9 @@ export default function ModificarProducto({
         descripcion,
         precio,
         urlImagen: foto.cloudUrl,
-        categoria: categoriaProducto ?? EnumCategoriaProducto.Bebida,
-        idSubCategoria: subcategoriaSelect.idSubCategoria,
-        tipo: producto.tipo,
+        categoria: categoriaFiltro ?? EnumCategoriaProducto.Bebida,
+        idSubCategoria: subcategoriaSeleccionada.idSubCategoria,
+        tipo: producto.tipo ?? EnumTipoProducto.Articulo,
       };
 
       switch (producto.tipo) {
@@ -328,9 +339,10 @@ export default function ModificarProducto({
           break;
         case EnumTipoProducto.Combo:
           data.combo = {
-            productosIncluidosIds: productosDelCombo.map(
-              (p) => p.idProducto ?? 0,
-            ),
+            productosIncluidos: productosDelCombo.map((p) => ({
+              id: p.idProducto ?? 0,
+              nombre: p.nombre ?? "",
+            })),
           };
           break;
       }
@@ -469,72 +481,72 @@ export default function ModificarProducto({
             {/* Renderizado condicional según tipo.id */}
             {producto.tipo === EnumTipoProducto.Plato && (
               <AltaPlato
-                nombre={nombre}
-                descripcion={descripcion}
-                precio={precio}
-                subcategoria={subcategoriaSelect}
+                nombre={nombre ?? ""}
+                descripcion={descripcion ?? ""}
+                precio={precio ?? 0}
+                subcategoria={subcategoriaSeleccionada}
                 tiempoPreparacion={tiempoPreparacion ?? 0}
                 foto={foto}
                 onChangeNombre={setNombre}
                 onChangeDescripcion={setDescripcion}
                 onChangePrecio={setPrecio}
-                onChangeSubCategoria={setSubcategoriaSelect}
+                onChangeSubCategoria={seleccionarSubcategoria}
                 onChangeTiempoPrep={setTiempoPreparacion}
                 onChangeImage={handleImageChange}
                 onChangeListaDeIngredientes={handleListaIngredientesChange}
                 error={errors}
                 onChangeApiError={setApiError}
-                categoria={categoriaProducto}
+                categoria={categoriaFiltro}
                 onChangeCategoria={(item) =>
-                  setCategoriaProducto(item ?? EnumCategoriaProducto.Otros)
+                  setCategoriaFiltro(item ?? EnumCategoriaProducto.Otros)
                 }
-                subcategorias={subcategorias}
+                subcategorias={subcategoriasFiltradas}
                 ingredientesIniciales={listaIngredientes}
               />
             )}
 
             {producto.tipo === EnumTipoProducto.Articulo && (
               <AltaArticulo
-                nombre={nombre}
-                descripcion={descripcion}
-                precio={precio}
-                subcategorias={subcategorias}
-                subcategoria={subcategoriaSelect}
+                nombre={nombre ?? ""}
+                descripcion={descripcion ?? ""}
+                precio={precio ?? 0}
+                subcategorias={subcategoriasFiltradas}
+                subcategoria={subcategoriaSeleccionada}
                 foto={foto}
                 onChangeNombre={setNombre}
                 onChangeDescripcion={setDescripcion}
                 onChangePrecio={setPrecio}
-                onChangeSubCategoria={setSubcategoriaSelect}
+                onChangeSubCategoria={seleccionarSubcategoria}
                 onChangeImage={handleImageChange}
                 error={errors}
-                categoria={categoriaProducto}
+                categoria={categoriaFiltro}
                 onChangeCategoria={(item) =>
-                  setCategoriaProducto(item ?? EnumCategoriaProducto.Otros)
+                  setCategoriaFiltro(item ?? EnumCategoriaProducto.Otros)
                 }
               />
             )}
 
             {producto.tipo === EnumTipoProducto.Combo && (
               <AltaCombo
-                nombre={nombre}
-                descripcion={descripcion}
-                precio={precio}
-                subcategoria={subcategoriaSelect}
+                nombre={nombre ?? ""}
+                descripcion={descripcion ?? ""}
+                precio={precio ?? 0}
+                subcategoria={subcategoriaSeleccionada}
                 foto={foto}
                 onChangeNombre={setNombre}
                 onChangeDescripcion={setDescripcion}
                 onChangePrecio={setPrecio}
-                onChangeSubCategoria={setSubcategoriaSelect}
+                onChangeSubCategoria={seleccionarSubcategoria}
                 onChangeImage={handleImageChange}
                 productosSeleccionados={productosDelCombo}
                 onChangeListaProd={handleChangeListaProd}
                 error={errors}
                 onChangeApiError={setApiError}
-                categoria={categoriaProducto}
+                categoria={categoriaFiltro}
                 onChangeCategoria={(item) =>
-                  setCategoriaProducto(item ?? EnumCategoriaProducto.Otros)
+                  setCategoriaFiltro(item ?? EnumCategoriaProducto.Otros)
                 }
-                subcategorias={subcategorias}
+                subcategorias={subcategoriasFiltradas}
               />
             )}
 
@@ -585,7 +597,7 @@ export default function ModificarProducto({
 
       <ConfirmarEliminarProductoModal
         abierto={mostrarModalEliminar}
-        nombreProducto={producto.nombre}
+        nombreProducto={producto.nombre ?? ""}
         urlImagen={producto.urlImagen ?? null}
         eliminando={eliminando}
         error={errorEliminar}

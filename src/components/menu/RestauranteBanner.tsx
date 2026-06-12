@@ -1,25 +1,33 @@
-import { IconClock, IconLocation } from '../icons'
-import { formatearHorario } from '../../utils/restaurantes'
+import type { DTORestaurante } from "../../data/DTORestaurante.js";
+import { formatearHorario } from "../../utils/restaurantes.js";
+import { IconClock, IconLocation } from "../icons.jsx";
 
-export default function RestauranteBanner({ restaurante }) {
+interface RestauranteBannerProps {
+  restaurante: DTORestaurante;
+  cantidadResenas?: number;
+}
+export default function RestauranteBanner({
+  restaurante,
+  cantidadResenas,
+}: RestauranteBannerProps) {
   const {
     nombre,
     calificacionProm,
-    cantidadResenas,
     direccion,
-    horarioServicio,
+    horaApertura,
+    horaCierre,
     abierto,
-  } = restaurante
+  } = restaurante;
 
-  const ubicacion = direccion?.nombre
-    ? `${direccion.nombre} - ${direccion.ciudad ?? 'Montevideo'}`
-    : 'Montevideo'
+  const ubicacion = direccion?.calle
+    ? `${direccion.calle} - ${direccion.numero ?? "Montevideo"}`
+    : "Montevideo";
 
-  const horario = formatearHorario(horarioServicio)
+  const horario = formatearHorario(horaApertura, horaCierre);
 
   return (
     <section className="overflow-hidden rounded-2xl shadow-sm">
-      <header className="flex min-h-[100px] items-center justify-center bg-trego-brown px-6 py-8 sm:min-h-[110px]">
+      <header className="flex min-h-25 items-center justify-center bg-trego-brown px-6 py-8 sm:min-h-27.5">
         <h1 className="text-center text-2xl font-bold tracking-tight text-white sm:text-[28px]">
           {nombre}
         </h1>
@@ -41,9 +49,9 @@ export default function RestauranteBanner({ restaurante }) {
         </span>
         <span className="flex items-center gap-1.5 font-medium text-gray-800">
           <span className="h-2.5 w-2.5 rounded-full bg-[#22c55e]" />
-          {abierto ? 'Abierto' : 'Cerrado'}
+          {abierto ? "Abierto" : "Cerrado"}
         </span>
       </div>
     </section>
-  )
+  );
 }

@@ -5,9 +5,9 @@ import {
   clienteYaComentoEnRestaurante,
   listarComentariosRestaurante,
 } from '../../api/comentariosApi.js'
-import { obtenerMisPedidos } from '../../api/pedidosApi.js'
-import { esSesionCliente } from '../../utils/sesion.js'
 import EstrellasCalificacion from './EstrellasCalificacion.jsx'
+import { esSesionCliente } from '../../utils/sesion.js'
+import { obtenerMisPedidos } from '../../api/pedidosApi.js'
 
 function formatearFecha(iso) {
   if (!iso) return ''

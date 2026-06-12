@@ -1,4 +1,6 @@
-import { limpiarSesion } from "../../utils/sesion.js";
+import { limpiarSesion, redirigirAlLogin } from "../../utils/sesion.js";
+
+let isRedirecting = false;
 
 export const fetchConAuth = async (
   endpoint: string,
@@ -7,34 +9,42 @@ export const fetchConAuth = async (
   const { redirectOnUnauthorized = true, ...fetchOptions } = options;
   const token = localStorage.getItem("jwtToken");
 
+  // Si no hay token y la redirección está activa, enviamos al login adecuado
+  if (!token && redirectOnUnauthorized) {
+    if (!isRedirecting) {
+      isRedirecting = true;
+      const userType = localStorage.getItem("jwtRol");
+      console.warn("No hay sesión activa. Redirigiendo al login.");
+      redirigirAlLogin(userType);
+    }
+    return new Response(null, { status: 401 });
+  }
+
   const headers = new Headers(options.headers || {});
 
   if (!headers.has("Content-Type") && options.body) {
     headers.set("Content-Type", "application/json");
   }
 
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-  }
+  headers.set("Authorization", `Bearer ${token}`);
 
-  const url = endpoint;
-
-  const response = await fetch(url, {
+  const response = await fetch(endpoint, {
     ...fetchOptions,
     headers,
   });
 
   if (response.status === 401 && redirectOnUnauthorized) {
-    console.error("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.");
-    limpiarSesion();
-    const path = window.location.pathname;
-    if (path.startsWith("/admin")) {
-      window.location.href = "/login/Administrador";
-    } else if (path.startsWith("/restaurantes")) {
-      window.location.href = "/login/Restaurante";
-    } else {
-      window.location.href = "/login/cliente";
+    // Solo la primera petición que falle ejecutará este bloque
+    if (!isRedirecting) {
+      isRedirecting = true;
+      const userType = localStorage.getItem("jwtRol");
+      console.error("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.");
+      
+      redirigirAlLogin(userType);
+      
+      limpiarSesion();
     }
+    return response;
   }
 
   return response;

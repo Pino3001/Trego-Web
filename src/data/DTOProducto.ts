@@ -9,16 +9,16 @@ import type { EnumTipoProducto } from "./EnumTipoProducto.js";
 
 export interface DTOProducto {
   idProducto?: number;
-  nombre: string;
-  descripcion: string;
-  precio: number;
+  nombre?: string;
+  descripcion?: string;
+  precio?: number;
   urlImagen?: string;
-  categoria: EnumCategoriaProducto; // O un Union Type: 'PIZZA' | 'BEBIDA' | ...
+  categoria?: EnumCategoriaProducto; // O un Union Type: 'PIZZA' | 'BEBIDA' | ...
   disponible?: boolean;
   idRestaurante?: number;
   cantidadDisponible?: number;
   ingredientes?: DTOIngrediente[];
-  tipo: EnumTipoProducto; // O un Union Type
+  tipo?: EnumTipoProducto; // O un Union Type
   oferta?: DTOOferta;
   plato?: DTOPlato;
   articulo?: DTOArticulo;

@@ -85,25 +85,25 @@ export function restauranteParaUi(restaurante: DTORestaurante) {
   };
 }
 
-export function productoParaCarrito(producto: DTOProducto) {
-  const descuento = producto.oferta?.descuento ?? 0;
+export function productoParaCarrito(producto: DTOProducto | undefined) {
+  const descuento = producto?.oferta?.descuento ?? 0;
   return {
-    idProducto: producto.idProducto,
-    nombre: producto.nombre,
-    descripcion: producto.descripcion ?? "",
-    precio: producto.precio,
-    fotoPlato: producto.urlImagen,
-    categoria: producto.categoria,
-    disponible: producto.disponible ?? true,
-    ofertaActiva: !!producto.oferta,
-    oferta: producto.oferta
+    idProducto: producto?.idProducto,
+    nombre: producto?.nombre,
+    descripcion: producto?.descripcion ?? "",
+    precio: producto?.precio,
+    fotoPlato: producto?.urlImagen,
+    categoria: producto?.categoria,
+    disponible: producto?.disponible ?? true,
+    ofertaActiva: !!producto?.oferta,
+    oferta: producto?.oferta
       ? {
           descuentoPorcentaje: producto.oferta.descuento,
           descripcion: producto.oferta.descripcion,
         }
       : undefined,
-    ingredientes: producto.ingredientes ?? [],
-    idRestaurante: producto.idRestaurante,
+    ingredientes: producto?.ingredientes ?? [],
+    idRestaurante: producto?.idRestaurante,
   };
 }
 

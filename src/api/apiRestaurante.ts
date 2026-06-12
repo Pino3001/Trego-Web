@@ -164,7 +164,7 @@ export async function listarProductos(): Promise<DTOProducto[]> {
       throw new Error("No tiene permisos para listar los productos.");
     }
     if (response.status === 404) {
-      throw new Error("No se encontraron productos para ingresar al combo.");
+      throw new Error("No se encontraron productos en el sistema.");
     }
     const errorText = await response.text().catch(() => "Error desconocido");
     throw new Error(errorText || "Error al listar los productos.");

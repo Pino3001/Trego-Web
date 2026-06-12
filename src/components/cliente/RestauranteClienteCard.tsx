@@ -1,16 +1,9 @@
 import { Link } from "react-router";
-import { IconStar } from "../icons";
-import { BadgeAbierto } from "../badges";
 import type { DTORestaurante } from "../../data/DTORestaurante.js";
+import { IconStar } from "../icons.jsx";
+import { BadgeAbierto } from "../badges.jsx";
+import { formatearHorario } from "../../utils/restaurantes.js";
 
-function formatearHorario(restaurante: DTORestaurante): string {
-  const fmt = (h?: string | null) =>
-    h && h.length >= 5 ? h.slice(0, 5) : null;
-  const a = fmt(restaurante.horaApertura);
-  const c = fmt(restaurante.horaCierre);
-  if (a && c) return `${a} - ${c}`;
-  return "—";
-}
 
 interface RestauranteClienteCardProps {
   restaurante: DTORestaurante;
@@ -21,7 +14,7 @@ export default function RestauranteClienteCard({
 }: RestauranteClienteCardProps) {
   const id = restaurante.idRestaurante;
   const zona = restaurante.direccion?.calle ?? "Montevideo";
-  const horario = formatearHorario(restaurante);
+  const horario = formatearHorario(restaurante.horaApertura, restaurante.horaCierre);
 
   if (id == null) return null;
 
@@ -61,7 +54,7 @@ export default function RestauranteClienteCard({
               {restaurante.categoria}
             </span>
           ) : (
-            <span className="h-[26px]" aria-hidden />
+            <span className="h-6.5" aria-hidden />
           )}
           <span className="text-right text-[11px] leading-tight text-gray-600">
             {horario}

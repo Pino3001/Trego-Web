@@ -1,12 +1,12 @@
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { apiAuth } from "../../api/apiAuth.js";
-import { limpiarSesion } from "../../utils/sesion.js";
 import Header from "../../components/body/Header.js";
 import Sidebar from "../../components/body/Sidebar.js";
 import type { SidebarSection } from "../../components/body/utilities/DataSidebar.js";
 import { useEffect, useState } from "react";
 import { administradorApi } from "../../api/administradorApi.js";
 import { obtenerUsuarioActual } from "../../api/usuariosApi.js";
+import { limpiarSesion } from "../../utils/sesion.js";
 
 export const SECCIONES_ADMIN: SidebarSection[] = [
   {
@@ -51,7 +51,6 @@ export const SECCIONES_ADMIN: SidebarSection[] = [
 ];
 
 export default function AdministradorLayaut() {
-  const location = useLocation();
   const navigate = useNavigate();
   // Verificamos si hay sesión iniciada
   const token = localStorage.getItem("jwtToken");
@@ -76,7 +75,7 @@ export default function AdministradorLayaut() {
 
     actualizarPendientes();
 
-    obtenerUsuarioActual()
+     obtenerUsuarioActual()
       .then((usuario) => {
         setPerfilNombre(usuario.nombre?.trim() || "Administrador");
         setPerfilEmail(usuario.email ?? "");

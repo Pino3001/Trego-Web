@@ -1,9 +1,7 @@
-import { useCallback, useMemo, useState } from 'react'
-import ModalBase, { Z_MODAL } from './ModalBase'
-import { useCarrito } from '../../context/CarritoContext'
-import DireccionFormCarrito from '../cliente/DireccionFormCarrito.js'
-
-// ... otros imports (ModalBase, etc.)
+import { useCallback, useMemo, useState } from "react";
+import ModalBase, { Z_MODAL } from "./ModalBase";
+import DireccionFormCarrito from "../cliente/DireccionFormCarrito.js";
+import { useCarrito } from "../../context/CarritoContext";
 
 export default function DireccionEnvioModal() {
   const {
@@ -13,64 +11,72 @@ export default function DireccionEnvioModal() {
     setDireccionSeleccionada,
     setMensajeCarrito,
     modalSuperior,
-  } = useCarrito()
+  } = useCarrito();
 
-  const [tab, setTab] = useState('guardadas')
+  const [tab, setTab] = useState("guardadas");
 
-  // Estado local para el formulario de "Ubicación Actual"
-  const [draftActual, setDraftActual] = useState({
-    calle: '',
-    numero: '',
-    apartamento: '',
-    esquina: '',
+  // Estado inicial limpio que cumple con la interfaz DTODireccion
+  const estadoInicialDraft = {
+    tag: "",
+    calle: "",
+    numero: "",
+    apartamento: "",
+    esquina: "",
     latitud: 0,
     longitud: 0,
-  })
+  };
 
-  const direccionesUi = useMemo(() => direcciones ?? [], [direcciones])
+  // Estado local para el formulario de "Ubicación Actual"
+  const [draftActual, setDraftActual] = useState(estadoInicialDraft);
 
-  function confirmarSeleccion(mensaje) {
-    setMensajeCarrito(mensaje)
-    cerrarModalDireccion()
-  }
+  const direccionesUi = useMemo(() => direcciones ?? [], [direcciones]);
 
-  function seleccionarGuardada(d) {
+  // Función auxiliar para centralizar el cierre exitoso
+  const confirmarSeleccion = (mensaje) => {
+    setMensajeCarrito(mensaje);
+    cerrarModalDireccion();
+  };
+
+  // Maneja la selección de una dirección del listado "Mis direcciones"
+  const seleccionarGuardada = (d) => {
     setDireccionSeleccionada({
-      tipo: 'guardada',
-      id: d.id,
-      nombre: d.nombre,
-      descripcion: d.descripcion,
-      datos: d.datos,
-    })
-    confirmarSeleccion(`Dirección seleccionada: ${d.nombre}`)
-  }
+      tipo: "guardada",
+      data: {
+        tag: d.nombre,
+        calle: d.datos?.calle || "",
+        numero: d.datos?.numero || "",
+        apartamento: d.datos?.apartamento || "",
+        esquina: d.datos?.esquina || "",
+        latitud: d.datos?.latitud || 0,
+        longitud: d.datos?.longitud || 0,
+      },
+    });
+    confirmarSeleccion(`Dirección seleccionada: ${d.nombre}`);
+  };
 
-  // Esta función se pasa al onSave de DireccionFormCarrito
-  const handleSaveUbicacionActual = useCallback(() => {
-    const nombreFormateado = `${draftActual.calle} ${draftActual.numero}`.trim()
-    setDireccionSeleccionada({
-      tipo: 'actual',
-      coords: { lat: draftActual.latitud, lng: draftActual.longitud },
-      nombre: nombreFormateado,
-      datos: draftActual,
-    })
-    confirmarSeleccion(`Dirección seleccionada: ${nombreFormateado}`)
-  }, [draftActual, setDireccionSeleccionada, confirmarSeleccion])
+  // Recibe directamente el 'draftFinal' enviado por DireccionFormCarrito
+  const handleSaveUbicacionActual = useCallback(
+    (draftFinal) => {
+      const nombreFormateado =
+        `${draftFinal.calle} ${draftFinal.numero}`.trim();
 
-  // Resetear el draft al cambiar a la pestaña de guardadas o al cerrar el modal
+      setDireccionSeleccionada({
+        tipo: "actual",
+        data: draftFinal, // Se envía directo respetando DireccionContexto
+      });
+
+      confirmarSeleccion(`Dirección seleccionada: ${nombreFormateado}`);
+    },
+    [setDireccionSeleccionada, cerrarModalDireccion, setMensajeCarrito],
+  );
+
+  // Resetear el draft al cambiar a la pestaña de guardadas
   const cambiarTab = (nuevaTab) => {
-    if (nuevaTab === 'guardadas') {
-      setDraftActual({
-        calle: '',
-        numero: '',
-        apartamento: '',
-        esquina: '',
-        latitud: 0,
-        longitud: 0,
-      })
+    if (nuevaTab === "guardadas") {
+      setDraftActual(estadoInicialDraft);
     }
-    setTab(nuevaTab)
-  }
+    setTab(nuevaTab);
+  };
 
   return (
     <ModalBase
@@ -78,11 +84,13 @@ export default function DireccionEnvioModal() {
       onCerrar={cerrarModalDireccion}
       ariaLabel="Seleccionar dirección"
       zIndex={Z_MODAL.direccion}
-      escucharEscape={modalSuperior === 'direccion'}
+      escucharEscape={modalSuperior === "direccion"}
     >
       <div className="p-5 sm:p-6">
         <div className="flex items-start justify-between gap-3">
-          <h2 className="text-[18px] font-extrabold text-gray-900">Dirección de envío</h2>
+          <h2 className="text-[18px] font-extrabold text-gray-900">
+            Dirección de envío
+          </h2>
           <button
             type="button"
             onClick={cerrarModalDireccion}
@@ -96,18 +104,22 @@ export default function DireccionEnvioModal() {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => cambiarTab('guardadas')}
+              onClick={() => cambiarTab("guardadas")}
               className={`flex-1 rounded-xl py-2 text-[12px] font-extrabold transition ${
-                tab === 'guardadas' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-white/60'
+                tab === "guardadas"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:bg-white/60"
               }`}
             >
               Tus Direcciones
             </button>
             <button
               type="button"
-              onClick={() => setTab('actual')}
+              onClick={() => setTab("actual")}
               className={`flex-1 rounded-xl py-2 text-[12px] font-extrabold transition ${
-                tab === 'actual' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-white/60'
+                tab === "actual"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:bg-white/60"
               }`}
             >
               Ubicación Actual
@@ -115,7 +127,7 @@ export default function DireccionEnvioModal() {
           </div>
         </div>
 
-        {tab === 'guardadas' && (
+        {tab === "guardadas" && (
           <div className="mt-4 grid gap-3">
             {direccionesUi.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-gray-300 bg-white py-10 text-center text-gray-600">
@@ -130,28 +142,34 @@ export default function DireccionEnvioModal() {
                   className="flex items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 text-left hover:bg-gray-50"
                 >
                   <div className="min-w-0">
-                    <p className="text-[14px] font-extrabold text-gray-900">{d.nombre}</p>
-                    <p className="mt-0.5 text-[12px] text-gray-500">{d.descripcion}</p>
+                    <p className="text-[14px] font-extrabold text-gray-900">
+                      {d.nombre}
+                    </p>
+                    <p className="mt-0.5 text-[12px] text-gray-500">
+                      {d.descripcion}
+                    </p>
                   </div>
-                  <span className="text-[12px] font-extrabold text-trego-orange">Elegir</span>
+                  <span className="text-[12px] font-extrabold text-trego-orange">
+                    Elegir
+                  </span>
                 </button>
               ))
             )}
           </div>
         )}
 
-        {tab === 'actual' && (
+        {tab === "actual" && (
           <div className="mt-4">
             <DireccionFormCarrito
               draft={draftActual}
               onChange={setDraftActual}
               onSave={handleSaveUbicacionActual}
-              onCancel={() => setTab('guardadas')}
+              onCancel={() => setTab("guardadas")}
               autoLocate={true}
             />
           </div>
         )}
       </div>
     </ModalBase>
-  )
+  );
 }

@@ -24,7 +24,6 @@ import RestauranteMenuPage from "./pages/cliente/screens/RestauranteMenuPage.jsx
 import HomePage from "./pages/cliente/screens/HomePage.jsx";
 import HistorialPage from "./pages/cliente/screens/HistorialPage.jsx";
 import ClienteLayaut from "./pages/cliente/ClienteLayaut.js";
-import { CarritoProvider } from "./context/CarritoContext.jsx";
 import { FiltrosUIProvider } from "./context/FiltrosContext.js";
 import { BusquedaProvider } from "./context/BusquedaContext.js";
 import LoginRestaurante from "./pages/logins/LoginRestaurante.js";
@@ -35,6 +34,7 @@ import ListarReclamos from "./pages/restaurantes/screens/ListarReclamos.js";
 import PerfilCliente from "./pages/perfil/PerfilScreen.js";
 import PerfilRestauranteScreen from "./pages/perfil/PerfilRestauranteScreen.js";
 import AltaOferta from "./pages/restaurantes/screens/AltaOferta.js";
+import { CarritoProvider } from "./context/CarritoContext";
 
 export default function AppRouter() {
   return (

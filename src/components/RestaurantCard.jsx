@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { IconStar } from './icons'
 import { BadgeAbierto, BadgeOfertas } from './badges'
-import { formatearHorario } from '../utils/restaurantes'
+import { formatearHorario } from '../utils/restaurantes.js'
 
 const cardBase =
   'block rounded-[18px] bg-trego-card p-3 shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition hover:shadow-[0_3px_12px_rgba(0,0,0,0.12)]'
