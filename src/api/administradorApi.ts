@@ -83,4 +83,28 @@ export const administradorApi = {
       throw new Error("ERROR_CAMBIAR_ESTADO");
     }
   },
+
+  crearAdministrador: async (datos: {
+    nombre: string;
+    email: string;
+  }): Promise<string> => {
+    const response = await fetchConAuth(ENDPOINTS.ADMIN_CREAR_ADMINISTRADOR, {
+      method: "POST",
+      body: JSON.stringify(datos),
+    });
+
+    const body = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const mensaje =
+        typeof body?.error === "string"
+          ? body.error
+          : "No se pudo crear el administrador. Intentá de nuevo.";
+      throw new Error(mensaje);
+    }
+
+    return typeof body?.mensaje === "string"
+      ? body.mensaje
+      : "Administrador creado exitosamente.";
+  },
 };

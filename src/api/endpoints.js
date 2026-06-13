@@ -35,6 +35,12 @@ export const ENDPOINTS = {
   USUARIO_ACTUAL: '/api/usuarios/actual',
   USUARIO_RECUPERAR_CONTRASENA: '/api/usuarios/recuperarContraseña',
   USUARIO_ACTUALIZAR_CONTRASENA: '/api/usuarios/actualizarContraseña',
+  USUARIO_PERFIL: '/api/usuarios/perfil',
+  USUARIO_AGREGAR_DIRECCION: "/api/usuarios/agregarDireccion",
+  USUARIO_ACTUALIZAR_DIRECCION:"/api/usuarios/actualizarDireccion",
+  CLIENTE_MODIFICAR_PERFIL: "/api/clientes/actualizar",
+  CLIENTE_ACTUAL: "/api/clientes/actual",
+  RESTAURANTE_MODIFICAR_PERFIL: "/api/restaurantes/actualizar",
 
   // Auth
   AUTH_GOOGLE: '/api/auth/google',
@@ -53,7 +59,7 @@ export const ENDPOINTS = {
   AGREGAR_INGREDIENTE: `/api/productos/agregarIngrediente`,
   LISTAR_PRODUCTOS: '/api/productos/listarProductos',
   MODIFICAR_PRODUCTO: '/api/productos/modificarProducto',
-  ELIMINAR_PRODUCTO: '/api/productos/eliminarProducto',
+  DESHABILITAR_PRODUCTO: '/api/productos',
   LISTAR_PEDIDOS: `/api/pedido/listarPedidos`,
   LISTAR_SUBCATEGORIAS: `/api/subcategorias/listar`,
   CONFIRMAR_PEDIDO: `/api/pedido/confirmar`,
@@ -62,6 +68,7 @@ export const ENDPOINTS = {
   ABRIR_LOCAL: `/api/restaurantes/abrirLocal`,
   CERRAR_LOCAL: `/api/restaurantes/cerrarLocal`,
   ACTUALIZAR_CIERRE: `/api/restaurantes/actualizarCierre`,
+  CREAR_OFERTA: "/api/restaurantes/ofertas/crear",
 
   //Registro
   REGISTRAR_RESTAURANTE: `/api/usuarios/registrar-restaurante/solicitar`,
@@ -79,4 +86,7 @@ export const ENDPOINTS = {
   // Administrador — activación / desactivación de cuentas
   ADMIN_USUARIO_HABILITAR_DESHABILITAR:
     '/api/administradores/HabilitarDeshabilitar/:id/:habilitar',
+
+  // Administrador — alta de administradores
+  ADMIN_CREAR_ADMINISTRADOR: '/api/administradores/CrearAdministrador',
 }

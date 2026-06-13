@@ -1,5 +1,7 @@
+import type { DTOAbrirCerrarLocalRequest } from "../data/DTOAbrirCerrarLocalRequest.js";
 import type { DTOFirma } from "../data/DTOFirma.js";
 import type { DTOIngrediente } from "../data/DTOIngrediente.js";
+import type { DTOOferta } from "../data/DTOOferta.js";
 import type { DTOPedido } from "../data/DTOPedido.js";
 import type { DTOProducto } from "../data/DTOProducto.js";
 import type { DTORestaurante } from "../data/DTORestaurante.js";
@@ -22,7 +24,7 @@ export interface DTOActualizarEstadoRequest {
 /**
  * Eniva una solicitud de alta al backend para que posteriormente sea habilitado por un Administrador
  * @param resto Datos del restaurante Solicitante
- * @returns 
+ * @returns
  */
 export async function enviarSolicitudAltaRestaurante(
   resto: Partial<DTORestaurante>,
@@ -171,7 +173,9 @@ export async function listarProductos(): Promise<DTOProducto[]> {
   return response.json();
 }
 
-export async function modificarProducto(producto: DTOProducto): Promise<DTOProducto> {
+export async function modificarProducto(
+  producto: DTOProducto,
+): Promise<DTOProducto> {
   const response = await fetchConAuth(ENDPOINTS.MODIFICAR_PRODUCTO, {
     method: "PATCH",
     body: JSON.stringify(producto),
@@ -192,11 +196,38 @@ export async function modificarProducto(producto: DTOProducto): Promise<DTOProdu
   return response.json();
 }
 
-export async function eliminarProducto(idProducto: number): Promise<void> {
-  const response = await fetchConAuth(
-    `${ENDPOINTS.ELIMINAR_PRODUCTO}/${idProducto}`,
-    { method: "DELETE" },
-  );
+/**
+ * Deshabilita un producto (disponible = false).
+ * @param idProducto - ID del producto a deshabilitar.
+ * @throws Error con el mensaje de error del backend o un mensaje genérico.
+ */
+export async function deshabilitarProducto(idProducto: number): Promise<void> {
+  const url = `${ENDPOINTS.DESHABILITAR_PRODUCTO}/${idProducto}/deshabilitar`;
+
+  const response = await fetchConAuth(url, { method: "PATCH" });
+
+  if (!response.ok) {
+    let mensaje = `Error ${response.status}`;
+    try {
+      const errorData = await response.json();
+      mensaje =
+        errorData.message || errorData.error || JSON.stringify(errorData);
+    } catch {
+      mensaje = await response.text().catch(() => "Error desconocido");
+    }
+    throw new Error(mensaje);
+  }
+}
+
+/**
+ * Habilita un producto .
+ * @param idProducto - ID del producto a deshabilitar.
+ * @throws Error con el mensaje de error del backend o un mensaje genérico.
+ */
+export async function habilitarProducto(idProducto: number): Promise<void> {
+  const url = `${ENDPOINTS.DESHABILITAR_PRODUCTO}/${idProducto}/habilitar`;
+
+  const response = await fetchConAuth(url, { method: "PATCH" });
 
   if (!response.ok) {
     let mensaje = `Error ${response.status}`;
@@ -337,7 +368,7 @@ export async function actualizarEstadoPedido(
  */
 export async function reembolsarPedido(pedido: DTOPedido): Promise<DTOPedido> {
   const response = await fetchConAuth(ENDPOINTS.CANCELAR_PEDIDO, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify(pedido),
   });
 
@@ -345,19 +376,20 @@ export async function reembolsarPedido(pedido: DTOPedido): Promise<DTOPedido> {
     let mensaje = `Error ${response.status}`;
     try {
       const errorData = await response.json();
-      mensaje = errorData.message || errorData.error || JSON.stringify(errorData);
+      mensaje =
+        errorData.message || errorData.error || JSON.stringify(errorData);
     } catch {
-      mensaje = await response.text().catch(() => 'Error desconocido');
+      mensaje = await response.text().catch(() => "Error desconocido");
     }
 
     if (response.status === 400) {
-      throw new Error(mensaje || 'Pedido inválido o no tiene pago asociado.');
+      throw new Error(mensaje || "Pedido inválido o no tiene pago asociado.");
     }
     if (response.status === 409) {
-      throw new Error(mensaje || 'El pedido ya había sido reembolsado.');
+      throw new Error(mensaje || "El pedido ya había sido reembolsado.");
     }
 
-    throw new Error(mensaje || 'Error al procesar el reembolso.');
+    throw new Error(mensaje || "Error al procesar el reembolso.");
   }
 
   return response.json();
@@ -369,16 +401,11 @@ export async function reembolsarPedido(pedido: DTOPedido): Promise<DTOPedido> {
  * @returns Nada.
  * @throws Error con el mensaje del backend si falla (400/409/500).
  */
-export async function abrirLocal(
-  cierre: string,
-): Promise<void> {
-  const response = await fetchConAuth(
-    `${ENDPOINTS.ABRIR_LOCAL}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({ horaCierre: cierre }),
-    },
-  );
+export async function abrirLocal(cierre: DTOAbrirCerrarLocalRequest): Promise<void> {
+  const response = await fetchConAuth(`${ENDPOINTS.ABRIR_LOCAL}`, {
+    method: "PATCH",
+    body: JSON.stringify(cierre),
+  });
 
   if (!response.ok) {
     // Intentamos extraer el mensaje de error del cuerpo de la respuesta
@@ -396,9 +423,7 @@ export async function abrirLocal(
       throw new Error(mensaje || "Falta la hora de cierre.");
     }
     if (response.status === 409) {
-      throw new Error(
-        mensaje || "El local aun no tiene productos cargados.",
-      );
+      throw new Error(mensaje || "El local aun no tiene productos cargados.");
     }
 
     throw new Error(mensaje || "Error al abrir el local.");
@@ -412,16 +437,16 @@ export async function abrirLocal(
  * @returns No retorna nada
  */
 export async function cerrarLocal(): Promise<void> {
-  const response = await fetchConAuth(
-    `${ENDPOINTS.CERRAR_LOCAL}`,
-    { method: "PATCH" }
-  );
+  const response = await fetchConAuth(`${ENDPOINTS.CERRAR_LOCAL}`, {
+    method: "PATCH",
+  });
 
   if (!response.ok) {
     let mensaje = `Error ${response.status}`;
     try {
       const errorData = await response.json();
-      mensaje = errorData.message || errorData.error || JSON.stringify(errorData);
+      mensaje =
+        errorData.message || errorData.error || JSON.stringify(errorData);
     } catch {
       mensaje = await response.text().catch(() => "Error desconocido");
     }
@@ -445,16 +470,11 @@ export async function cerrarLocal(): Promise<void> {
  * @returns Nada.
  * @throws Error con el mensaje del backend si falla (400/409/500).
  */
-export async function actualizarHoraCierre(
-  cierre: string,
-): Promise<void> {
-  const response = await fetchConAuth(
-    `${ENDPOINTS.ACTUALIZAR_CIERRE}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({ horaCierre: cierre }),
-    },
-  );
+export async function actualizarHoraCierre(cierre: string): Promise<void> {
+  const response = await fetchConAuth(`${ENDPOINTS.ACTUALIZAR_CIERRE}`, {
+    method: "PATCH",
+    body: JSON.stringify({ horaCierre: cierre }),
+  });
 
   if (!response.ok) {
     // Intentamos extraer el mensaje de error del cuerpo de la respuesta
@@ -472,13 +492,70 @@ export async function actualizarHoraCierre(
       throw new Error(mensaje || "Falta la hora de cierre.");
     }
     if (response.status === 404) {
-      throw new Error(
-        mensaje || "Restaurante no encontrado.",
-      );
+      throw new Error(mensaje || "Restaurante no encontrado.");
     }
 
     throw new Error(mensaje || "Error al actualizar la hora.");
   }
 
   return;
+}
+
+/**
+ * Modifica el perfil de un restaurante registrado
+ * @param resto Datos nuevos del restaurante a modificar
+ * @returns
+ */
+export async function modificarRestaurantePerfil(
+  resto: DTORestaurante,
+): Promise<void> {
+  const response = await fetchConAuth(ENDPOINTS.RESTAURANTE_MODIFICAR_PERFIL, {
+    method: "PATCH",
+    body: JSON.stringify(resto),
+  });
+
+  if (!response.ok) {
+    let mensaje = `Error ${response.status}`;
+    try {
+      const errorData = await response.json();
+      mensaje =
+        errorData.message || errorData.error || JSON.stringify(errorData);
+    } catch {
+      mensaje = await response.text().catch(() => "Error desconocido");
+    }
+    throw new Error(mensaje);
+  }
+
+  return response.json();
+}
+
+/**
+ * Crea una nueva oferta para el restaurante autenticado.
+ * @param request - Datos de la oferta (DTOOferta)
+ * @param idProducto - ID del producto al que se asocia la oferta
+ * @returns Promise con la oferta creada (DTOOferta)
+ * @throws Error si la respuesta no es exitosa
+ */
+export async function crearOferta(
+  request: DTOOferta,
+  idProducto: number
+): Promise<DTOOferta> {
+  const response = await fetchConAuth(`${ENDPOINTS.CREAR_OFERTA}?idProducto=${idProducto}`, {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    let errorMessage = `Error ${response.status}: ${response.statusText}`;
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch {
+      errorMessage = await response.text().catch(() => errorMessage);
+    }
+    throw new Error(errorMessage);
+  }
+
+  const data: DTOOferta = await response.json();
+  return data;
 }

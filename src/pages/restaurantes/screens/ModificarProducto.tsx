@@ -12,10 +12,12 @@ import type { DTOIngrediente } from "../../../data/DTOIngrediente.js";
 import { useSubCategorias } from "../../../hooks/useSubCategorias.js";
 import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
 import {
-  eliminarProducto,
+  deshabilitarProducto,
+  habilitarProducto,
   modificarProducto,
   obtenerFirmaCloudinary,
 } from "../../../api/apiRestaurante.js";
+import AltaOferta from "./AltaOferta.js";
 
 type StepState = "FORM" | "LOADING" | "SUCCESS";
 
@@ -23,11 +25,13 @@ type StepState = "FORM" | "LOADING" | "SUCCESS";
 interface ModificarProductoProps {
   producto: DTOProducto;
   onReturn: () => void;
+  deshabilitado?: boolean;
 }
 
 export default function ModificarProducto({
   producto,
   onReturn,
+  deshabilitado,
 }: ModificarProductoProps) {
   const [step, setStep] = useState<StepState>("FORM");
   const [mostrarModalEliminar, setMostrarModalEliminar] = useState(false);
@@ -38,7 +42,7 @@ export default function ModificarProducto({
   const { subcategorias, subcategoriaSeleccionada, seleccionarSubcategoria } =
     useSubCategorias();
   const { productos } = useProductoRestaurante();
-
+  const [ofertaNueva, setNuevaOferta] = useState<boolean>(false);
   // Nombre del producto a modificar
   const [nombre, setNombre] = useState(producto.nombre);
   // Precio del producto a modificar
@@ -73,10 +77,13 @@ export default function ModificarProducto({
     producto.ingredientes ?? [],
   );
 
-  const handleListaIngredientesChange = useCallback((lista: DTOIngrediente[]) => {
-    listaIngredientesRef.current = lista;
-    setListaIngredientes(lista);
-  }, []);
+  const handleListaIngredientesChange = useCallback(
+    (lista: DTOIngrediente[]) => {
+      listaIngredientesRef.current = lista;
+      setListaIngredientes(lista);
+    },
+    [],
+  );
 
   // Estados para Combo
   // Productos que conforman el Combo a modificar -- Viene como lista de numeros
@@ -205,6 +212,75 @@ export default function ModificarProducto({
     return Object.keys(errs).length === 0;
   };
 
+  const handleHabilitar = async () => {
+    setApiError(null);
+    if (!validate()) return;
+    setStep("LOADING");
+    try {
+      if (!foto.cloudUrl) {
+        setApiError("Foto no cargada correctamente.");
+        setStep("FORM");
+        return;
+      }
+      if (!subcategoriaSelect?.idSubCategoria) {
+        setApiError("Sin sub-categoría seleccionada.");
+        setStep("FORM");
+        return;
+      }
+      if (!producto.idProducto) {
+        setApiError("El producto no tiene id válido.");
+        setStep("FORM");
+        return;
+      }
+
+      const data: DTOProducto = {
+        idProducto: producto.idProducto,
+        nombre,
+        descripcion,
+        precio,
+        urlImagen: foto.cloudUrl,
+        categoria: categoriaProducto ?? EnumCategoriaProducto.Bebida,
+        idSubCategoria: subcategoriaSelect.idSubCategoria,
+        tipo: producto.tipo,
+      };
+
+      switch (producto.tipo) {
+        case EnumTipoProducto.Plato:
+          data.ingredientes = listaIngredientesRef.current
+            .filter((i) => i.idIngrediente != null)
+            .map((i) => ({
+              idIngrediente: i.idIngrediente!,
+              nombre: i.nombre,
+              idRestaurante: i.idRestaurante ?? producto.idRestaurante ?? 0,
+            }));
+          data.plato = {
+            tiempoPreparacionMinutos: tiempoPreparacion ?? 0,
+          };
+          break;
+        case EnumTipoProducto.Combo:
+          data.combo = {
+            productosIncluidosIds: productosDelCombo.map(
+              (p) => p.idProducto ?? 0,
+            ),
+          };
+          break;
+      }
+
+      if (producto.idProducto) {
+        await habilitarProducto(producto.idProducto);
+        await modificarProducto(data);
+        setStep("SUCCESS");
+      } else {
+        setApiError("No se encontro el producto que se quiere habilitar");
+      }
+    } catch (err) {
+      setApiError(
+        err instanceof Error ? err.message : "Error al guardar el producto.",
+      );
+      setStep("FORM");
+    }
+  };
+
   const handleSubmit = async () => {
     setApiError(null);
     if (!validate()) return;
@@ -287,7 +363,7 @@ export default function ModificarProducto({
     setEliminando(true);
     setErrorEliminar(null);
     try {
-      await eliminarProducto(producto.idProducto);
+      await deshabilitarProducto(producto.idProducto);
       setMostrarModalEliminar(false);
       onReturn();
     } catch (err) {
@@ -298,6 +374,15 @@ export default function ModificarProducto({
       setEliminando(false);
     }
   };
+
+  if (ofertaNueva) {
+    return (
+      <AltaOferta
+        producto={producto}
+        onCancelar={() => setNuevaOferta(false)}
+      />
+    );
+  }
 
   return (
     <>
@@ -372,7 +457,15 @@ export default function ModificarProducto({
 
         {/* FORM */}
         {step === "FORM" && (
-          <div className="bg-white rounded-3xl shadow-lg shadow-green-50 p-8 flex flex-col gap-1">
+          <div className="bg-white rounded-3xl shadow-lg shadow-green-50 p-2 flex flex-col gap-1">
+            <div className="ml-auto">
+              <button
+                onClick={() => setNuevaOferta(!ofertaNueva)}
+                className="py-2.5 px-6 rounded-3xl border border-trego-admin text-trego-admin hover:bg-trego-admin hover:text-white text-base font-semibold transition-all duration-200"
+              >
+                Agregar oferta
+              </button>
+            </div>
             {/* Renderizado condicional según tipo.id */}
             {producto.tipo === EnumTipoProducto.Plato && (
               <AltaPlato
@@ -460,22 +553,32 @@ export default function ModificarProducto({
               </div>
             )}
 
-            {/* Botones */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <button
-                onClick={handleSubmit}
-                className="flex-1 py-3.5 px-6 rounded-3xl bg-trego-restaurante hover:bg-green-700 text-white text-base font-bold transition-all duration-200 shadow-md"
-              >
-                Modificar Producto
-              </button>
-              <button
-                type="button"
-                onClick={handleAbrirModalEliminar}
-                className="flex-1 py-3.5 px-6 rounded-3xl bg-trego-orange hover:bg-trego-cart text-white text-base font-semibold transition-all duration-200"
-              >
-                Eliminar Producto
-              </button>
-            </div>
+            {!deshabilitado ? (
+              <div className="flex m-auto w-2xl pt-2">
+                <button
+                  onClick={handleHabilitar}
+                  className="flex-1 py-3.5 px-6 rounded-3xl bg-trego-restaurante hover:bg-green-700 text-white text-base font-bold transition-all duration-200 shadow-md"
+                >
+                  Habilitar Producto
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row gap-4 pt-2">
+                <button
+                  onClick={handleSubmit}
+                  className="flex-1 py-3.5 px-6 rounded-3xl bg-trego-restaurante hover:bg-green-700 text-white text-base font-bold transition-all duration-200 shadow-md"
+                >
+                  Modificar Producto
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAbrirModalEliminar}
+                  className="flex-1 py-3.5 px-6 rounded-3xl border border-trego-orange text-trego-orange hover:bg-trego-orange hover:text-white  text-base font-semibold transition-all duration-200"
+                >
+                  Deshabilitar Producto
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

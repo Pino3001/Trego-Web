@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, CheckCircle, AlertCircle } from "lucide-react";
+import { Search, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
 import CardPedidoAconfirmar from "../componentes/CardPedidoAconfirmar.js";
 import { EnumEstadoPedido } from "../../../data/EnumEstadoPedido.js";
 import {
@@ -110,9 +110,9 @@ export default function ListarSinConfirmar() {
   };
 
   const handleLimpiarFiltros = () => {
-  limpiarFiltros();   
-  setProductoSelect(undefined); 
-};
+    limpiarFiltros();
+    setProductoSelect(undefined);
+  };
 
   return (
     <div className="flex-1 w-full h-full p-4 md:p-8 overflow-y-auto bg-gray-50 text-gray-800 font-sans">
@@ -133,9 +133,23 @@ export default function ListarSinConfirmar() {
         </div>
       )}
 
-      <h1 className="text-2xl font-black text-gray-800 text-center mb-6 uppercase tracking-tight">
-        Pedidos a Confirmar
-      </h1>
+      <div className="flex w-full justify-between">
+        <div></div>
+        <h1 className="text-2xl font-black text-gray-800 text-center mb-6 uppercase tracking-tight">
+          Pedidos a Confirmar
+        </h1>
+        <button
+          type="button"
+          onClick={recargar}
+          disabled={loading} 
+          className={`shrink-0 flex items-center justify-center w-8 h-8 
+              text-trego-restaurante hover:opacity-80 transition-colors
+              ${loading ? "animate-spin opacity-60 cursor-wait" : ""}`}
+          aria-label="Recargar"
+        >
+          <RefreshCw size={32} />
+        </button>
+      </div>
 
       <div className="max-w-5xl mx-auto mb-8 relative group">
         <FiltrosRestaurantes
@@ -145,9 +159,9 @@ export default function ListarSinConfirmar() {
           desplegableTipo="Producto Pedido"
           filtroSelecte={productoSelect}
           mapToItem={(i) => ({
-                id: i.toString() ?? "",
-                label: i.nombre,
-              })}
+            id: i.toString() ?? "",
+            label: i.nombre,
+          })}
           onChangeFiltroSelect={(item) => {
             (setProductoSelect(item),
               setProductoSeleccionadoId(item?.idProducto));

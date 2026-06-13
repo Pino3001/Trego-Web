@@ -18,6 +18,7 @@ import ListarCancelados from "./pages/restaurantes/screens/ListarCancelados.js";
 import GestionRestaurantesPage from "./pages/admin/screens/GestionRestaurantesPage.js";
 import ListarRestaurantesPage from "./pages/admin/screens/ListarRestaurantesPage.js";
 import ListarClientesPage from "./pages/admin/screens/ListarClientesPage.js";
+import CrearAdministradorPage from "./pages/admin/screens/CrearAdministradorPage.js";
 import AdministradorLayaut from "./pages/admin/AdministradorLayaut.js";
 import RestauranteMenuPage from "./pages/cliente/screens/RestauranteMenuPage.jsx";
 import HomePage from "./pages/cliente/screens/HomePage.jsx";
@@ -31,6 +32,9 @@ import RegistrarRestaurante from "./pages/logins/RegistrarRestaurante.js";
 import ListarProductos from "./pages/restaurantes/screens/ListarProductos.js";
 import ModificarProducto from "./pages/restaurantes/screens/ModificarProducto.js";
 import ListarReclamos from "./pages/restaurantes/screens/ListarReclamos.js";
+import PerfilCliente from "./pages/perfil/PerfilScreen.js";
+import PerfilRestauranteScreen from "./pages/perfil/PerfilRestauranteScreen.js";
+import AltaOferta from "./pages/restaurantes/screens/AltaOferta.js";
 
 export default function AppRouter() {
   return (
@@ -96,6 +100,10 @@ export default function AppRouter() {
             element={<SolicitarAltaRestaurante />}
           />
           <Route
+            path="/perfil/restaurante"
+            element={<PerfilRestauranteScreen />}
+          />
+          <Route
             path="/restaurantes/perfil/contraseña"
             element={
               <CambiarContraseñaPage
@@ -112,6 +120,7 @@ export default function AppRouter() {
             path="/restaurantes/ListarProductos/:id"
             element={<ModificarProducto />}
           />
+          <Route path="/restaurantes/alta-oferta" element={<AltaOferta />} />
         </Route>
 
         {/* --- RUTAS ADMIN (LAYOUT CON SIDEBAR) --- */}
@@ -125,6 +134,10 @@ export default function AppRouter() {
             element={<ListarRestaurantesPage />}
           />
           <Route path="/admin/clientes" element={<ListarClientesPage />} />
+          <Route
+            path="/admin/administradores/crear"
+            element={<CrearAdministradorPage />}
+          />
           <Route
             path="/admin/perfil/contraseña"
             element={
@@ -151,6 +164,7 @@ export default function AppRouter() {
           <Route path="/restaurante/:id" element={<RestauranteMenuPage />} />
           <Route path="/restaurantes" element={<HomePage />} />
           <Route path="/Historial" element={<HistorialPage />} />
+          <Route path="/perfil/cliente" element={<PerfilCliente />} />
         </Route>
       </Routes>
     </BrowserRouter>

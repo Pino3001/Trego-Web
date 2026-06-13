@@ -37,9 +37,14 @@ export const SECCIONES_ADMIN: SidebarSection[] = [
   {
     section: "Sistema",
     items: [
-      { 
-        label: "Estadísticas", 
-        disabled: true
+      {
+        label: "Crear administrador",
+        path: "/admin/administradores/crear",
+        end: true,
+      },
+      {
+        label: "Estadísticas",
+        disabled: true,
       },
     ],
   },
@@ -118,7 +123,7 @@ export default function AdministradorLayaut() {
         tipoUser="Administrador"
         perfilNombre={perfilNombre}
         perfilEmail={perfilEmail}
-        onVerPerfil={() => navigate("/admin/perfil/contraseña")}
+        onCambiarContraseña={() => navigate("/admin/perfil/contraseña")}
         onLogout={handleLogout}
       />
       <div className="flex flex-1 overflow-hidden">

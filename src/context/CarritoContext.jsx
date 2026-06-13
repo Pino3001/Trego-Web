@@ -290,6 +290,7 @@ export function CarritoProvider({ children }) {
             nombre: producto.nombre,
             precio: producto.precio,
             fotoPlato: producto.fotoPlato,
+            ingredientes: producto.ingredientes ?? [],
             cantidad: cantidad ?? 1,
             comentarios: comentarios ?? "",
             ingredientesQuitados: ingredientesQuitados ?? [],
@@ -406,6 +407,45 @@ export function CarritoProvider({ children }) {
     )
   }
 
+  async function modificarItemCarrito(idProducto, { cantidad, comentarios, ingredientesQuitados }) {
+    const item = items.find((i) => i.idProducto === idProducto)
+    if (!item) return
+
+    const nuevaCantidad = Math.max(1, Number(cantidad) || item.cantidad || 1)
+    const nuevosComentarios = comentarios ?? ''
+    const nuevosQuitados = ingredientesQuitados ?? []
+
+    if (tieneSesion()) {
+      try {
+        await modificarProductoEnCarrito({
+          producto: item,
+          cantidad: nuevaCantidad,
+          comentarios: nuevosComentarios,
+          ingredientesQuitados: nuevosQuitados,
+          idRestaurante: restaurante?.idUsuario ?? carritoDto?.idRestaurante,
+        })
+        await cargarCarritoDesdeApi()
+      } catch (err) {
+        setMensajeCarrito(err.message ?? 'No se pudo guardar los cambios')
+        throw err
+      }
+      return
+    }
+
+    setItems((prev) =>
+      prev.map((it) =>
+        it.idProducto === idProducto
+          ? {
+              ...it,
+              cantidad: nuevaCantidad,
+              comentarios: nuevosComentarios,
+              ingredientesQuitados: nuevosQuitados,
+            }
+          : it,
+      ),
+    )
+  }
+
   function direccionParaBackend() {
     if (!direccionSeleccionada) return null;
     if (direccionSeleccionada.tipo === "guardada") {
@@ -495,6 +535,7 @@ export function CarritoProvider({ children }) {
     cambiarCantidad,
     cambiarComentarios,
     cambiarIngredientesQuitados,
+    modificarItemCarrito,
     validarRestauranteAbierto,
     cargarCarritoDesdeApi,
     cargarDireccionesDesdeApi,

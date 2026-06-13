@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import ModalBase, { Z_MODAL } from './ModalBase'
 import { useCarrito } from '../../context/CarritoContext'
-import { useGeolocation } from '../../hooks/useGeolocation'
-import { resolverDireccionDesdeCoords } from '../../api/mapeadores'
+import DireccionFormCarrito from '../cliente/DireccionFormCarrito.js'
+
+// ... otros imports (ModalBase, etc.)
 
 export default function DireccionEnvioModal() {
   const {
@@ -14,12 +15,17 @@ export default function DireccionEnvioModal() {
     modalSuperior,
   } = useCarrito()
 
-  const { coords, cargandoUbicacion, tieneUbicacion, solicitar, ubicacionDenegada } =
-    useGeolocation(false)
   const [tab, setTab] = useState('guardadas')
-  const [esperandoUbicacionParaEnvio, setEsperandoUbicacionParaEnvio] = useState(false)
-  const [resolviendoDireccion, setResolviendoDireccion] = useState(false)
-  const [etiquetaUbicacion, setEtiquetaUbicacion] = useState(null)
+
+  // Estado local para el formulario de "Ubicación Actual"
+  const [draftActual, setDraftActual] = useState({
+    calle: '',
+    numero: '',
+    apartamento: '',
+    esquina: '',
+    latitud: 0,
+    longitud: 0,
+  })
 
   const direccionesUi = useMemo(() => direcciones ?? [], [direcciones])
 
@@ -27,25 +33,6 @@ export default function DireccionEnvioModal() {
     setMensajeCarrito(mensaje)
     cerrarModalDireccion()
   }
-
-  const aplicarUbicacionActual = useCallback(
-    async (coordsActuales) => {
-      setResolviendoDireccion(true)
-      try {
-        const resuelta = await resolverDireccionDesdeCoords(coordsActuales)
-        setDireccionSeleccionada({
-          tipo: 'actual',
-          coords: coordsActuales,
-          nombre: resuelta.nombre,
-          datos: resuelta.datos,
-        })
-        confirmarSeleccion(`Dirección seleccionada: ${resuelta.nombre}`)
-      } finally {
-        setResolviendoDireccion(false)
-      }
-    },
-    [setDireccionSeleccionada, confirmarSeleccion],
-  )
 
   function seleccionarGuardada(d) {
     setDireccionSeleccionada({
@@ -58,52 +45,32 @@ export default function DireccionEnvioModal() {
     confirmarSeleccion(`Dirección seleccionada: ${d.nombre}`)
   }
 
-  function seleccionarActual() {
-    if (!tieneUbicacion || !coords) {
-      setEsperandoUbicacionParaEnvio(true)
-      solicitar()
-      return
-    }
-    aplicarUbicacionActual(coords)
-  }
-
-  useEffect(() => {
-    if (!esperandoUbicacionParaEnvio || !tieneUbicacion || !coords) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setEsperandoUbicacionParaEnvio(false)
-    aplicarUbicacionActual(coords)
-  }, [esperandoUbicacionParaEnvio, tieneUbicacion, coords, aplicarUbicacionActual])
-
-  useEffect(() => {
-    if (!direccionModalAbierto) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setEsperandoUbicacionParaEnvio(false)
-      setResolviendoDireccion(false)
-    }
-  }, [direccionModalAbierto])
-
-  useEffect(() => {
-    if (!tieneUbicacion || !coords) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setEtiquetaUbicacion(null)
-      return
-    }
-    let cancelado = false
-    resolverDireccionDesdeCoords(coords).then((resuelta) => {
-      if (!cancelado) setEtiquetaUbicacion(resuelta.nombre)
+  // Esta función se pasa al onSave de DireccionFormCarrito
+  const handleSaveUbicacionActual = useCallback(() => {
+    const nombreFormateado = `${draftActual.calle} ${draftActual.numero}`.trim()
+    setDireccionSeleccionada({
+      tipo: 'actual',
+      coords: { lat: draftActual.latitud, lng: draftActual.longitud },
+      nombre: nombreFormateado,
+      datos: draftActual,
     })
-    return () => {
-      cancelado = true
-    }
-  }, [tieneUbicacion, coords])
+    confirmarSeleccion(`Dirección seleccionada: ${nombreFormateado}`)
+  }, [draftActual, setDireccionSeleccionada, confirmarSeleccion])
 
-  const textoUbicacionDetectada =
-    etiquetaUbicacion ??
-    (resolviendoDireccion || cargandoUbicacion
-      ? 'Buscando dirección…'
-      : tieneUbicacion
-        ? 'Resolviendo dirección…'
-        : 'Tocá el botón para detectar tu dirección')
+  // Resetear el draft al cambiar a la pestaña de guardadas o al cerrar el modal
+  const cambiarTab = (nuevaTab) => {
+    if (nuevaTab === 'guardadas') {
+      setDraftActual({
+        calle: '',
+        numero: '',
+        apartamento: '',
+        esquina: '',
+        latitud: 0,
+        longitud: 0,
+      })
+    }
+    setTab(nuevaTab)
+  }
 
   return (
     <ModalBase
@@ -129,7 +96,7 @@ export default function DireccionEnvioModal() {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setTab('guardadas')}
+              onClick={() => cambiarTab('guardadas')}
               className={`flex-1 rounded-xl py-2 text-[12px] font-extrabold transition ${
                 tab === 'guardadas' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:bg-white/60'
               }`}
@@ -174,30 +141,14 @@ export default function DireccionEnvioModal() {
         )}
 
         {tab === 'actual' && (
-          <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
-            <p className="text-[13px] text-gray-600">
-              {tieneUbicacion ? (
-                <>
-                  Ubicación detectada:{' '}
-                  <span className="font-extrabold text-gray-900">{textoUbicacionDetectada}</span>
-                </>
-              ) : ubicacionDenegada ? (
-                'No se pudo acceder a tu ubicación. Habilitá permisos del navegador.'
-              ) : (
-                'Usá tu ubicación actual para el envío.'
-              )}
-            </p>
-
-            <button
-              type="button"
-              onClick={seleccionarActual}
-              className="mt-4 w-full rounded-full bg-trego-orange px-6 py-3 text-[13px] font-extrabold text-white shadow-md hover:bg-orange-600 active:scale-[0.99] disabled:opacity-50"
-              disabled={cargandoUbicacion || resolviendoDireccion}
-            >
-              {cargandoUbicacion || resolviendoDireccion
-                ? 'Obteniendo dirección…'
-                : 'Usar ubicación actual'}
-            </button>
+          <div className="mt-4">
+            <DireccionFormCarrito
+              draft={draftActual}
+              onChange={setDraftActual}
+              onSave={handleSaveUbicacionActual}
+              onCancel={() => setTab('guardadas')}
+              autoLocate={true}
+            />
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 export interface DTODireccion {
-  tag?: string;
+  tag: string;
   calle: string;
   numero: string;
   apartamento: string;

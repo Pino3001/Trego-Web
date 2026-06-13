@@ -7,6 +7,9 @@ export function useFiltrosProductos(productos: DTOProducto[]) {
     number | undefined
   >();
   const [orden, setOrden] = useState<"ASC" | "DESC">("ASC");
+  const [estadoFiltro, setEstadoFiltro] = useState<
+    "TODOS" | "HABILITADOS" | "DESHABILITADOS"
+  >("HABILITADOS");
 
   const productosFiltrados = useMemo(() => {
     let resultado = productos;
@@ -30,6 +33,14 @@ export function useFiltrosProductos(productos: DTOProducto[]) {
       );
     }
 
+    if (estadoFiltro !== "TODOS") {
+      resultado = resultado.filter((p) =>
+        estadoFiltro === "HABILITADOS"
+          ? p.disponible === true
+          : p.disponible === false,
+      );
+    }
+
     // Ordenamiento por NOMBRE
     return [...resultado].sort((a, b) => {
       const nombreA = (a.nombre ?? "").toLowerCase();
@@ -40,15 +51,18 @@ export function useFiltrosProductos(productos: DTOProducto[]) {
         return nombreB.localeCompare(nombreA);
       }
     });
-  }, [productos, searchTerm, ingredienteSeleccionadoId, orden]);
+  }, [productos, searchTerm, ingredienteSeleccionadoId, orden, estadoFiltro]);
 
   const hayFiltros =
-    searchTerm.trim() !== "" || ingredienteSeleccionadoId !== undefined;
+    searchTerm.trim() !== "" ||
+    ingredienteSeleccionadoId !== undefined ||
+    estadoFiltro !== "TODOS";
 
   const limpiarFiltros = useCallback(() => {
     setSearchTerm("");
     setIngredienteSeleccionadoId(undefined);
     setOrden("ASC");
+    setEstadoFiltro("TODOS");
   }, []);
 
   return {
@@ -61,5 +75,7 @@ export function useFiltrosProductos(productos: DTOProducto[]) {
     productosFiltrados,
     hayFiltros,
     limpiarFiltros,
+    estadoFiltro,
+    setEstadoFiltro,
   };
 }

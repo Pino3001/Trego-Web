@@ -32,6 +32,8 @@ export default function ListarProductos() {
     setIngredienteSeleccionadoId,
     setOrden,
     setSearchTerm,
+    estadoFiltro,
+    setEstadoFiltro,
   } = useFiltrosProductos(productos);
 
   const { listaIngredientesBackend } = useIngredientes();
@@ -69,6 +71,7 @@ export default function ListarProductos() {
           setProductoSelect(undefined);
           recargarProductos();
         }}
+        deshabilitado={productoSelect.disponible ?? true}
       />
     );
   }
@@ -116,6 +119,8 @@ export default function ListarProductos() {
             id: i?.toString() ?? "",
             label: i.nombre,
           })}
+          onChangeEstadoFiltro={setEstadoFiltro}
+          estadoFiltro={estadoFiltro}
         />
       </div>
 

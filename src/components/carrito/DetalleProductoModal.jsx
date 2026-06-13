@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import ModalBase, { Z_MODAL } from './ModalBase'
 import { useCarrito } from '../../context/CarritoContext'
-
-function obtenerIngredientes(producto) {
-  if (producto?.ingredientes?.length) {
-    return producto.ingredientes.map((i) => (typeof i === 'string' ? i : i.nombre)).filter(Boolean)
-  }
-  return []
-}
+import {
+  obtenerNombresIngredientes,
+  toggleIngredienteQuitado,
+  validarIngredientesQuitados,
+} from './ingredientesProducto.js'
 
 export default function DetalleProductoModal() {
   const {
@@ -26,7 +24,7 @@ export default function DetalleProductoModal() {
   const [quitados, setQuitados] = useState([])
   const [errorIngredientes, setErrorIngredientes] = useState(null)
 
-  const ingredientes = useMemo(() => obtenerIngredientes(producto), [producto])
+  const ingredientes = useMemo(() => obtenerNombresIngredientes(producto), [producto])
 
   useEffect(() => {
     setQuitados([])
@@ -35,21 +33,10 @@ export default function DetalleProductoModal() {
     setComentarios('')
   }, [producto?.idProducto])
 
-  const MSG_TODOS_INGREDIENTES =
-    'No podés quitar todos los ingredientes. Dejá al menos uno en el plato.'
-
   function toggleQuitado(nombre) {
-    if (quitados.includes(nombre)) {
-      setQuitados((prev) => prev.filter((x) => x !== nombre))
-      setErrorIngredientes(null)
-      return
-    }
-    if (ingredientes.length > 0 && quitados.length + 1 >= ingredientes.length) {
-      setErrorIngredientes(MSG_TODOS_INGREDIENTES)
-      return
-    }
-    setQuitados((prev) => [...prev, nombre])
-    setErrorIngredientes(null)
+    const result = toggleIngredienteQuitado(ingredientes, quitados, nombre)
+    setQuitados(result.quitados)
+    setErrorIngredientes(result.error)
   }
 
   function cerrar() {
@@ -61,11 +48,9 @@ export default function DetalleProductoModal() {
   }
 
   function agregar() {
-    if (
-      ingredientes.length > 0 &&
-      quitados.length >= ingredientes.length
-    ) {
-      setErrorIngredientes(MSG_TODOS_INGREDIENTES)
+    const errorIng = validarIngredientesQuitados(ingredientes, quitados)
+    if (errorIng) {
+      setErrorIngredientes(errorIng)
       return
     }
     agregarProductoAlCarrito(

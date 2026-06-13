@@ -13,6 +13,8 @@ interface DateTimeInputProps {
   disabled?: boolean;
   /** Mensaje de error o indicador booleano de que hay un error */
   error?: string | boolean;
+  /** Clases extra para el input (sobrescriben estilos base) */
+  className?: string;
 }
 
 export const DateTimeInput = forwardRef<HTMLInputElement, DateTimeInputProps>(
@@ -24,8 +26,9 @@ export const DateTimeInput = forwardRef<HTMLInputElement, DateTimeInputProps>(
       label = mode === "time" ? "Hora" : "Fecha",
       disabled = false,
       error,
+      className,
     },
-    ref
+    ref,
   ) => {
     // Evaluamos si hay error para aplicar las clases rojas
     const hasError = Boolean(error);
@@ -39,7 +42,7 @@ export const DateTimeInput = forwardRef<HTMLInputElement, DateTimeInputProps>(
             value={value}
             onChange={(e) => onChange(e.target.value)}
             disabled={disabled}
-            placeholder=" "
+            placeholder=""
             className={`
               peer w-full px-4 pl-6 py-2.5 text-base bg-transparent 
               rounded-xl outline-none transition-all scheme-light
@@ -51,6 +54,7 @@ export const DateTimeInput = forwardRef<HTMLInputElement, DateTimeInputProps>(
                   : /* Clases Normales (Tus clases originales) */
                     "border border-[#79747E] text-[#1D1B20] focus:border-2 focus:border-[#6750A4] focus:px-3.75 focus:py-2.25"
               }
+              ${className ?? ""}
             `}
           />
 
@@ -72,13 +76,11 @@ export const DateTimeInput = forwardRef<HTMLInputElement, DateTimeInputProps>(
 
         {/* Muestra el texto del error debajo del input si pasaste un string */}
         {typeof error === "string" && error && (
-          <span className="text-xs text-[#B3261E] mt-1 ml-4">
-            {error}
-          </span>
+          <span className="text-xs text-[#B3261E] mt-1 ml-4">{error}</span>
         )}
       </div>
     );
-  }
+  },
 );
 
 // Muestra el nombre correcto en las React DevTools

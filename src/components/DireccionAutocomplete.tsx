@@ -57,6 +57,8 @@ interface DireccionAutocompleteProps {
   onSelectAddress: (direccion: DireccionGeoapify) => void;
   onClear?: () => void;
   error?: string;
+  className?: string;
+  classNameLabel?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -68,6 +70,8 @@ export default function DireccionAutocomplete({
   onSelectAddress,
   onClear,
   error,
+  className,
+  classNameLabel
 }: DireccionAutocompleteProps) {
   const [sugerencias, setSugerencias] = useState<DireccionGeoapify[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -124,7 +128,9 @@ export default function DireccionAutocomplete({
         setSugerencias([]);
         setIsOpen(false);
         setShowNoResults(false);
-        setSearchError("No se pudo buscar la dirección. Revisá que el backend esté corriendo.");
+        setSearchError(
+          "No se pudo buscar la dirección. Revisá que el backend esté corriendo.",
+        );
       } finally {
         setIsSearching(false);
       }
@@ -188,7 +194,7 @@ export default function DireccionAutocomplete({
     <div className="relative w-full flex flex-col " ref={wrapperRef}>
       {/* Label */}
       {label && (
-        <label className="text-sm font-semibold px-5 text-gray-700">
+        <label className={`text-sm font-semibold px-5 text-gray-700 ${classNameLabel}`}>
           {label}
         </label>
       )}
@@ -220,6 +226,7 @@ export default function DireccionAutocomplete({
                 ? "border-red-400 focus:ring-1 focus:ring-red-400 bg-red-50/30"
                 : "border-gray-400 bg-white focus:border-trego-restaurante focus:ring-1 focus:ring-trego-restaurante"
             }
+                ${className}
           `}
         />
 
@@ -315,7 +322,8 @@ export default function DireccionAutocomplete({
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 <line x1="8" y1="11" x2="14" y2="11" />
               </svg>
-              No se encontraron resultados. Escribí al menos 3 letras y elegí una opción de la lista.
+              No se encontraron resultados. Escribí al menos 3 letras y elegí
+              una opción de la lista.
             </li>
           )}
         </ul>
