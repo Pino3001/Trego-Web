@@ -1,7 +1,18 @@
 import type { DTORestaurante } from "../data/DTORestaurante.js";
 import type { DTOClienteResponse } from "../data/DTOClienteResponse.js";
+import type { DTOSubcategoria as DTOSubCategoria } from "../data/DTOSubcategoria.js";
 import { ENDPOINTS } from "./endpoints.js";
 import { fetchConAuth } from "./header/fetchConAuth.js";
+import { obtenerFirmaCloudinary } from "./apiRestaurante.js";
+
+export type CategoriaProducto =
+  | "Bebida"
+  | "Ensalada"
+  | "Principal"
+  | "Entrada"
+  | "Guarnicion"
+  | "Postre"
+  | "Otros";
 
 export const administradorApi = {
   obtenerRestaurantesPendientes: async (): Promise<DTORestaurante[]> => {
@@ -86,4 +97,50 @@ export const administradorApi = {
       ? body.mensaje
       : "Administrador creado exitosamente.";
   },
+
+  crearSubCategoria: async (
+    nombre: string,
+    categoria: CategoriaProducto,
+    imagenFile: File,
+  ): Promise<DTOSubCategoria> => {
+    // 1. Subir imagen a Cloudinary
+    const nombreSinExtension =
+      imagenFile.name.substring(0, imagenFile.name.lastIndexOf(".")) ||
+      imagenFile.name;
+
+    const datosBack = await obtenerFirmaCloudinary(nombreSinExtension, "image");
+
+    const formData = new FormData();
+    formData.append("file", imagenFile);
+    formData.append("api_key", datosBack.apiKey);
+    formData.append("timestamp", datosBack.timestamp.toString());
+    formData.append("signature", datosBack.firma);
+    formData.append("public_id", datosBack.publicId);
+
+    const cloudinaryRes = await fetch(datosBack.uploadUrl, {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!cloudinaryRes.ok) {
+      throw new Error("ERROR_IMAGEN");
+    }
+
+    const cloudinaryData = await cloudinaryRes.json();
+    const urlImagen: string = cloudinaryData.secure_url;
+
+    // 2. Crear subcategoría en el backend con la URL obtenida
+    const response = await fetchConAuth(ENDPOINTS.SUBCATEGORIA_CREAR, {
+      method: "POST",
+      body: JSON.stringify({ nombre, categoria, urlImagen }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 409) throw new Error("ERROR_DUPLICADO");
+      throw new Error("ERROR_CREAR");
+    }
+
+    return response.json();
+  },
+
 };

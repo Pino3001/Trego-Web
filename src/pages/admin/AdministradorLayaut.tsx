@@ -22,6 +22,11 @@ export const SECCIONES_ADMIN: SidebarSection[] = [
         path: "/admin/restaurantes", 
         end: true 
       },
+      {
+        label: "Crear nueva subcategoría",
+        path: "/admin/subcategorias/nueva",
+        end: true,
+      },
     ],
   },
   {

@@ -80,6 +80,9 @@ export const ENDPOINTS = {
   ADMIN_RESTAURANTE_HABILITAR: '/api/administradores/restaurantes/:id/habilitar',
   ADMIN_RESTAURANTE_NO_HABILITAR: '/api/administradores/restaurantes/:id/noHabilitar/:motivo',
 
+  // Administrador — subcategorías
+  SUBCATEGORIA_CREAR: '/api/subcategorias/crear',
+
   // Administrador — clientes
   CLIENTES_TODOS: '/api/clientes',
 
