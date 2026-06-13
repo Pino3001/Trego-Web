@@ -117,7 +117,7 @@ export default function AdministradorLayaut() {
 
   // Si pasa todas las reglas, renderizamos la pantalla normal
   return (
-    <div className="h-screen w-screen flex flex-col bg-gray-50 overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-gray-50 overflow-hidden notranslate" lang="es">
       <Header
         abrirPerfil
         tipoUser="Administrador"

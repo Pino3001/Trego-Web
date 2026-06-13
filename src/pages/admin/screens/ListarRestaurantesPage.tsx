@@ -5,8 +5,15 @@ import { administradorApi } from "../../../api/administradorApi.js";
 import type { DTORestaurante } from "../../../data/DTORestaurante.js";
 import type { DTODireccion } from "../../../data/DTODireccion.js";
 import AccionesEstadoCuenta from "../components/AccionesEstadoCuenta.js";
+import {
+  clasesBadgeEstadoRestaurante,
+  etiquetaEstadoRestaurante,
+  esCuentaRestauranteActiva,
+  normalizarRestauranteAdmin,
+  obtenerEstadoRestaurante,
+} from "../utils/estadoRestauranteAdmin.js";
 
-type FiltroEstado = "todos" | "habilitados" | "pendientes";
+type FiltroEstado = "todos" | "habilitados" | "pendientes" | "deshabilitados";
 type OrdenLista = "az" | "za" | "calificacion";
 
 function formatearDireccion(direccion?: DTODireccion): string {
@@ -47,7 +54,7 @@ function MetricaCard({
   valor: number;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm notranslate" translate="no">
       <p className="text-sm font-medium text-gray-500">{etiqueta}</p>
       <p className="mt-2 text-3xl font-bold text-gray-900">{valor}</p>
     </div>
@@ -94,12 +101,18 @@ export default function ListarRestaurantesPage() {
 
       for (const r of habilitados) {
         if (r.idRestaurante != null) {
-          porId.set(r.idRestaurante, { ...r, habilitado: true });
+          porId.set(
+            r.idRestaurante,
+            normalizarRestauranteAdmin({ ...r, habilitado: true }),
+          );
         }
       }
       for (const r of pendientes) {
         if (r.idRestaurante != null && !porId.has(r.idRestaurante)) {
-          porId.set(r.idRestaurante, { ...r, habilitado: false });
+          porId.set(
+            r.idRestaurante,
+            normalizarRestauranteAdmin({ ...r, habilitado: false }),
+          );
         }
       }
 
@@ -124,12 +137,22 @@ export default function ListarRestaurantesPage() {
   }, [cargarDatos]);
 
   const metricas = useMemo(() => {
-    const habilitados = restaurantes.filter((r) => r.habilitado).length;
-    const pendientes = restaurantes.filter((r) => !r.habilitado).length;
+    let habilitados = 0;
+    let pendientes = 0;
+    let deshabilitados = 0;
+
+    for (const r of restaurantes) {
+      const estado = obtenerEstadoRestaurante(r);
+      if (estado === "habilitado") habilitados++;
+      else if (estado === "pendiente") pendientes++;
+      else deshabilitados++;
+    }
+
     return {
       total: restaurantes.length,
       habilitados,
       pendientes,
+      deshabilitados,
     };
   }, [restaurantes]);
 
@@ -137,9 +160,13 @@ export default function ListarRestaurantesPage() {
     let lista = [...restaurantes];
 
     if (filtroEstado === "habilitados") {
-      lista = lista.filter((r) => r.habilitado);
+      lista = lista.filter((r) => obtenerEstadoRestaurante(r) === "habilitado");
     } else if (filtroEstado === "pendientes") {
-      lista = lista.filter((r) => !r.habilitado);
+      lista = lista.filter((r) => obtenerEstadoRestaurante(r) === "pendiente");
+    } else if (filtroEstado === "deshabilitados") {
+      lista = lista.filter(
+        (r) => obtenerEstadoRestaurante(r) === "deshabilitado",
+      );
     }
 
     const q = busqueda.trim().toLowerCase();
@@ -162,6 +189,10 @@ export default function ListarRestaurantesPage() {
     return lista;
   }, [restaurantes, filtroEstado, busqueda, orden]);
 
+  const estadoSeleccionado = seleccionado
+    ? obtenerEstadoRestaurante(seleccionado)
+    : null;
+
   return (
     <>
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
@@ -170,7 +201,8 @@ export default function ListarRestaurantesPage() {
             Todos los registrados
           </h1>
           <p className="mt-2 text-gray-500">
-            Vista general de restaurantes habilitados y pendientes.
+            Vista general de restaurantes habilitados, pendientes y
+            deshabilitados.
           </p>
         </div>
 
@@ -187,10 +219,14 @@ export default function ListarRestaurantesPage() {
         )}
 
         {!cargando && !error && (
-          <div className="mb-8 grid gap-4 sm:grid-cols-3">
+          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <MetricaCard etiqueta="Total registrados" valor={metricas.total} />
             <MetricaCard etiqueta="Habilitados" valor={metricas.habilitados} />
             <MetricaCard etiqueta="Pendientes" valor={metricas.pendientes} />
+            <MetricaCard
+              etiqueta="Deshabilitados"
+              valor={metricas.deshabilitados}
+            />
           </div>
         )}
 
@@ -214,11 +250,13 @@ export default function ListarRestaurantesPage() {
                 onChange={(e) =>
                   setFiltroEstado(e.target.value as FiltroEstado)
                 }
-                className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-trego-admin focus:outline-none focus:ring-2 focus:ring-blue-100"
+                className="notranslate rounded-xl border border-gray-300 px-4 py-2.5 text-sm focus:border-trego-admin focus:outline-none focus:ring-2 focus:ring-blue-100"
+                translate="no"
               >
                 <option value="todos">Todos</option>
                 <option value="habilitados">Habilitados</option>
                 <option value="pendientes">Pendientes</option>
+                <option value="deshabilitados">Deshabilitados</option>
               </select>
             </label>
 
@@ -252,7 +290,10 @@ export default function ListarRestaurantesPage() {
           />
         ) : (
           <ul className="grid gap-4 sm:grid-cols-2">
-            {restaurantesFiltrados.map((restaurante) => (
+            {restaurantesFiltrados.map((restaurante) => {
+              const estado = obtenerEstadoRestaurante(restaurante);
+
+              return (
               <li key={restaurante.idRestaurante}>
                 <button
                   type="button"
@@ -264,13 +305,9 @@ export default function ListarRestaurantesPage() {
                       {restaurante.nombre ?? "Sin nombre"}
                     </p>
                     <span
-                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        restaurante.habilitado
-                          ? "bg-green-50 text-green-700"
-                          : "bg-amber-50 text-amber-700"
-                      }`}
+                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${clasesBadgeEstadoRestaurante(estado)}`}
                     >
-                      {restaurante.habilitado ? "Habilitado" : "Pendiente"}
+                      {etiquetaEstadoRestaurante(estado)}
                     </span>
                   </div>
 
@@ -288,12 +325,13 @@ export default function ListarRestaurantesPage() {
                   </div>
                 </button>
               </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </div>
 
-      {seleccionado && (
+      {seleccionado && estadoSeleccionado && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
           onMouseDown={(e) => {
@@ -315,13 +353,9 @@ export default function ListarRestaurantesPage() {
                     {seleccionado.nombre ?? "Sin nombre"}
                   </h2>
                   <span
-                    className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      seleccionado.habilitado
-                        ? "bg-green-50 text-green-700"
-                        : "bg-amber-50 text-amber-700"
-                    }`}
+                    className={`mt-2 inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${clasesBadgeEstadoRestaurante(estadoSeleccionado)}`}
                   >
-                    {seleccionado.habilitado ? "Habilitado" : "Pendiente"}
+                    {etiquetaEstadoRestaurante(estadoSeleccionado)}
                   </span>
                 </div>
                 <button
@@ -370,11 +404,16 @@ export default function ListarRestaurantesPage() {
                   idUsuario={seleccionado.idRestaurante}
                   nombre={seleccionado.nombre ?? "Restaurante"}
                   habilitado={seleccionado.habilitado ?? false}
-                  mostrarNotaSolicitudesPendientes={!seleccionado.habilitado}
+                  cuentaHabilitada={
+                    seleccionado.habilitado
+                      ? (seleccionado.cuentaHabilitada ?? true)
+                      : undefined
+                  }
+                  esSolicitudPendiente={!seleccionado.habilitado}
                   onEstadoActualizado={() =>
                     handleEstadoActualizado(
                       seleccionado.nombre ?? "Restaurante",
-                      seleccionado.habilitado ?? false,
+                      esCuentaRestauranteActiva(seleccionado),
                     )
                   }
                 />
