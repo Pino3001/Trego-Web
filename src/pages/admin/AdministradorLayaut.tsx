@@ -123,12 +123,12 @@ export default function AdministradorLayaut() {
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-50 overflow-hidden">
       <Header
-        abrirPerfil
         tipoUser="Administrador"
         perfilNombre={perfilNombre}
         perfilEmail={perfilEmail}
         onCambiarContraseña={() => navigate("/admin/perfil/contraseña")}
         onLogout={handleLogout}
+        cambiarContrasenia
       />
       <div className="flex flex-1 overflow-hidden">
         {/* Le pasamos el estado real al Sidebar para que se bloquee visualmente */}

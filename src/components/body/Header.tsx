@@ -11,7 +11,6 @@ interface HeaderProps {
   onBusquedaChange?: (value: string) => void;
   onBuscar?: () => void;
   onAbrirFiltros?: () => void;
-  abrirPerfil?: boolean;
   tipoUser?: "Cliente" | "Restaurante" | "Administrador";
   children?: ReactNode;
   onToggleRestauranteAbierto?: (
@@ -32,6 +31,10 @@ interface HeaderProps {
   noMostrarbuscador?: boolean;
   navigateTo?: string;
   onCambiarContraseña?: () => void;
+  verPerfil?: boolean;
+  cambiarContrasenia?: boolean;
+  verHistorial?: boolean;
+  onChangeHistorial?: () => void;
 }
 
 export default function Header(props: HeaderProps) {
@@ -43,7 +46,6 @@ export default function Header(props: HeaderProps) {
     onBusquedaChange,
     onBuscar,
     onAbrirFiltros,
-    abrirPerfil, // Esto es momentaneo, despues cuandp tengammos lo de perfil cambiamos por lo que convenga
     tipoUser = "Cliente",
     children,
     onToggleRestauranteAbierto,
@@ -61,6 +63,10 @@ export default function Header(props: HeaderProps) {
     horaApertura,
     onChangeHoraApertura,
     onCambiarContraseña,
+    verHistorial,
+    verPerfil,
+    cambiarContrasenia,
+    onChangeHistorial,
   } = props;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -144,54 +150,56 @@ export default function Header(props: HeaderProps) {
           {/**Aca podemos colocar el boton que quieramos, ejemplo el de registrar usuario, etc */}
           {children}
 
-          {abrirPerfil && (
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setMenuAbierto(!menuAbierto)}
-                className="flex h-10 w-10 items-center justify-center hover:scale-120 rounded-full bg-trego-profile shadow-sm sm:h-11 sm:w-11 cursor-pointer transition-transform active:scale-95"
-                aria-label="Perfil"
-              >
-                <IconUser className="h-5 w-5 text-white" />
-              </button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuAbierto(!menuAbierto)}
+              className="flex h-10 w-10 items-center justify-center hover:scale-120 rounded-full bg-trego-profile shadow-sm sm:h-11 sm:w-11 cursor-pointer transition-transform active:scale-95"
+              aria-label="Perfil"
+            >
+              <IconUser className="h-5 w-5 text-white" />
+            </button>
 
-              {/* Capa invisible para cerrar el menú si se hace clic fuera */}
-              {menuAbierto && (
-                <div
-                  className="fixed inset-0 z-40 cursor-default"
-                  onClick={() => setMenuAbierto(false)}
+            {/* Capa invisible para cerrar el menú si se hace clic fuera */}
+            {menuAbierto && (
+              <div
+                className="fixed inset-0 z-40 cursor-default"
+                onClick={() => setMenuAbierto(false)}
+              />
+            )}
+
+            {/* Pequeño menú modal flotante */}
+            {menuAbierto && (
+              <>
+                <MenuUsuario
+                  nombre={perfilNombre ?? "Usuario"}
+                  email={perfilEmail ?? ""}
+                  tipoUser={tipoUser}
+                  onVerPerfil={() => {
+                    setMenuAbierto(false);
+                    onVerPerfil?.();
+                  }}
+                  onCerrarSesion={() => onLogout?.()}
+                  onToggleRestaurante={(horaCierre, horaApertura) =>
+                    onToggleRestauranteAbierto?.(horaCierre, horaApertura)
+                  }
+                  restauranteAbierto={restauranteAbierto}
+                  horaCierre={horaCierre}
+                  onChangeHoraCierre={onChangeHoraCierre}
+                  horaApertura={horaApertura}
+                  onChangeHoraApertura={onChangeHoraApertura}
+                  onCambiarContrasenia={() => {
+                    setMenuAbierto(false);
+                    onCambiarContraseña?.();
+                  }}
+                  verHistorial={verHistorial ?? false}
+                  verPerfil={verPerfil ?? false}
+                  cambiarContrasenia={cambiarContrasenia ?? false}
+                  onChangeHistorial={() => onChangeHistorial}
                 />
-              )}
-
-              {/* Pequeño menú modal flotante */}
-              {menuAbierto && (
-                <>
-                  <MenuUsuario
-                    nombre={perfilNombre ?? "Usuario"}
-                    email={perfilEmail ?? ""}
-                    tipoUser={tipoUser}
-                    onVerPerfil={() => {
-                      setMenuAbierto(false);
-                      onVerPerfil?.();
-                    }}
-                    onCerrarSesion={() => onLogout?.()}
-                    onToggleRestaurante={(horaCierre, horaApertura) =>
-                      onToggleRestauranteAbierto?.(horaCierre, horaApertura)
-                    }
-                    restauranteAbierto={restauranteAbierto}
-                    horaCierre={horaCierre}
-                    onChangeHoraCierre={onChangeHoraCierre}
-                    horaApertura={horaApertura}
-                    onChangeHoraApertura={onChangeHoraApertura}
-                    onCambiarContrasenia={() => {
-                      setMenuAbierto(false);
-                      onCambiarContraseña?.();
-                    }}
-                  />
-                </>
-              )}
-            </div>
-          )}
+              </>
+            )}
+          </div>
         </div>
       </div>
       <div

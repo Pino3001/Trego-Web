@@ -1,4 +1,4 @@
-import { ArrowDownAZ, ArrowUpAZ, Trash2 } from "lucide-react";
+import { ArrowDownAZ, ArrowUpAZ, Check, Trash2, X } from "lucide-react";
 import type { DTOProducto } from "../../../data/DTOProducto.js";
 import { TextInput } from "../../../components/TextInput.js";
 import {
@@ -29,6 +29,10 @@ interface FiltroRestoProps<T> {
   onChangeEstadoFiltro?: (
     estado: "TODOS" | "HABILITADOS" | "DESHABILITADOS",
   ) => void;
+  ofertasActivas?: boolean;
+  setOfertasActivas?: (item: boolean) => void;
+  fechaInicioLabel?: string;
+  fechaFinLabel?: string;
 }
 
 export default function FiltrosRestaurantes<T>({
@@ -51,6 +55,10 @@ export default function FiltrosRestaurantes<T>({
   mapToItem,
   estadoFiltro,
   onChangeEstadoFiltro,
+  ofertasActivas,
+  setOfertasActivas,
+  fechaInicioLabel = "Desde",
+  fechaFinLabel = "Hasta"
 }: FiltroRestoProps<T>) {
   const toggleOrden = () => setOrden(orden === "ASC" ? "DESC" : "ASC");
 
@@ -99,7 +107,9 @@ export default function FiltrosRestaurantes<T>({
       {porFecha ? (
         <>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-center text-gray-700">Desde</span>
+            <span className="text-sm font-medium text-center text-gray-700">
+              {fechaInicioLabel}
+            </span>
             <input
               type="date"
               value={fechaDesde}
@@ -109,7 +119,9 @@ export default function FiltrosRestaurantes<T>({
           </label>
 
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-center text-gray-700">Hasta</span>
+            <span className="text-sm font-medium text-center text-gray-700">
+              {fechaFinLabel}
+            </span>
             <input
               type="date"
               value={fechaHasta}
@@ -139,9 +151,42 @@ export default function FiltrosRestaurantes<T>({
           </button>
         </div>
 
+        {setOfertasActivas ? (
+          <div className="flex flex-col gap-1 min-w-11">
+            <span
+              className={`text-sm font-medium text-gray-700`}
+            >
+              Activos
+            </span>
+            <label
+              className={`flex h-11 w-11 cursor-pointer items-center justify-center rounded-xl border transition-colors
+                ${
+                  ofertasActivas
+                    ? "border-trego-restaurante/60 bg-trego-restaurante/15 text-trego-restaurante hover:bg-trego-restaurante/20"
+                    : "border-gray-200 bg-gray-50 text-gray-400 hover:bg-gray-100"
+                }
+              `}
+            >
+              <input
+                type="checkbox"
+                checked={ofertasActivas}
+                onChange={() => setOfertasActivas(!ofertasActivas)}
+                className="hidden"
+              />
+              {ofertasActivas ? (
+                <Check className="h-5 w-5" />
+              ) : (
+                <X className="h-5 w-5" />
+              )}
+            </label>
+          </div>
+        ) : undefined}
+
         {onChangeEstadoFiltro && (
           <div className="flex flex-col gap-1 min-w-40 max-w-120 flex-1">
-            <span className="text-sm font-medium text-center text-gray-700">Estado</span>
+            <span className="text-sm font-medium text-center text-gray-700">
+              Estado
+            </span>
             <TextSelector<"TODOS" | "HABILITADOS" | "DESHABILITADOS">
               items={["TODOS", "HABILITADOS", "DESHABILITADOS"]}
               placeholder=""

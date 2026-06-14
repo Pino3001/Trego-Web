@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle, RefreshCw } from "lucide-react";
-import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
+import FiltrosRestaurantes from "../componentes/FiltrosResto.js";
 import { CardReclamo, type Reclamo } from "../componentes/CardReclamo.js";
 import type { NotificationState } from "../types/NotificationState.js";
 import { resolverReclamo } from "../../../api/reclamosApi.js";

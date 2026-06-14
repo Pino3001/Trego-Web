@@ -47,18 +47,18 @@ export default function ProductoMenuCard({
           {tieneOferta ? (
             <>
               <span className="text-[14px] text-gray-600 ">Precio: </span>
-              <p className="flex gap-2">
+              <span className="flex gap-2">
                 <span className="text-[14px] text-gray-400 ">Antes </span>
                 <span className="text-[14px] text-gray-400 line-through">
                   {original}$
                 </span>
-              </p>
-              <p className="flex gap-2">
+              </span>
+              <span className="flex gap-2">
                 <span className="text-[14px] text-gray-400 ">/ Ahora </span>
                 <span className="text-[16px] font-bold text-red-700">
                   {conDescuento}$
                 </span>
-              </p>
+              </span>
             </>
           ) : (
             <>

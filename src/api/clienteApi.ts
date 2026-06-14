@@ -30,12 +30,13 @@ async function parsearError(
 
 export const clienteApi = {
   listarRestaurantes: async (nombre?: string): Promise<DTORestaurante[]> => {
-    const params =
-      nombre?.trim() !== ""
-        ? `?nombre=${encodeURIComponent(nombre!.trim())}`
-        : "";
+    let query = "";
+    if (nombre && nombre.trim() !== "") {
+      query = `?nombre=${encodeURIComponent(nombre.trim())}`;
+    }
+console.log("Esta es la url que se una  ", ENDPOINTS.RESTAURANTES_TODOS)
     const response = await fetchConAuth(
-      `${ENDPOINTS.RESTAURANTES_LISTAR}${params}`,
+      `${ENDPOINTS.RESTAURANTES_TODOS}${query}`,
     );
 
     if (!response.ok) {
@@ -49,7 +50,7 @@ export const clienteApi = {
   listarRestaurantesPorDireccion: async (
     direccion: DTODireccion,
   ): Promise<DTORestaurante[]> => {
-    const response = await fetchConAuth(ENDPOINTS.RESTAURANTES_POR_DIRECCION, {
+    const response = await fetchConAuth(ENDPOINTS.RESTAURANTES_ZONA, {
       method: "POST",
       body: JSON.stringify(direccion),
     });
@@ -71,7 +72,7 @@ export const clienteApi = {
 
   obtenerRestaurante: async (id: number): Promise<DTORestaurante> => {
     const response = await fetchConAuth(
-      `${ENDPOINTS.RESTAURANTE_OBTENER}/${id}`,
+      `${ENDPOINTS.RESTAURANTE_POR_ID}/${id}`,
     );
 
     if (response.status === 404) {

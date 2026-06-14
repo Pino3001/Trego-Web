@@ -9,6 +9,7 @@ import {
   productoTieneOferta,
   type OrdenPrecioFront,
 } from "../utils/menuCliente.js";
+import { productosConOferta } from "../utils/productos.js";
 
 export function useMenuCliente(idRestaurante: string | undefined) {
   const [restaurante, setRestaurante] = useState<DTORestaurante | null>(null);
@@ -38,8 +39,8 @@ export function useMenuCliente(idRestaurante: string | undefined) {
       const [cabecera, menuResp] = await Promise.all([
         clienteApi.obtenerRestaurante(id),
         clienteApi.verMenu(id, {
-          categoria: categoria || undefined,
-          orden: ordenFrontAMenu(ordenPrecio),
+          categoria: categoria ?? undefined,
+          orden: ordenFrontAMenu(ordenPrecio) ?? "precio_asc",
         }),
       ]);
 
@@ -57,9 +58,7 @@ export function useMenuCliente(idRestaurante: string | undefined) {
       });
       setProductos(menuResp.productos ?? []);
     } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Error al cargar el menú",
-      );
+      setError(e instanceof Error ? e.message : "Error al cargar el menú");
       setRestaurante(null);
       setProductos([]);
     } finally {
@@ -80,10 +79,7 @@ export function useMenuCliente(idRestaurante: string | undefined) {
     [productos, busquedaPlato, soloOfertas],
   );
 
-  const ofertas = useMemo(
-    () => productos.filter(productoTieneOferta),
-    [productos],
-  );
+  const ofertas = useMemo(() => productosConOferta(productos), [productos]);
 
   const sinProductos =
     !!restaurante && productos.length === 0 && !!mensajeVacio;

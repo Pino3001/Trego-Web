@@ -5,10 +5,10 @@ import { EnumCategoriaProducto } from "../data/EnumCategoriaProducto.js";
 export function precioFinalProducto(producto: DTOProducto): number {
   if (producto.oferta?.descuento) {
     return Math.round(
-      producto.precio * (1 - producto.oferta.descuento / 100),
+      producto?.precio ?? 0 * (1 - producto.oferta.descuento / 100),
     );
   }
-  return producto.precio;
+  return producto.precio ?? 0;
 }
 
 export function productoTieneOferta(producto: DTOProducto): boolean {
@@ -28,7 +28,7 @@ export function filtrarProductosLocales(
   const termino = opts.nombrePlato?.trim().toLowerCase();
   if (termino) {
     lista = lista.filter((p) =>
-      p.nombre.toLowerCase().includes(termino),
+      p.nombre?.toLowerCase().includes(termino),
     );
   }
 

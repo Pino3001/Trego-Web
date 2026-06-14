@@ -40,6 +40,7 @@ const SECCIONES: SidebarSection[] = [
     items: [
       { label: "Alta Producto", path: "/restaurantes/altaProducto" },
       { label: "Mis Productos", path: "/restaurantes/ListarProductos" },
+      { label: "Listar Ofertas", path: "/restaurantes/listar-ofertas" },
     ],
   },
   {
@@ -308,7 +309,7 @@ export default function RestauranteLayout() {
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-50 overflow-hidden">
       <Header
-        abrirPerfil
+        verPerfil
         tipoUser="Restaurante"
         perfilNombre={perfilNombre}
         perfilEmail={perfilEmail}
