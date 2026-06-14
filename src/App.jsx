@@ -35,6 +35,7 @@ import PerfilCliente from "./pages/perfil/PerfilScreen.js";
 import PerfilRestauranteScreen from "./pages/perfil/PerfilRestauranteScreen.js";
 import AltaOferta from "./pages/restaurantes/screens/AltaOferta.js";
 import { CarritoProvider } from "./context/CarritoContext";
+import ListarOfertas from "./pages/restaurantes/screens/ListarOfertas.js";
 
 export default function AppRouter() {
   return (
@@ -121,6 +122,7 @@ export default function AppRouter() {
             element={<ModificarProducto />}
           />
           <Route path="/restaurantes/alta-oferta" element={<AltaOferta />} />
+          <Route path="/restaurantes/listar-ofertas" element={<ListarOfertas />} />
         </Route>
 
         {/* --- RUTAS ADMIN (LAYOUT CON SIDEBAR) --- */}

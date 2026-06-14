@@ -1,24 +1,37 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import ImageUploadField from "../../../components/ImagenUploadField.js";
 import type { ImageField } from "../../../components/typos/ImageField.js";
 import { TextInputNumber } from "../../../components/TextImputNumber.js";
 import {
+  activarDesactivarOferta,
   crearOferta,
   obtenerFirmaCloudinary,
 } from "../../../api/apiRestaurante.js";
 import type { DTOProducto } from "../../../data/DTOProducto.js";
 import type { DTOOferta } from "../../../data/DTOOferta.js";
+import ToggleActivar from "../../../components/ToggleActivar.js";
+import type { DTOModificarOfertaRequest } from "../../../data/DTOModificarOfertaRequest.js";
+
+const formatearFechaParaInput = (fechaISO?: string) => {
+  if (!fechaISO) return "";
+  return fechaISO.split("T")[0];
+};
 
 interface AltaOfertaProps {
   producto?: DTOProducto;
   onCancelar: () => void;
+  oferta?: DTOOferta;
 }
 
-export default function AltaOferta({ producto, onCancelar }: AltaOfertaProps) {
+export default function AltaOferta({
+  producto,
+  onCancelar,
+  oferta,
+}: AltaOfertaProps) {
   const [foto, setFoto] = useState<ImageField>({
     file: null,
-    previewUrl: null,
-    cloudUrl: null,
+    previewUrl: oferta ? (oferta.urlImagen ?? null) : null,
+    cloudUrl: oferta ? (oferta.urlImagen ?? null) : null,
     uploadState: "idle",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -29,10 +42,21 @@ export default function AltaOferta({ producto, onCancelar }: AltaOfertaProps) {
     mensaje: string;
   } | null>(null);
 
-  const [descripcion, setDescripcion] = useState("");
-  const [fechaDesde, setFechaDesde] = useState("");
-  const [fechaHasta, setFechaHasta] = useState("");
-  const [descuento, setDescuento] = useState(0);
+  const [descripcion, setDescripcion] = useState<string>(
+    oferta ? oferta.descripcion : "",
+  );
+  const [fechaDesde, setFechaDesde] = useState<string>(
+    formatearFechaParaInput(oferta?.fechaInicio) ?? "",
+  );
+  const [fechaHasta, setFechaHasta] = useState<string>(
+    formatearFechaParaInput(oferta?.fechaFin) ?? "",
+  );
+  const [descuento, setDescuento] = useState<number>(
+    oferta ? oferta.descuento : 0,
+  );
+  const [habilitar, setHabilitar] = useState<boolean>(
+    producto?.ofertaActiva ?? false,
+  );
 
   const precioFinal =
     (producto?.precio ?? 0) > 0
@@ -102,6 +126,78 @@ export default function AltaOferta({ producto, onCancelar }: AltaOfertaProps) {
     return Object.keys(newErrors).length === 0;
   };
 
+  useEffect(() => {
+    handleDesactivar();
+  }, [habilitar]);
+
+  const handleDesactivar = async () => {
+    const newErrors: Record<string, string> = {};
+
+    if (fechaDesde && fechaHasta && fechaDesde > fechaHasta)
+      newErrors.fechaHasta = "La fecha fin debe ser posterior a la de inicio";
+
+    const hoyObj = new Date();
+    const hoy = new Date(hoyObj.getTime() - hoyObj.getTimezoneOffset() * 60000)
+      .toISOString()
+      .split("T")[0]!;
+
+    // Validaciones de Fecha
+    if (!fechaDesde) {
+      newErrors.fechaDesde = "Ingresá la fecha de inicio";
+    } else if (fechaDesde > hoy) {
+      newErrors.fechaDesde = "La fecha de inicio no puede ser posterior a hoy";
+    }
+
+    if (!fechaHasta) {
+      newErrors.fechaHasta = "Ingresá la fecha de fin";
+    } else if (fechaHasta < hoy) {
+      newErrors.fechaHasta = "La fecha de fin no puede ser anterior a hoy";
+    }
+
+    if (fechaDesde && fechaHasta && fechaDesde > fechaHasta) {
+      newErrors.fechaHasta = "La fecha fin debe ser posterior a la de inicio";
+    }
+    if (Object.keys(newErrors).length === 0) {
+      try {
+        const fechaInicioFormateada = fechaDesde
+          ? `${fechaDesde}T00:00:00`
+          : undefined;
+        const fechaFinFormateada = fechaHasta
+          ? `${fechaHasta}T00:00:00`
+          : undefined;
+
+        const activarDesactivar: DTOModificarOfertaRequest = {
+          fechaInicio: fechaInicioFormateada ?? "",
+          fechaFin: fechaFinFormateada ?? "",
+          habilitar: habilitar,
+          idProducto: producto?.idProducto ?? 0,
+        };
+
+        await activarDesactivarOferta(activarDesactivar);
+
+        setNotificacion({
+          tipo: "exito",
+          mensaje: habilitar
+            ? "¡La oferta se encuentra activa!"
+            : "¡La oferta se encuentra desactivada!",
+        });
+      } catch (error) {
+        console.error("Error al cambiar el estado de la oferta:", error);
+
+        const mensajeError =
+          error instanceof Error
+            ? error.message
+            : "Ocurrió un error inesperado al modificar la oferta.";
+
+        setNotificacion({
+          tipo: "error",
+          mensaje: mensajeError,
+        });
+      }
+    }
+    setErrors(newErrors);
+  };
+
   const handleCrear = async () => {
     if (!validar()) return;
 
@@ -109,22 +205,24 @@ export default function AltaOferta({ producto, onCancelar }: AltaOfertaProps) {
     const fechaFinFormateada = `${fechaHasta}T00:00:00`;
 
     try {
-      const oferta: DTOOferta = {
-        urlImagen: foto.cloudUrl ?? "",
+      const payloadOferta: DTOOferta = {
+        idOferta: oferta?.idOferta ?? 0,
+        urlImagen: foto.cloudUrl || foto.previewUrl || "",
         fechaInicio: fechaInicioFormateada,
         fechaFin: fechaFinFormateada,
-        descuento: descuento,
-        descripcion: descripcion,
+        descuento: descuento ?? 0,
+        descripcion: descripcion ?? "",
       };
-      await crearOferta(oferta, producto?.idProducto ?? 0);
 
+      await crearOferta(payloadOferta, producto?.idProducto ?? 0);
       setNotificacion({
         tipo: "exito",
         mensaje: "¡La oferta se creó correctamente!",
       });
-
-      setTimeout(() => setNotificacion(null), 3000);
-      onCancelar();
+      setTimeout(() => {
+        setNotificacion(null);
+        onCancelar();
+      }, 2000);
     } catch (error) {
       console.error("Error al crear oferta:", error);
       const mensaje =
@@ -145,7 +243,8 @@ export default function AltaOferta({ producto, onCancelar }: AltaOfertaProps) {
 
   return (
     <div className="bg-white w-5xl mx-auto rounded-3xl p-2 flex flex-col gap-6">
-      <div className="relative py-5">
+      <div className="relative py-5 flex justify-center items-center">
+        {/* Botón Izquierda */}
         <button
           type="button"
           onClick={onCancelar}
@@ -164,9 +263,20 @@ export default function AltaOferta({ producto, onCancelar }: AltaOfertaProps) {
               d="M15.75 19.5L8.25 12l7.5-7.5"
             />
           </svg>
-          Volver al producto
+          {oferta ? "Volver al listado" : "Volver al producto"}
         </button>
-        <h2 className="text-center font-semibold text-4xl">Nueva oferta</h2>
+
+        {/* Texto Centro */}
+        <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+          {oferta ? "Modificar oferta" : "Nueva oferta"}
+        </h2>
+
+        {/* Botón Derecha */}
+        {oferta && (
+          <div className="absolute right-0 top-1/2 -translate-y-1/2">
+            <ToggleActivar value={habilitar} onChange={setHabilitar} />
+          </div>
+        )}
       </div>
       <h2 className="text-center font-semibold text-trego-restaurante text-3xl pb-5">{`${producto?.tipo ?? "Producto"} - ${producto?.nombre ?? "Sin Nombre"}`}</h2>
 
@@ -231,7 +341,7 @@ export default function AltaOferta({ producto, onCancelar }: AltaOfertaProps) {
               <TextInputNumber
                 value={descuento}
                 onChange={setDescuento}
-                label="Descuento"
+                label=""
                 suffix="%"
                 error={errors.descuento}
                 min={0}
@@ -300,7 +410,9 @@ export default function AltaOferta({ producto, onCancelar }: AltaOfertaProps) {
           className="px-6 py-2.5 rounded-3xl w-full bg-trego-restaurante text-white text-sm font-semibold
                      hover:brightness-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isUploading ? "Subiendo imagen…" : "Crear oferta"}
+          {oferta
+            ? `${isUploading ? "Subiendo imagen…" : "Modificar oferta"}`
+            : `${isUploading ? "Subiendo imagen…" : "Nueva oferta"}`}
         </button>
         <button
           type="button"

@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import type { DTOSubcategoria } from "../data/DTOSubcategoria.js";
 import { listarSubcategorias } from "../api/apiRestaurante.js";
-import type { EnumCategoriaProducto } from "../data/EnumCategoriaProducto.js";
+import { EnumCategoriaProducto } from "../data/EnumCategoriaProducto.js";
 
 interface UseSubCategoriasUnificadoOptions {
   onError?: (mensaje: string) => void;
@@ -15,7 +15,7 @@ export function useSubCategorias({
   const [error, setError] = useState<string | null>(null);
   const [categoriaFiltro, setCategoriaFiltro] = useState<
     EnumCategoriaProducto | undefined
-  >(undefined);
+  >(EnumCategoriaProducto.Otros);
   const [subcategoriaSeleccionada, setSubcategoriaSeleccionada] = useState<
     DTOSubcategoria | undefined
   >();

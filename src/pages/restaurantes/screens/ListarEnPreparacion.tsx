@@ -12,7 +12,7 @@ import { usePedidos } from "../../../hooks/usePedidoRestaurante.js";
 import { useFiltrosPedidos } from "../../../hooks/useFiltrosPedidos.js";
 import type { DTOProducto } from "../../../data/DTOProducto.js";
 import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
-import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
+import FiltrosRestaurantes from "../componentes/FiltrosResto.js";
 
 export default function ListarEnPreparacion() {
   const [notification, setNotification] = useState<NotificationState>({

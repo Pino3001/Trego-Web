@@ -6,19 +6,30 @@ import FiltrosRestaurantes from "../componentes/FiltrosResto.js";
 import { useFiltrosProductos } from "../../../hooks/useFiltrosProducto.js";
 import type { DTOIngrediente } from "../../../data/DTOIngrediente.js";
 import { useIngredientes } from "../../../hooks/useIngredientes.js";
-import ProductoCard from "../componentes/CardProducto.js";
 import type { DTOProducto } from "../../../data/DTOProducto.js";
 import ModificarProducto from "./ModificarProducto.js";
+import OfertaRestoCard from "../componentes/OfertaRestoCard.js";
+import AltaOferta from "./AltaOferta.js";
 
-export default function ListarProductos() {
+export default function ListarOfertas() {
   const [notification, setNotification] = useState<NotificationState>({
     show: false,
     message: "",
     type: "success",
   });
 
-  const { productos, loadingProductos, errorProductos, recargarProductos } =
-    useProductoRestaurante();
+  const {
+    productosOfertas,
+    loadingProductos,
+    errorProductos,
+    recargarProductos,
+    ofertasActivas,
+    setOfertasActivas,
+    isProductoOfertaActiva,
+  } = useProductoRestaurante({
+    soloOfertasInicial: true,
+    ofertasActivasInicial: true,
+  });
 
   const {
     hayFiltros,
@@ -26,16 +37,13 @@ export default function ListarProductos() {
     orden,
     productosFiltrados,
     searchTerm,
-    setIngredienteSeleccionadoId,
     setOrden,
     setSearchTerm,
-    estadoFiltro,
-    setEstadoFiltro,
-  } = useFiltrosProductos(productos);
-
-  const { listaIngredientesBackend } = useIngredientes();
-
-  const [ingredienteSelec, setIngredienteSelec] = useState<DTOIngrediente>();
+    fechaInicioOferta,
+    setFechaInicioOferta,
+    fechaFinOferta,
+    setFechaFinOferta,
+  } = useFiltrosProductos(productosOfertas);
 
   const [productoSelect, setProductoSelect] = useState<DTOProducto>();
 
@@ -51,26 +59,22 @@ export default function ListarProductos() {
     if (errorProductos) showNotification(errorProductos, "error");
   }, [errorProductos]);
 
-  useEffect(() => {
-    if (errorProductos) showNotification(errorProductos, "error");
-  }, [errorProductos]);
-
   const handleLimpiarFiltros = () => {
     limpiarFiltros();
-    setIngredienteSelec(undefined);
   };
 
   if (productoSelect) {
-    return (
-      <ModificarProducto
-        producto={productoSelect}
-        onReturn={() => {
-          setProductoSelect(undefined);
-          recargarProductos();
-        }}
-        deshabilitado={productoSelect.disponible ?? true}
-      />
-    );
+    if (productoSelect.oferta)
+      return (
+        <AltaOferta
+          producto={productoSelect}
+          onCancelar={() => {
+            setProductoSelect(undefined);
+            recargarProductos();
+          }}
+          oferta={productoSelect.oferta}
+        />
+      );
   }
 
   return (
@@ -106,18 +110,15 @@ export default function ListarProductos() {
           setOrden={setOrden}
           hayFiltros={hayFiltros}
           limpiarFiltros={handleLimpiarFiltros}
-          filtroSelecte={ingredienteSelec}
-          onChangeFiltroSelect={(item) => {
-            (setIngredienteSelec(item),
-              setIngredienteSeleccionadoId(item?.idIngrediente));
-          }}
-          listaFiltros={listaIngredientesBackend}
-          mapToItem={(i) => ({
-            id: i?.toString() ?? "",
-            label: i.nombre,
-          })}
-          onChangeEstadoFiltro={setEstadoFiltro}
-          estadoFiltro={estadoFiltro}
+          ofertasActivas={ofertasActivas}
+          setOfertasActivas={setOfertasActivas}
+          porFecha
+          fechaDesde={fechaInicioOferta}
+          fechaHasta={fechaFinOferta}
+          onChangeFechaDesde={setFechaInicioOferta}
+          onChangeFechaHasta={setFechaFinOferta}
+          fechaInicioLabel="Inicio Oferta"
+          fechaFinLabel="Fin Oferta"
         />
       </div>
 
@@ -126,7 +127,7 @@ export default function ListarProductos() {
           <div className="flex justify-center items-center py-12">
             <p className="text-gray-500 font-medium flex items-center gap-2">
               <span className="animate-spin h-5 w-5 border-2 border-green-600 border-t-transparent rounded-full"></span>
-              Cargando Productos...
+              Cargando ofertas...
             </p>
           </div>
         ) : productosFiltrados.length === 0 ? (
@@ -137,11 +138,13 @@ export default function ListarProductos() {
           </div>
         ) : (
           // Grid de dos columnas: 1 columna en móviles, 2 en tablets/escritorio
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 items-center px-2 md:grid-cols-3 justify-center gap-4">
             {productosFiltrados.map((prod) => (
-              <ProductoCard
+              <OfertaRestoCard
+                key={prod.oferta?.idOferta}
                 producto={prod}
                 onClick={() => setProductoSelect(prod)}
+                esActiva={isProductoOfertaActiva(prod)}
               />
             ))}
           </div>

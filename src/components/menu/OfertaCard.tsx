@@ -9,7 +9,7 @@ interface OfertaCardProps {
 export default function OfertaCard({ producto, onClick }: OfertaCardProps) {
   if (!producto) return null;
 
-  const { nombre, descripcion, urlImagen, oferta } = producto;
+  const { nombre, oferta } = producto;
   const descuento = oferta?.descuento ?? 0;
   const { tieneOferta, conDescuento, original } = obtenerPrecios(producto);
 
@@ -22,7 +22,7 @@ export default function OfertaCard({ producto, onClick }: OfertaCardProps) {
       {/* Imagen */}
       <div className="relative overflow-hidden">
         <img
-          src={urlImagen || "/placeholder.png"}
+          src={oferta?.urlImagen || "/placeholder.png"}
           alt={nombre ?? "Oferta"}
           className="h-28 w-full object-cover transition-transform duration-300 group-hover:scale-105"
           loading="lazy"
@@ -40,7 +40,7 @@ export default function OfertaCard({ producto, onClick }: OfertaCardProps) {
           {nombre}
         </h3>
         <p className="line-clamp-2 flex-1 text-[11px] leading-relaxed text-gray-400">
-          {descripcion}
+          {oferta?.descripcion}
         </p>
         <div className="mt-1 flex items-baseline gap-1.5">
           <span className="text-[14px] text-gray-600 ">

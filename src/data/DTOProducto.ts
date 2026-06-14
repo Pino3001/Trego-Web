@@ -20,6 +20,7 @@ export interface DTOProducto {
   ingredientes?: DTOIngrediente[];
   tipo?: EnumTipoProducto; // O un Union Type
   oferta?: DTOOferta;
+  ofertaActiva?: boolean;
   plato?: DTOPlato;
   articulo?: DTOArticulo;
   combo?: DTOCombo;

@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle, RefreshCw, Search } from "lucide-react";
 import CardPedidoAconfirmar from "../componentes/CardPedidoAconfirmar.js";
 import type { NotificationState } from "../types/NotificationState.js";
 import { usePedidos } from "../../../hooks/usePedidoRestaurante.js";
-import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
+import FiltrosRestaurantes from "../componentes/FiltrosResto.js";
 import { useFiltrosPedidos } from "../../../hooks/useFiltrosPedidos.js";
 import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
 import type { DTOProducto } from "../../../data/DTOProducto.js";

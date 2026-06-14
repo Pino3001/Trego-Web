@@ -10,15 +10,15 @@ export function precioConDescuento(
 }
 
 export function productosConOferta(productos: DTOProducto[]): DTOProducto[] {
-  // Fecha actual en formato YYYY-MM-DD (sin hora)
   const hoy = new Date();
   const hoyStr = hoy.toISOString().split("T")[0];
-
+  console.log("Viene: ", productos)
   return productos.filter((p) => {
-    // Verificar que exista la oferta y sus fechas
+    // Nuevo: verificar el booleano ofertasActivas
+    if (p.ofertaActiva !== true) return false;
+
     if (!p.oferta?.fechaInicio || !p.oferta?.fechaFin) return false;
 
-    // Convertir inicio a string de fecha (si es Date, extraer solo la parte de fecha)
     const inicioStr =
       typeof p.oferta.fechaInicio === "string"
         ? p.oferta.fechaInicio
@@ -29,7 +29,7 @@ export function productosConOferta(productos: DTOProducto[]): DTOProducto[] {
         ? p.oferta.fechaFin
         : new Date(p.oferta.fechaFin).toISOString().split("T")[0];
 
-    if (!hoyStr || !inicioStr || !finStr) return;
+    if (!hoyStr || !inicioStr || !finStr) return false;
 
     return hoyStr >= inicioStr && hoyStr <= finStr;
   });

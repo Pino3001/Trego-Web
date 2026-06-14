@@ -17,6 +17,7 @@ import {
 } from "../../../api/apiRestaurante.js";
 import AltaOferta from "./AltaOferta.js";
 import { useSubCategorias } from "../../../hooks/useSubCategorias.js";
+import { ChevronLeft, Tag } from "lucide-react";
 
 type StepState = "FORM" | "LOADING" | "SUCCESS";
 
@@ -82,13 +83,26 @@ export default function ModificarProducto({
     [],
   );
 
+  const handleCategoriaChange = (
+    nuevaCategoria: EnumCategoriaProducto | undefined,
+  ) => {
+    setCategoriaFiltro(nuevaCategoria);
+    // Si la subcategoría actual no pertenece a la nueva categoría, resetearla
+    if (
+      subcategoriaSeleccionada &&
+      nuevaCategoria !== subcategoriaSeleccionada.categoria
+    ) {
+      seleccionarSubcategoria(undefined);
+    }
+  };
+
   useEffect(() => {
     setCategoriaFiltro(producto.categoria);
     seleccionarSubcategoria(producto.subCategoria);
   }, []);
   // Estados para Combo
   // Productos que conforman el Combo a modificar -- Viene como lista de numeros
-  const [idProductosCombo, setIdProductosCombo] = useState<Number[]>(
+  const [idProductosCombo, setIdProductosCombo] = useState<number[]>(
     producto.combo?.productosIncluidos?.map((p) => p.id) ?? [],
   );
   // Productos completos pertenecientes al combo
@@ -399,31 +413,32 @@ export default function ModificarProducto({
   return (
     <>
       <div className="w-full max-w-5xl mx-auto px-10 py-8 min-h-screen bg-gray-75">
-        <div className="relative mb-2">
+        <div className="flex items-center justify-between mb-2 py-4 border-b border-gray-100">
           <button
             type="button"
-            onClick={onReturn} // o tu función de volver
-            className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center gap-2 text-gray-600 hover:text-trego-restaurante"
+            onClick={onReturn}
+            className="flex items-center gap-1.5 text-gray-500 hover:text-trego-admin font-medium transition-colors"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.75 19.5L8.25 12l7.5-7.5"
-              />
-            </svg>
-            Volver al Listado
+            <ChevronLeft size={20} />
+            Volver
           </button>
 
-          <h1 className="text-3xl font-bold text-center">
-            Modificar {producto.nombre}
-          </h1>
+          <div className="flex flex-col items-center">
+            <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">
+              Modificar producto
+            </h1>
+            <span className="text-sm text-gray-500 font-medium">
+              {producto.nombre}
+            </span>
+          </div>
+
+          <button
+            onClick={() => setNuevaOferta(!ofertaNueva)}
+            className="flex items-center gap-2 py-2.5 px-5 rounded-full border border-trego-admin text-white bg-trego-admin hover:bg-indigo-800 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shadow-sm shadow-indigo-200"
+          >
+            <Tag size={18} />
+            <span className="font-semibold">Agregar oferta</span>
+          </button>
         </div>
 
         {/* SUCCESS */}
@@ -470,14 +485,6 @@ export default function ModificarProducto({
         {/* FORM */}
         {step === "FORM" && (
           <div className="bg-white rounded-3xl shadow-lg shadow-green-50 p-2 flex flex-col gap-1">
-            <div className="ml-auto">
-              <button
-                onClick={() => setNuevaOferta(!ofertaNueva)}
-                className="py-2.5 px-6 rounded-3xl border border-trego-admin text-trego-admin hover:bg-trego-admin hover:text-white text-base font-semibold transition-all duration-200"
-              >
-                Agregar oferta
-              </button>
-            </div>
             {/* Renderizado condicional según tipo.id */}
             {producto.tipo === EnumTipoProducto.Plato && (
               <AltaPlato
@@ -498,7 +505,7 @@ export default function ModificarProducto({
                 onChangeApiError={setApiError}
                 categoria={categoriaFiltro}
                 onChangeCategoria={(item) =>
-                  setCategoriaFiltro(item ?? EnumCategoriaProducto.Otros)
+                  handleCategoriaChange(item ?? EnumCategoriaProducto.Otros)
                 }
                 subcategorias={subcategoriasFiltradas}
                 ingredientesIniciales={listaIngredientes}
@@ -521,7 +528,7 @@ export default function ModificarProducto({
                 error={errors}
                 categoria={categoriaFiltro}
                 onChangeCategoria={(item) =>
-                  setCategoriaFiltro(item ?? EnumCategoriaProducto.Otros)
+                  handleCategoriaChange(item ?? EnumCategoriaProducto.Otros)
                 }
               />
             )}
@@ -544,7 +551,7 @@ export default function ModificarProducto({
                 onChangeApiError={setApiError}
                 categoria={categoriaFiltro}
                 onChangeCategoria={(item) =>
-                  setCategoriaFiltro(item ?? EnumCategoriaProducto.Otros)
+                  handleCategoriaChange(item ?? EnumCategoriaProducto.Otros)
                 }
                 subcategorias={subcategoriasFiltradas}
               />
