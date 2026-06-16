@@ -1,4 +1,5 @@
 import type { DTOAbrirCerrarLocalRequest } from "../data/DTOAbrirCerrarLocalRequest.js";
+import type { DTOEstadisticas } from "../data/DTOEstadisticas.js";
 import type { DTOFirma } from "../data/DTOFirma.js";
 import type { DTOIngrediente } from "../data/DTOIngrediente.js";
 import type { DTOOferta } from "../data/DTOOferta.js";
@@ -558,4 +559,43 @@ export async function crearOferta(
 
   const data: DTOOferta = await response.json();
   return data;
+}
+
+/**
+ * Obtiene estadísticas del restaurante autenticado en un rango de fechas.
+ */
+export async function obtenerEstadisticas(
+  fechaInicio: string,
+  fechaFin: string,
+): Promise<DTOEstadisticas> {
+  const response = await fetchConAuth(ENDPOINTS.RESTAURANTE_ESTADISTICAS, {
+    method: "POST",
+    body: JSON.stringify({ fechaInicio, fechaFin }),
+  });
+
+  if (!response.ok) {
+    let mensaje = `Error ${response.status}`;
+    try {
+      const errorData = await response.json();
+      mensaje =
+        errorData.message || errorData.error || JSON.stringify(errorData);
+    } catch {
+      mensaje = await response.text().catch(() => "Error desconocido");
+    }
+
+    if (response.status === 400) {
+      throw new Error(
+        mensaje || "Se requieren ambas fechas para filtrar estadísticas.",
+      );
+    }
+    if (response.status === 403) {
+      throw new Error(
+        mensaje || "Solo los restaurantes pueden obtener estadísticas.",
+      );
+    }
+
+    throw new Error(mensaje || "Error al obtener las estadísticas.");
+  }
+
+  return response.json();
 }

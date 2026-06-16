@@ -35,6 +35,7 @@ import ListarReclamos from "./pages/restaurantes/screens/ListarReclamos.js";
 import PerfilCliente from "./pages/perfil/PerfilScreen.js";
 import PerfilRestauranteScreen from "./pages/perfil/PerfilRestauranteScreen.js";
 import AltaOferta from "./pages/restaurantes/screens/AltaOferta.js";
+import EstadisticasPage from "./pages/restaurantes/screens/EstadisticasPage.js";
 
 export default function AppRouter() {
   return (
@@ -121,6 +122,18 @@ export default function AppRouter() {
             element={<ModificarProducto />}
           />
           <Route path="/restaurantes/alta-oferta" element={<AltaOferta />} />
+          <Route
+            path="/restaurantes/estadisticas/platos"
+            element={<EstadisticasPage vista="platos" />}
+          />
+          <Route
+            path="/restaurantes/estadisticas/fechas"
+            element={<EstadisticasPage vista="fechas" />}
+          />
+          <Route
+            path="/restaurantes/estadisticas/monto"
+            element={<EstadisticasPage vista="monto" />}
+          />
         </Route>
 
         {/* --- RUTAS ADMIN (LAYOUT CON SIDEBAR) --- */}
