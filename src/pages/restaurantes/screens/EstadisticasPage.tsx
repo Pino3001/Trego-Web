@@ -91,7 +91,7 @@ function TablaPlatos({ productos }: { productos: DTOProductoSimplificado[] }) {
             <th className="pb-3 pr-4 font-medium">Producto</th>
             <th className="pb-3 pr-4 font-medium">Precio</th>
             <th className="pb-3 pr-4 font-medium">Cantidad</th>
-            <th className="pb-3 font-medium">Distribución</th>
+            <th className="pb-3 font-medium">Comparación</th>
           </tr>
         </thead>
         <tbody>
@@ -166,7 +166,7 @@ function TablaVentasPorFecha({
           <tr className="border-b border-gray-200 text-left text-gray-600">
             <th className="pb-3 pr-4 font-medium">Fecha</th>
             <th className="pb-3 pr-4 font-medium">Pedidos</th>
-            <th className="pb-3 font-medium">Distribución</th>
+            <th className="pb-3 font-medium">Comparación</th>
           </tr>
         </thead>
         <tbody>
@@ -218,7 +218,7 @@ function TablaMontoPromedio({
           <tr className="border-b border-gray-200 text-left text-gray-600">
             <th className="pb-3 pr-4 font-medium">Fecha</th>
             <th className="pb-3 pr-4 font-medium">Promedio</th>
-            <th className="pb-3 font-medium">Distribución</th>
+            <th className="pb-3 font-medium">Comparación</th>
           </tr>
         </thead>
         <tbody>
