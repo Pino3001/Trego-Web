@@ -5,10 +5,10 @@ import { EnumCategoriaProducto } from "../data/EnumCategoriaProducto.js";
 export function precioFinalProducto(producto: DTOProducto): number {
   if (producto.oferta?.descuento) {
     return Math.round(
-      producto.precio * (1 - producto.oferta.descuento / 100),
+      producto?.precio ?? 0 * (1 - producto.oferta.descuento / 100),
     );
   }
-  return producto.precio;
+  return producto.precio ?? 0;
 }
 
 export function productoTieneOferta(producto: DTOProducto): boolean {
@@ -28,7 +28,7 @@ export function filtrarProductosLocales(
   const termino = opts.nombrePlato?.trim().toLowerCase();
   if (termino) {
     lista = lista.filter((p) =>
-      p.nombre.toLowerCase().includes(termino),
+      p.nombre?.toLowerCase().includes(termino),
     );
   }
 
@@ -85,25 +85,25 @@ export function restauranteParaUi(restaurante: DTORestaurante) {
   };
 }
 
-export function productoParaCarrito(producto: DTOProducto) {
-  const descuento = producto.oferta?.descuento ?? 0;
+export function productoParaCarrito(producto: DTOProducto | undefined) {
+  const descuento = producto?.oferta?.descuento ?? 0;
   return {
-    idProducto: producto.idProducto,
-    nombre: producto.nombre,
-    descripcion: producto.descripcion ?? "",
-    precio: producto.precio,
-    fotoPlato: producto.urlImagen,
-    categoria: producto.categoria,
-    disponible: producto.disponible ?? true,
-    ofertaActiva: !!producto.oferta,
-    oferta: producto.oferta
+    idProducto: producto?.idProducto,
+    nombre: producto?.nombre,
+    descripcion: producto?.descripcion ?? "",
+    precio: producto?.precio,
+    fotoPlato: producto?.urlImagen,
+    categoria: producto?.categoria,
+    disponible: producto?.disponible ?? true,
+    ofertaActiva: !!producto?.oferta,
+    oferta: producto?.oferta
       ? {
           descuentoPorcentaje: producto.oferta.descuento,
           descripcion: producto.oferta.descripcion,
         }
       : undefined,
-    ingredientes: producto.ingredientes ?? [],
-    idRestaurante: producto.idRestaurante,
+    ingredientes: producto?.ingredientes ?? [],
+    idRestaurante: producto?.idRestaurante,
   };
 }
 

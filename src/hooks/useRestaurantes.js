@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
 import {
-  buscarRestaurantes,
   obtenerRestaurantesZona,
 } from '../api/restaurantesApi'
+import { clienteApi } from '../api/clienteApi.js'
 
 const FILTROS_INICIALES = {
   categoria: '',
@@ -62,11 +62,7 @@ export function useRestaurantes() {
     setModoBusqueda(true)
     setTerminoBusqueda(nombre)
     try {
-      const data = await buscarRestaurantes({
-        latitud: coords.latitud,
-        longitud: coords.longitud,
-        nombre: nombre.trim(),
-      })
+      const data = await clienteApi.listarRestaurantes(nombre.trim())
       setRestaurantes(data)
     } catch (e) {
       setError(e.message ?? 'Error en la búsqueda')

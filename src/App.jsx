@@ -20,11 +20,11 @@ import ListarRestaurantesPage from "./pages/admin/screens/ListarRestaurantesPage
 import ListarClientesPage from "./pages/admin/screens/ListarClientesPage.js";
 import CrearAdministradorPage from "./pages/admin/screens/CrearAdministradorPage.js";
 import AdministradorLayaut from "./pages/admin/AdministradorLayaut.js";
+import AltaSubCategoriaPage from "./pages/admin/screens/AltaSubCategoriaPage.js";
 import RestauranteMenuPage from "./pages/cliente/screens/RestauranteMenuPage.jsx";
 import HomePage from "./pages/cliente/screens/HomePage.jsx";
 import HistorialPage from "./pages/cliente/screens/HistorialPage.jsx";
 import ClienteLayaut from "./pages/cliente/ClienteLayaut.js";
-import { CarritoProvider } from "./context/CarritoContext.jsx";
 import { FiltrosUIProvider } from "./context/FiltrosContext.js";
 import { BusquedaProvider } from "./context/BusquedaContext.js";
 import LoginRestaurante from "./pages/logins/LoginRestaurante.js";
@@ -36,6 +36,8 @@ import PerfilCliente from "./pages/perfil/PerfilScreen.js";
 import PerfilRestauranteScreen from "./pages/perfil/PerfilRestauranteScreen.js";
 import AltaOferta from "./pages/restaurantes/screens/AltaOferta.js";
 import EstadisticasPage from "./pages/restaurantes/screens/EstadisticasPage.js";
+import { CarritoProvider } from "./context/CarritoContext";
+import ListarOfertas from "./pages/restaurantes/screens/ListarOfertas.js";
 
 export default function AppRouter() {
   return (
@@ -134,6 +136,7 @@ export default function AppRouter() {
             path="/restaurantes/estadisticas/monto"
             element={<EstadisticasPage vista="monto" />}
           />
+          <Route path="/restaurantes/listar-ofertas" element={<ListarOfertas />} />
         </Route>
 
         {/* --- RUTAS ADMIN (LAYOUT CON SIDEBAR) --- */}
@@ -142,6 +145,7 @@ export default function AppRouter() {
             path="/admin/restaurantes"
             element={<GestionRestaurantesPage />}
           />
+          <Route path="/admin/subcategorias/nueva" element={<AltaSubCategoriaPage />} />
           <Route
             path="/admin/restaurantes/todos"
             element={<ListarRestaurantesPage />}

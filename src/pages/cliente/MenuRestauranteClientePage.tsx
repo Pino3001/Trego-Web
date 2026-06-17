@@ -1,21 +1,20 @@
 import { Link, useParams } from "react-router";
-import { useEffect, type ReactNode } from "react";
-import RestauranteBanner from "../../components/menu/RestauranteBanner.jsx";
-import OfertaCard from "../../components/menu/OfertaCard.jsx";
-import Header from "../../components/body/Header.js";
-import { useCarrito } from "../../context/CarritoContext.jsx";
+import { useCarrito } from "../../context/CarritoContext.js";
 import { useMenuCliente } from "../../hooks/useMenuCliente.js";
-import {
-  productoParaCarrito,
-  restauranteParaUi,
-} from "../../utils/menuCliente.js";
+import { useEffect, type ReactNode } from "react";
 import type { DTOProducto } from "../../data/DTOProducto.js";
+import type { DTORestaurante } from "../../data/DTORestaurante.js";
+import { productoParaCarrito } from "../../utils/menuCliente.js";
 import MenuFiltrosCliente from "../../components/cliente/MenuFiltrosCliente.js";
 import { IconBack, IconTag } from "../../components/icons.jsx";
+import OfertaCard from "../../components/menu/OfertaCard.js";
 import ProductoClienteCard from "../../components/cliente/ProductoClienteCard.js";
+import Header from "../../components/body/Header.js";
+import RestauranteBanner from "../../components/menu/RestauranteBanner.js";
 
-export default function MenuRestauranteClientePage() {
-  const { id } = useParams();
+
+export default function MenuRestauranteClientePage(): React.JSX.Element {
+  const { id } = useParams<{ id: string }>();
   const { abrirDetalleProducto, validarRestauranteAbierto } = useCarrito();
 
   const {
@@ -38,20 +37,22 @@ export default function MenuRestauranteClientePage() {
     sinProductosEnCategoria,
   } = useMenuCliente(id);
 
-  const restauranteUi = restaurante ? restauranteParaUi(restaurante) : null;
-
   useEffect(() => {
-    if (restauranteUi) {
-      validarRestauranteAbierto(restauranteUi.abierto);
+    if (restaurante) {
+      // Forzamos un booleano en caso de que restaurante.abierto venga undefined de la API
+      validarRestauranteAbierto(!!restaurante.abierto);
     }
-  }, [restauranteUi?.abierto, restauranteUi, validarRestauranteAbierto]);
+  }, [restaurante?.abierto, restaurante, validarRestauranteAbierto]);
 
-  const handleAgregar = (producto: DTOProducto) => {
-    if (!restauranteUi) return;
-    abrirDetalleProducto(productoParaCarrito(producto), restauranteUi);
+  const handleAgregar = (producto: DTOProducto | undefined) => {
+    console.log("Entro aca")
+    if (!restaurante || !producto) return;
+    console.log("LLego aca aca")
+    
+    // Al castear a DTORestaurante nos aseguramos de que cumpla con exactOptionalPropertyTypes de tu contexto
+    abrirDetalleProducto(producto, restaurante as DTORestaurante);
   };
 
-  const ofertasUi = ofertas.map(productoParaCarrito);
 
   if (cargando) {
     return (
@@ -61,7 +62,8 @@ export default function MenuRestauranteClientePage() {
     );
   }
 
-  if (error || !restaurante || !restauranteUi) {
+  // CORREGIDO: Removida la doble evaluación idéntica
+  if (error || !restaurante) {
     return (
       <PageShell>
         <NavBack />
@@ -87,7 +89,7 @@ export default function MenuRestauranteClientePage() {
     return (
       <PageShell>
         <NavBack />
-        <RestauranteBanner restaurante={restauranteUi} />
+        <RestauranteBanner restaurante={restaurante as DTORestaurante} />
         <div className="mt-10 flex flex-col items-center gap-4 text-center">
           <p className="text-lg text-gray-600">
             {mensajeVacio ?? "Este restaurante aún no ha cargado su menú"}
@@ -103,12 +105,12 @@ export default function MenuRestauranteClientePage() {
     );
   }
 
-  const mostrarOfertas = ofertasUi.length > 0 && !categoria && !soloOfertas;
+  const mostrarOfertas = ofertas.length > 0 && !categoria && !soloOfertas;
 
   return (
     <PageShell>
       <NavBack />
-      <RestauranteBanner restaurante={restauranteUi} />
+      <RestauranteBanner restaurante={restaurante as DTORestaurante} />
 
       <div className="mt-5 flex flex-col gap-5 lg:mt-6 lg:flex-row lg:items-start lg:gap-6">
         <MenuFiltrosCliente
@@ -130,8 +132,8 @@ export default function MenuRestauranteClientePage() {
                 Ofertas del día
               </h2>
               <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-3 scrollbar-thin">
-                {ofertasUi.map((p) => (
-                  <OfertaCard key={p.idProducto} producto={p} />
+                {ofertas.map((p) => (
+                  <OfertaCard key={p.idProducto} producto={p} onClick={() => handleAgregar(p)} />
                 ))}
               </div>
             </section>
@@ -169,7 +171,7 @@ export default function MenuRestauranteClientePage() {
   );
 }
 
-function PageShell({ children }: { children: ReactNode }) {
+function PageShell({ children }: { children: ReactNode }): React.JSX.Element {
   return (
     <div className="min-h-screen bg-[#f0f0f0]">
       <Header
@@ -185,7 +187,7 @@ function PageShell({ children }: { children: ReactNode }) {
   );
 }
 
-function NavBack() {
+function NavBack(): React.JSX.Element {
   return (
     <Link
       to="/cliente/restaurantes"

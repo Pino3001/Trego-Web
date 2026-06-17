@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { DTOIngrediente } from "../data/DTOIngrediente.js";
 import { crearIngrediente, listarIngredientes } from "../api/apiRestaurante.js";
 
@@ -25,6 +25,11 @@ export function useIngredientes({
   const [nuevoIngrediente, setNuevoIngrediente] = useState("");
   const [mostrarFormIngrediente, setMostrarFormIngrediente] = useState(false);
 
+  const onListaCambiadaRef = useRef(onListaCambiada);
+  useEffect(() => {
+    onListaCambiadaRef.current = onListaCambiada;
+  }, [onListaCambiada]);
+
   // Carga inicial de ingredientes
   useEffect(() => {
     let cancelado = false;
@@ -45,10 +50,9 @@ export function useIngredientes({
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sincroniza con el padre cada vez que cambia la lista seleccionada
   useEffect(() => {
-    onListaCambiada?.(listaIngredientes);
-  }, [listaIngredientes, onListaCambiada]);
+    onListaCambiadaRef.current?.(listaIngredientes);
+  }, [listaIngredientes]);
 
   const yaEstaEnLista = useCallback(
     (lista: DTOIngrediente[], item: DTOIngrediente) =>
@@ -70,27 +74,23 @@ export function useIngredientes({
 
       setListaIngredientes((prev) => {
         if (yaEstaEnLista(prev, item)) return prev;
-        const next = [...prev, item];
-        onListaCambiada?.(next);
-        return next;
+        return [...prev, item];
       });
 
-      // Limpiamos el buscador para poder agregar otro al instante
       setIngredienteSeleccionado(undefined);
     },
-    [yaEstaEnLista, onListaCambiada],
+    [yaEstaEnLista],
   );
 
   const quitarIngrediente = useCallback((ing: DTOIngrediente) => {
     setListaIngredientes((prev) => {
-      const next = prev.filter((i) =>
+      return prev.filter((i) =>
         ing.idIngrediente != null
           ? i.idIngrediente !== ing.idIngrediente
           : i.nombre.trim().toLowerCase() !== ing.nombre.trim().toLowerCase(),
       );
-      onListaCambiada?.(next);
-      return next;
     });
+
     setIngredienteSeleccionado((prev) =>
       prev &&
         ((ing.idIngrediente != null &&
@@ -99,21 +99,23 @@ export function useIngredientes({
         ? undefined
         : prev,
     );
-  }, [onListaCambiada]);
+  }, []);
 
   const limpiarIngredientes = useCallback(() => {
     setListaIngredientes([]);
-    onListaCambiada?.([]);
     setIngredienteSeleccionado(undefined);
-  }, [onListaCambiada]);
+  }, []);
 
   const crearIngredienteLocal = useCallback(async () => {
     const nombre = nuevoIngrediente.trim();
     if (!nombre) return;
     try {
       const nuevo = await crearIngrediente(nombre);
+      console.log("Devuelve el back el siguiente ingrediente: ", nuevo)
       setListaIngredientesBackend((prev) => [...prev, nuevo]);
-      agregarIngrediente(nuevo);
+      
+      agregarIngrediente(nuevo); 
+      
       setMostrarFormIngrediente(false);
       setNuevoIngrediente("");
     } catch (error) {

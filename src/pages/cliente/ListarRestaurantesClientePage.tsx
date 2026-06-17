@@ -8,7 +8,10 @@ import {
   ubicacionPromptYaRespondido,
   useGeolocation,
 } from "../../hooks/useGeolocation.js";
-import { useRestaurantesCliente, type FiltrosRestauranteCliente } from "../../hooks/useRestaurantesCliente.js";
+import {
+  useRestaurantesCliente,
+  type FiltrosRestauranteCliente,
+} from "../../hooks/useRestaurantesCliente.js";
 import { IconRefresh } from "../../components/icons.jsx";
 import RestauranteClienteCard from "../../components/cliente/RestauranteClienteCard.js";
 
@@ -66,12 +69,13 @@ export default function ListarRestaurantesClientePage() {
   const filtrarPorZona = useCallback(() => {
     if (!geo.tieneUbicacion || !geo.coords) return;
     cargarPorDireccion({
+      tag: "",
       calle: "",
       numero: "",
       apartamento: "",
       esquina: "",
-      latitud: geo.coords.latitud,
-      longitud: geo.coords.longitud,
+      latitud: geo.coords.latitud ?? 0,
+      longitud: geo.coords.longitud ?? 0,
     });
   }, [geo.tieneUbicacion, geo.coords, cargarPorDireccion]);
 
@@ -115,7 +119,7 @@ export default function ListarRestaurantesClientePage() {
         onBusquedaChange={setBusqueda}
         onBuscar={handleBuscar}
         onAbrirFiltros={() => setFiltrosAbiertos(true)}
-        abrirPerfil
+        verPerfil
       />
 
       <main className="mx-auto max-w-275 px-4 py-5 sm:px-6 sm:py-6">
@@ -148,11 +152,13 @@ export default function ListarRestaurantesClientePage() {
           </div>
         </div>
 
-        {!geo.tieneUbicacion && !ubicacionCancelada && !geo.ubicacionDenegada && (
-          <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-            Activá tu ubicación para ver restaurantes que reparten en tu zona.
-          </p>
-        )}
+        {!geo.tieneUbicacion &&
+          !ubicacionCancelada &&
+          !geo.ubicacionDenegada && (
+            <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Activá tu ubicación para ver restaurantes que reparten en tu zona.
+            </p>
+          )}
 
         <div className="mb-6 grid gap-3 sm:grid-cols-3">
           <Metrica label="Disponibles" valor={metricas.total} />
@@ -197,12 +203,14 @@ export default function ListarRestaurantesClientePage() {
         )}
       </main>
 
-      {mostrarPromptUbicacion && !geo.tieneUbicacion && !geo.ubicacionDenegada && (
-        <LocationPrompt
-          onActivar={handleActivarUbicacion}
-          onCancelar={handleCancelarUbicacion}
-        />
-      )}
+      {mostrarPromptUbicacion &&
+        !geo.tieneUbicacion &&
+        !geo.ubicacionDenegada && (
+          <LocationPrompt
+            onActivar={handleActivarUbicacion}
+            onCancelar={handleCancelarUbicacion}
+          />
+        )}
 
       {geo.cargandoUbicacion && !geo.tieneUbicacion && (
         <p className="fixed bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-sm text-white">
@@ -214,7 +222,9 @@ export default function ListarRestaurantesClientePage() {
         abierto={filtrosAbiertos}
         filtros={filtros}
         onCerrar={() => setFiltrosAbiertos(false)}
-        onAplicar={(nuevos: FiltrosRestauranteCliente) => aplicarFiltros(nuevos)}
+        onAplicar={(nuevos: FiltrosRestauranteCliente) =>
+          aplicarFiltros(nuevos)
+        }
       />
     </div>
   );

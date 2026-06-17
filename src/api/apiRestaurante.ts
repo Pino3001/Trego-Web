@@ -2,6 +2,7 @@ import type { DTOAbrirCerrarLocalRequest } from "../data/DTOAbrirCerrarLocalRequ
 import type { DTOEstadisticas } from "../data/DTOEstadisticas.js";
 import type { DTOFirma } from "../data/DTOFirma.js";
 import type { DTOIngrediente } from "../data/DTOIngrediente.js";
+import type { DTOModificarOfertaRequest } from "../data/DTOModificarOfertaRequest.js";
 import type { DTOOferta } from "../data/DTOOferta.js";
 import type { DTOPedido } from "../data/DTOPedido.js";
 import type { DTOProducto } from "../data/DTOProducto.js";
@@ -165,7 +166,7 @@ export async function listarProductos(): Promise<DTOProducto[]> {
       throw new Error("No tiene permisos para listar los productos.");
     }
     if (response.status === 404) {
-      throw new Error("No se encontraron productos para ingresar al combo.");
+      throw new Error("No se encontraron productos en el sistema.");
     }
     const errorText = await response.text().catch(() => "Error desconocido");
     throw new Error(errorText || "Error al listar los productos.");
@@ -402,7 +403,9 @@ export async function reembolsarPedido(pedido: DTOPedido): Promise<DTOPedido> {
  * @returns Nada.
  * @throws Error con el mensaje del backend si falla (400/409/500).
  */
-export async function abrirLocal(cierre: DTOAbrirCerrarLocalRequest): Promise<void> {
+export async function abrirLocal(
+  cierre: DTOAbrirCerrarLocalRequest,
+): Promise<void> {
   const response = await fetchConAuth(`${ENDPOINTS.ABRIR_LOCAL}`, {
     method: "PATCH",
     body: JSON.stringify(cierre),
@@ -539,12 +542,15 @@ export async function modificarRestaurantePerfil(
  */
 export async function crearOferta(
   request: DTOOferta,
-  idProducto: number
+  idProducto: number,
 ): Promise<DTOOferta> {
-  const response = await fetchConAuth(`${ENDPOINTS.CREAR_OFERTA}?idProducto=${idProducto}`, {
-    method: "POST",
-    body: JSON.stringify(request),
-  });
+  const response = await fetchConAuth(
+    `${ENDPOINTS.CREAR_OFERTA}?idProducto=${idProducto}`,
+    {
+      method: "POST",
+      body: JSON.stringify(request),
+    },
+  );
 
   if (!response.ok) {
     let errorMessage = `Error ${response.status}: ${response.statusText}`;
@@ -598,4 +604,29 @@ export async function obtenerEstadisticas(
   }
 
   return response.json();
+}
+
+/**
+ * Desactiva una oferta para un restaurante autenticado.
+ * @param request - Datos de la oferta a modificar
+ * @throws Error si la respuesta no es exitosa
+ */
+export async function activarDesactivarOferta(
+  request: DTOModificarOfertaRequest,
+): Promise<void> {
+  const response = await fetchConAuth(ENDPOINTS.ACTIVAR_DESACTIVAR_OFERTA, {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+
+  if (!response.ok) {
+    let errorMessage = `Error ${response.status}: ${response.statusText}`;
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.message || errorMessage;
+    } catch {
+      errorMessage = await response.text().catch(() => errorMessage);
+    }
+    throw new Error(errorMessage);
+  }
 }

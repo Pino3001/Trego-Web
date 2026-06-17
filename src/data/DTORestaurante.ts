@@ -4,7 +4,7 @@ import type { DTOIngrediente } from "./DTOIngrediente.js";
 import type { DTOProducto } from "./DTOProducto.js";
 
 export interface DTORestaurante {
-  idRestaurante?: number | null;
+  idRestaurante?: number | null | undefined;
   nombre?: string;
   email?: string;
   password?: string;

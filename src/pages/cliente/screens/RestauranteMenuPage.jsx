@@ -1,20 +1,19 @@
-import { Link, useParams } from 'react-router'
-import { useEffect, useState } from 'react'
-import { useMenuRestaurante } from '../../../hooks/useMenuRestaurante.js'
-import { useCarrito } from '../../../context/CarritoContext.jsx'
-import RestauranteBanner from '../../../components/menu/RestauranteBanner.jsx'
-import MenuSidebar from '../../../components/menu/MenuSidebar.jsx'
-import ComentariosRestaurantePanel from '../../../components/menu/ComentariosRestaurantePanel.jsx'
-import { IconBack, IconTag } from '../../../components/icons.jsx'
-import OfertaCard from '../../../components/menu/OfertaCard.jsx'
-import ProductoMenuCard from '../../../components/menu/ProductoMenuCard.jsx'
-
+import { Link, useParams } from "react-router";
+import { useEffect, useState } from "react";
+import MenuSidebar from "../../../components/menu/MenuSidebar.jsx";
+import ComentariosRestaurantePanel from "../../../components/menu/ComentariosRestaurantePanel.jsx";
+import { IconBack, IconTag } from "../../../components/icons.jsx";
+import { useCarrito } from "../../../context/CarritoContext";
+import { useMenuRestaurante } from "../../../hooks/useMenuRestaurante.js";
+import ProductoMenuCard from "../../../components/menu/ProductoMenuCard.js";
+import OfertaCard from "../../../components/menu/OfertaCard.js";
+import RestauranteBanner from "../../../components/menu/RestauranteBanner.js";
 
 export default function RestauranteMenuPage() {
-  const { id } = useParams()
-  const { abrirDetalleProducto, validarRestauranteAbierto } = useCarrito()
+  const { id } = useParams();
+  const { abrirDetalleProducto, validarRestauranteAbierto } = useCarrito();
 
-  const [resenasInfo, setResenasInfo] = useState(null)
+  const [resenasInfo, setResenasInfo] = useState(null);
 
   const {
     menu,
@@ -28,53 +27,63 @@ export default function RestauranteMenuPage() {
     ofertas,
     sinProductos,
     sinProductosEnCategoria,
-  } = useMenuRestaurante(id)
+  } = useMenuRestaurante(id);
 
   useEffect(() => {
     if (menu?.restaurante) {
-      validarRestauranteAbierto(menu.restaurante.abierto)
+      validarRestauranteAbierto(menu.restaurante.abierto);
     }
-  }, [menu?.restaurante?.abierto, menu?.restaurante, validarRestauranteAbierto])
+  }, [
+    menu?.restaurante?.abierto,
+    menu?.restaurante,
+    validarRestauranteAbierto,
+  ]);
 
   const handleAgregar = (producto) => {
     // Paso 2 del CU: muestra detalle, cantidad, ingredientes y comentarios
-    abrirDetalleProducto(producto, menu?.restaurante)
-  }
+    abrirDetalleProducto(producto, menu?.restaurante);
+  };
 
   if (cargando) {
     return (
       <PageShell>
         <p className="py-16 text-center text-gray-500">Cargando menú...</p>
       </PageShell>
-    )
+    );
   }
 
   if (error || !menu) {
     return (
       <PageShell>
         <NavBack />
-        <p className="py-16 text-center text-red-600">{error ?? 'No se pudo cargar el menú'}</p>
+        <p className="py-16 text-center text-red-600">
+          {error ?? "No se pudo cargar el menú"}
+        </p>
       </PageShell>
-    )
+    );
   }
 
   if (menu.restaurante && !menu.restaurante.habilitado) {
     return (
       <PageShell>
         <NavBack />
-        <p className="py-16 text-center text-gray-600">Este restaurante no está disponible.</p>
+        <p className="py-16 text-center text-gray-600">
+          Este restaurante no está disponible.
+        </p>
       </PageShell>
-    )
+    );
   }
 
   if (sinProductos) {
     return (
       <PageShell>
         <NavBack />
-        {menu.restaurante ? <RestauranteBanner restaurante={menu.restaurante} /> : null}
+        {menu.restaurante ? (
+          <RestauranteBanner restaurante={menu.restaurante} />
+        ) : null}
         <div className="mt-10 flex flex-col items-center gap-4 text-center">
           <p className="text-lg text-gray-600">
-            {menu.mensaje ?? 'Este restaurante aún no ha cargado su menú'}
+            {menu.mensaje ?? "Este restaurante aún no ha cargado su menú"}
           </p>
           <Link
             to="/restaurantes"
@@ -84,30 +93,24 @@ export default function RestauranteMenuPage() {
           </Link>
         </div>
       </PageShell>
-    )
+    );
   }
 
-  const mostrarOfertas = ofertas.length > 0 && !categoria
+  const mostrarOfertas = ofertas.length > 0 && !categoria;
 
   const cantidadResenas =
-    resenasInfo?.cantidadResenas ?? menu.restaurante?.cantidadResenas ?? 0
-
-  const restauranteConResenas = menu.restaurante
-    ? {
-        ...menu.restaurante,
-        cantidadResenas,
-        calificacionProm:
-          cantidadResenas > 0 ? resenasInfo?.calificacionProm ?? null : null,
-      }
-    : menu.restaurante
+    resenasInfo?.cantidadResenas ?? menu.restaurante?.cantidadResenas ?? 0;
 
   return (
     <PageShell>
       <NavBack />
-      <RestauranteBanner restaurante={restauranteConResenas} />
+      <RestauranteBanner
+        restaurante={menu.restaurante}
+        cantidadResenas={cantidadResenas}
+      />
 
       <div className="mt-5 flex flex-col gap-5 lg:mt-6 lg:flex-row lg:items-start lg:gap-6">
-        <div className="flex w-full shrink-0 flex-col gap-4 lg:w-[240px]">
+        <div className="flex w-full shrink-0 flex-col gap-4 lg:w-60">
           <MenuSidebar
             categoria={categoria}
             onCategoriaChange={setCategoria}
@@ -129,14 +132,20 @@ export default function RestauranteMenuPage() {
               </h2>
               <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-3 scrollbar-thin">
                 {ofertas.map((p) => (
-                  <OfertaCard key={p.idProducto} producto={p} />
+                  <OfertaCard
+                    key={p.idProducto}
+                    producto={p}
+                    onClick={() => handleAgregar(p)}
+                  />
                 ))}
               </div>
             </section>
           )}
 
           <section>
-            <h2 className="mb-4 text-[17px] font-bold text-gray-900">Todos los Productos</h2>
+            <h2 className="mb-4 text-[17px] font-bold text-gray-900">
+              Todos los Productos
+            </h2>
 
             {sinProductosEnCategoria ? (
               <p className="rounded-2xl border border-dashed border-gray-300 bg-white py-12 text-center text-gray-600">
@@ -155,15 +164,17 @@ export default function RestauranteMenuPage() {
         </div>
       </div>
     </PageShell>
-  )
+  );
 }
 
 function PageShell({ children }) {
   return (
     <div className=" bg-[#f0f0f0]">
-      <div className="mx-auto max-w-275 px-4 py-3 sm:px-6 sm:py-4">{children}</div>
+      <div className="mx-auto max-w-275 px-4 py-3 sm:px-6 sm:py-4">
+        {children}
+      </div>
     </div>
-  )
+  );
 }
 
 function NavBack() {
@@ -175,5 +186,5 @@ function NavBack() {
       <IconBack className="h-5 w-5" />
       Lista de Restaurantes
     </Link>
-  )
+  );
 }

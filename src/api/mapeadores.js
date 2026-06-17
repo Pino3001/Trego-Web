@@ -2,10 +2,10 @@
 
 /** Convierte respuestas del backend al formato que usa el front. */
 
-import { precioConDescuento } from "../utils/productos.js"
 import { reverseGeocodeGeoapify } from "./apiGeoapify.js"
 import { reverseGeocodeNominatim } from "./nominatim.js"
 import { ENDPOINTS } from "./endpoints.js"
+import { precioConDescuento } from "../utils/productos.js"
 
 function formatearHora(hora) {
   if (!hora) return null
@@ -106,10 +106,10 @@ export function mapearLineaCarritoAItem(linea) {
   }
 }
 
-export function mapearCarritoDtoAItems(carritoDto) {
+/* export function mapearCarritoDtoAItems(carritoDto) {
   if (!carritoDto?.productos) return []
   return carritoDto.productos.map(mapearLineaCarritoAItem)
-}
+} */
 
 /** Texto corto para UI: "Calle 1234" */
 export function nombreDireccionDesdeCampos(calle, numero) {

@@ -7,6 +7,7 @@ import Header from "../../components/body/Header.js";
 import TextoDivider from "../../components/TextoDivider.js";
 import OTPInput from "../../components/inicio/OTPInput.js";
 import logo from "../../assets/tregoRestaurante.svg";
+import { guardarSesion } from "../../utils/sesion.js";
 
 
 type AuthStep = "INGRESO" | "VERI_CODIGO" | "LOADING";
@@ -41,7 +42,7 @@ export default function RegistrarRestaurante() {
       );
 
       if (result.success && result.login?.token) {
-        localStorage.setItem("jwtToken", result.login.token);
+        guardarSesion(result.login.token, result.login.rol);
         localStorage.setItem("restauranteHabilitado", "false");
         window.dispatchEvent(new Event("trego-sesion-iniciada"));
         navigate("/restaurantes/solicitarAlta");
@@ -276,7 +277,7 @@ export default function RegistrarRestaurante() {
                     shadow-md hover:shadow-md hover:shadow-green-100
                   "
                 >
-                  Iniciar Sesión
+                  Registrarse
                 </button>
               </div>
             )}

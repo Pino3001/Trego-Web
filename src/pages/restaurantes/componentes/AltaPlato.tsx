@@ -133,6 +133,7 @@ export default function AltaPlato({
             onSelect={(item) =>
               onChangeCategoria(item?.id as EnumCategoriaProducto)
             }
+            error={error.categoria ?? ""}
           />
 
           <TextSelector
@@ -145,6 +146,7 @@ export default function AltaPlato({
             })}
             selected={subcategoria}
             onSelect={onChangeSubCategoria}
+            error={error.subcategoria ?? ""}
           />
 
           <TextInputNumber

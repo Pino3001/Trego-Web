@@ -6,12 +6,13 @@ import {
   useNavigate,
 } from "react-router";
 import { apiAuth } from "../../api/apiAuth.js";
-import { limpiarSesion } from "../../utils/sesion.js";
 import Header from "../../components/body/Header.js";
-import { useCarrito } from "../../context/CarritoContext.jsx";
 import { useFiltros } from "../../context/FiltrosContext.js";
 import CarritoUIRoot from "../../components/carrito/CarritoUIRoot.js";
 import { useBusqueda } from "../../context/BusquedaContext.js";
+import { limpiarSesion } from "../../utils/sesion.js";
+import { useCarrito } from "../../context/CarritoContext.js";
+import { useCliente } from "../../hooks/useCliente.js";
 
 export default function ClienteLayaut() {
   const navigate = useNavigate();
@@ -19,13 +20,9 @@ export default function ClienteLayaut() {
   const { abrirCarrito, cantidadTotal } = useCarrito();
   const { abrirFiltros } = useFiltros();
   const { busqueda, setBusqueda } = useBusqueda();
-
+  const { cliente } = useCliente();
   // Lista de rutas que no quiero que muestre el buscador
-  const rutasSinBuscador = [
-    "/Historial",
-    "/perfil",
-    "/pedidos/:pedidoId",
-  ];
+  const rutasSinBuscador = ["/Historial", "/perfil", "/pedidos/:pedidoId"];
 
   // Comprobar si la URL actual coincide con AL MENOS UNA de esas rutas
   const ocultarBuscador = rutasSinBuscador.some((ruta) =>
@@ -55,14 +52,13 @@ export default function ClienteLayaut() {
   };
 
   const handleVerPerfil = () => {
-    navigate("/perfil/cliente")
-  }
+    navigate("/perfil/cliente");
+  };
 
   // Si pasa todas las reglas, renderizamos la pantalla normal
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-50 overflow-hidden">
       <Header
-        abrirPerfil={true}
         tipoUser="Cliente"
         onBuscar={() => {}}
         onLogout={handleLogout}
@@ -74,6 +70,11 @@ export default function ClienteLayaut() {
         noMostrarbuscador={noMostrarBuscador}
         navigateTo={"/restaurantes"}
         onVerPerfil={handleVerPerfil}
+        perfilNombre={cliente?.nombre ?? ""}
+        perfilEmail={cliente?.email ?? ""}
+        verPerfil
+        verHistorial
+        onChangeHistorial={() => navigate("/Historial")}
       />
 
       <main className="flex-1 flex flex-col overflow-y-auto relative">
