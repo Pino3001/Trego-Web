@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+/* import { useCallback, useEffect, useMemo, useState } from "react";
 import { clienteApi } from "../api/clienteApi.js";
 import type { DTODireccion } from "../data/DTODireccion.js";
 import type { DTORestaurante } from "../data/DTORestaurante.js";
@@ -160,3 +160,4 @@ export function useRestaurantesCliente() {
     hayFiltrosActivos,
   };
 }
+ */

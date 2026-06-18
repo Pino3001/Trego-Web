@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+/* import { useCallback, useEffect, useMemo, useState } from "react";
 import FiltersModal from "../../components/FiltersModal.jsx";
 import LocationPrompt from "../../components/LocationPrompt.jsx";
 import EmptyState from "../../components/EmptyState.jsx";
@@ -240,3 +240,4 @@ function Metrica({ label, valor }: { label: string; valor: number }) {
     </div>
   );
 }
+ */

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+/* import { useCallback, useEffect, useMemo, useState } from "react";
 import { clienteApi } from "../api/clienteApi.js";
 import { esMenuSinProductos } from "../data/VerMenuRespuesta.js";
 import type { DTOProducto } from "../data/DTOProducto.js";
@@ -110,3 +110,4 @@ export function useMenuCliente(idRestaurante: string | undefined) {
     recargar: cargar,
   };
 }
+ */

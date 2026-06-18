@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router";
+/* import { Link, useParams } from "react-router";
 import { useCarrito } from "../../context/CarritoContext.js";
 import { useMenuCliente } from "../../hooks/useMenuCliente.js";
 import { useEffect, type ReactNode } from "react";
@@ -197,4 +197,4 @@ function NavBack(): React.JSX.Element {
       Lista de restaurantes
     </Link>
   );
-}
+} */
