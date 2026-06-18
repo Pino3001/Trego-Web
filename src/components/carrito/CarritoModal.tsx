@@ -11,14 +11,14 @@ import { EnumTipoProducto } from "../../data/EnumTipoProducto.js";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { DetalleCombo } from "./DetalleCombo.js";
 import { obtenerPrecios } from "../../utils/productos.js";
+import EditorItemCarrito from "./EditorItemCarrito.jsx"; // <-- Asegurate de que la ruta sea correcta
 
 // ---------------------------------------------------------------------------
-// INTERFACES
+// INTERFACES Y CLASES TAILWIND (Se mantienen igual)
 // ---------------------------------------------------------------------------
 
 interface IngredientesChipsProps {
   ingredientesQuitados?: DTOIngrediente[];
-  onChange?: (val: DTOIngrediente[]) => void;
 }
 
 interface ItemCarritoProps {
@@ -29,10 +29,6 @@ interface ItemCarritoProps {
   onCambiarIngredientes: (id: number, ingredientes: DTOIngrediente[]) => void;
 }
 
-// ---------------------------------------------------------------------------
-// CLASES TAILWIND (extraídas del render para evitar repetición)
-// ---------------------------------------------------------------------------
-
 const CLS = {
   btnEditar:
     "rounded-xl border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-extrabold text-gray-500 hover:bg-gray-50 transition-colors",
@@ -40,7 +36,6 @@ const CLS = {
     "rounded-xl border border-red-100 bg-red-50 px-2.5 py-1.5 text-[11px] font-extrabold text-red-500 hover:bg-red-100 transition-colors",
 } as const;
 
-/** Clases del banner de mensaje según si es positivo o de advertencia */
 function clsBanner(positivo: boolean): string {
   return `mt-4 rounded-2xl border px-4 py-3 text-[13px] font-bold ${
     positivo
@@ -50,7 +45,7 @@ function clsBanner(positivo: boolean): string {
 }
 
 // ---------------------------------------------------------------------------
-// FUNCIONES AUXILIARES
+// FUNCIONES AUXILIARES (Se mantienen igual)
 // ---------------------------------------------------------------------------
 
 function formatearMoneda(n: number | string | undefined | null): string {
@@ -62,18 +57,16 @@ function esMensajePositivo(mensaje: string): boolean {
   return mensaje.includes("seleccionad") || mensaje.includes("correctamente");
 }
 
-/** Extrae el id real del producto, contemplando variaciones de la API */
 function extraerIdItem(item: DTOProductoPedido): number {
   return item.producto?.idProducto || (item.producto as any)?.id || 0;
 }
 
 // ---------------------------------------------------------------------------
-// SUB-COMPONENTES
+// SUB-COMPONENTES (Se mantienen igual)
 // ---------------------------------------------------------------------------
 
 function IngredientesChips({
   ingredientesQuitados,
-  onChange,
 }: IngredientesChipsProps): React.JSX.Element | null {
   const quitados = ingredientesQuitados ?? [];
   if (!quitados.length) return null;
@@ -88,13 +81,6 @@ function IngredientesChips({
           {q.nombre}
         </span>
       ))}
-      <button
-        type="button"
-        onClick={() => onChange?.([])}
-        className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-extrabold text-gray-400 hover:bg-gray-200 transition-colors"
-      >
-        Limpiar
-      </button>
     </div>
   );
 }
@@ -108,9 +94,7 @@ function ItemCarrito({
 }: ItemCarritoProps): React.JSX.Element {
   const idReal = extraerIdItem(item);
   const cantidad = item.cantidad || 1;
-  const { tieneOferta, conDescuento, original } = obtenerPrecios(
-    item.producto ?? {},
-  );
+  const { conDescuento } = obtenerPrecios(item.producto ?? {});
 
   return (
     <div className="flex items-stretch gap-6 rounded-2xl border border-gray-100 bg-white p-2 shadow-sm">
@@ -158,14 +142,11 @@ function ItemCarrito({
             {formatearMoneda(conDescuento)}
           </span>
         </p>
-        {/* Ingredientes quitados (solo para Platos) */}
         {item.producto?.tipo === EnumTipoProducto.Plato && (
           <IngredientesChips
             ingredientesQuitados={item.ingredientesAQuitar ?? []}
-            onChange={(val) => onCambiarIngredientes(idReal, val)}
           />
         )}
-        {/* Detalle de productos incluidos (solo para Combos) */}
         {item.producto?.tipo === EnumTipoProducto.Combo &&
           item.producto.combo && (
             <DetalleCombo
@@ -178,17 +159,15 @@ function ItemCarrito({
           <button
             type="button"
             onClick={() => onEditar(item)}
-            className="rounded-xl border border-gray-200 bg-white px-2.5 py-1.5 text-[11px] font-extrabold 
-                        text-gray-500 hover:bg-gray-50 transition-colors"
-            title="Agregar nota al producto"
+            className={CLS.btnEditar}
+            title="Editar producto"
           >
-            Nota
+            Editar
           </button>
           <button
             type="button"
             onClick={() => onEliminar(idReal)}
-            className="rounded-xl border border-red-100 bg-red-50 px-2.5 py-1.5 text-[11px] font-extrabold 
-                          text-red-500 hover:bg-red-100 transition-colors"
+            className={CLS.btnEliminar}
             title="Eliminar producto"
           >
             Eliminar
@@ -228,19 +207,15 @@ export default function CarritoModal(): React.JSX.Element {
     vaciarCarrito,
     mensajeCarrito,
     setMensajeCarrito,
-    validarRestauranteAbierto,
     modalSuperior,
     cargandoCarrito,
     restauranteAbierto,
   } = useCarrito();
 
-  const [editandoId, setEditandoId] = useState<number | null>(null);
-  const [editandoNombre, setEditandoNombre] = useState<string>("");
-  const [comentarioTmp, setComentarioTmp] = useState<string>("");
-
+  // --- NUEVO ESTADO PARA EL EDITOR ---
+  const [itemEditando, setItemEditando] = useState<DTOProductoPedido | null>(null);
   const carritoVacio = items.length === 0;
 
-  // ── Generador del Label de Dirección ──
   const direccionLabel = useMemo(() => {
     if (!direccionSeleccionada?.data) return "Sin dirección seleccionada";
     const { calle, numero } = direccionSeleccionada.data;
@@ -248,7 +223,6 @@ export default function CarritoModal(): React.JSX.Element {
     return `${calle} ${numero ?? ""}`.trim();
   }, [direccionSeleccionada]);
 
-  // ── Efecto para resolver coordenadas a dirección real ──
   useEffect(() => {
     const data = direccionSeleccionada?.data;
 
@@ -310,29 +284,32 @@ export default function CarritoModal(): React.JSX.Element {
     intentarPagar();
   }
 
-  function abrirEditorComentario(item: DTOProductoPedido): void {
-    setEditandoId(item.producto?.idProducto ?? 0);
-    setEditandoNombre(item.producto?.nombre ?? "Producto");
-    setComentarioTmp(item.observaciones ?? "");
-  }
-
-  function guardarComentario(): void {
-    if (!editandoId) return;
-    cambiarComentarios(editandoId, comentarioTmp);
-    cancelarEdicion();
+  function abrirEditorItem(item: DTOProductoPedido): void {
+    setItemEditando(item);
   }
 
   function cancelarEdicion(): void {
-    setEditandoId(null);
-    setEditandoNombre("");
-    setComentarioTmp("");
+    setItemEditando(null);
+  }
+
+  // --- NUEVO HANDLER PARA GUARDAR TODO DESDE EL EDITOR ---
+  function guardarEdicionItem(cambios: DTOProductoPedido): void {
+    if (!itemEditando) return;
+    const idReal = extraerIdItem(itemEditando);
+
+    // Actualizamos todo en el contexto
+    cambiarCantidad(idReal, cambios.cantidad ?? 1);
+    cambiarComentarios(idReal, cambios.observaciones ?? "");
+    cambiarIngredientesQuitados(idReal, cambios.ingredientesAQuitar ?? []);
+    
+    // Cerramos el editor
+    cancelarEdicion();
   }
 
   function cambiarCantidadItem(id: number, x: number): void {
     cambiarCantidad(id, x);
-    if (x <= 0) {
-      setComentarioTmp("");
-      setEditandoId(null);
+    if (x <= 0 && itemEditando && extraerIdItem(itemEditando) === id) {
+      cancelarEdicion();
     }
   }
 
@@ -346,7 +323,6 @@ export default function CarritoModal(): React.JSX.Element {
       escucharEscape={modalSuperior === "carrito"}
     >
       <div className="p-4 sm:p-5">
-        {/* Encabezado */}
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-[18px] font-extrabold text-gray-900">Carrito</h2>
           <button
@@ -358,16 +334,12 @@ export default function CarritoModal(): React.JSX.Element {
           </button>
         </div>
 
-        {/* Banner de mensaje */}
         {mensajeCarrito && (
-          <div
-            className={`${clsBanner(esMensajePositivo(mensajeCarrito))} mt-2`}
-          >
+          <div className={`${clsBanner(esMensajePositivo(mensajeCarrito))} mt-2`}>
             {mensajeCarrito}
           </div>
         )}
 
-        {/* Sección de dirección */}
         <div className="mt-3 flex items-center gap-3 rounded-2xl border border-orange-100 bg-orange-50/60 px-4 py-1.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
             <svg
@@ -402,92 +374,67 @@ export default function CarritoModal(): React.JSX.Element {
           </button>
         </div>
 
-        {/* Lista de items scrolleable */}
-        <div className="mt-3 max-h-170 overflow-y-auto pr-1 flex flex-col gap-2.5 custom-scrollbar">
-          {cargandoCarrito ? (
-            <div className="flex flex-col items-center gap-3 py-10">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-orange-100 border-t-trego-orange" />
-              <p className="text-[13px] text-gray-400">Cargando carrito…</p>
+        {/* Si NO estamos editando, mostramos la lista y el total */}
+        {!itemEditando ? (
+          <>
+            <div className="mt-3 max-h-170 overflow-y-auto pr-1 flex flex-col gap-2.5 custom-scrollbar">
+              {cargandoCarrito ? (
+                <div className="flex flex-col items-center gap-3 py-10">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-orange-100 border-t-trego-orange" />
+                  <p className="text-[13px] text-gray-400">Cargando carrito…</p>
+                </div>
+              ) : carritoVacio ? (
+                <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 py-12 text-center">
+                  <p className="text-[13px] font-bold text-gray-400">
+                    No hay productos en el carrito
+                  </p>
+                  <p className="mt-1 text-[12px] text-gray-300">
+                    ¡Agregá algo para comenzar!
+                  </p>
+                </div>
+              ) : (
+                items.map((item: DTOProductoPedido) => (
+                  <ItemCarrito
+                    key={extraerIdItem(item)}
+                    item={item}
+                    onEditar={abrirEditorItem}
+                    onEliminar={eliminarProducto}
+                    onCambiarCantidad={cambiarCantidadItem}
+                    onCambiarIngredientes={cambiarIngredientesQuitados}
+                  />
+                ))
+              )}
             </div>
-          ) : carritoVacio ? (
-            <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50 py-12 text-center">
-              <p className="text-[13px] font-bold text-gray-400">
-                No hay productos en el carrito
-              </p>
-              <p className="mt-1 text-[12px] text-gray-300">
-                ¡Agregá algo para comenzar!
-              </p>
-            </div>
-          ) : (
-            items.map((item: DTOProductoPedido) => (
-              <ItemCarrito
-                key={extraerIdItem(item)}
-                item={item}
-                onEditar={abrirEditorComentario}
-                onEliminar={eliminarProducto}
-                onCambiarCantidad={cambiarCantidadItem}
-                onCambiarIngredientes={cambiarIngredientesQuitados}
-              />
-            ))
-          )}
-        </div>
 
-        {/* Total y botón de pago */}
-        {!carritoVacio && (
-          <div className="mt-4 rounded-2xl border border-orange-100 bg-[#fff8f4] px-4 pt-2 pb-4">
-            <div className="flex pb-2 items-center justify-between">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-orange-400">
-                Total del pedido
-              </p>
-              <p className="text-[20px] font-extrabold text-gray-900">
-                {formatearMoneda(total)}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={realizarPedido}
-              disabled={carritoVacio}
-              className="w-full rounded-full bg-trego-orange py-3 text-[13px] font-extrabold text-white shadow-sm hover:bg-orange-600 active:scale-[0.99] disabled:opacity-50 transition-colors"
-            >
-              {direccionSeleccionada ? "Realizar pago" : "Realizar pedido"}
-            </button>
-          </div>
-        )}
-
-        {/* Editor de notas */}
-        {editandoId && (
-          <div className="mt-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-            <div className="mb-2 flex items-center gap-2">
-              <p className="text-[12px] font-extrabold text-gray-600">
-                Nota para
-              </p>
-              <span className="max-w-50 truncate rounded-xl bg-gray-100 px-3 py-1 text-[12px] font-extrabold text-gray-800">
-                {editandoNombre}
-              </span>
-            </div>
-            <textarea
-              value={comentarioTmp}
-              onChange={(e) => setComentarioTmp(e.target.value)}
-              placeholder="Ej: sin sal, sin cebolla..."
-              rows={2}
-              className="mt-2 w-full resize-none rounded-2xl border border-gray-200 bg-[#fafafa] p-3 text-[13px] outline-none focus:border-trego-orange transition-colors"
+            {!carritoVacio && (
+              <div className="mt-4 rounded-2xl border border-orange-100 bg-[#fff8f4] px-4 pt-2 pb-4">
+                <div className="flex pb-2 items-center justify-between">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-orange-400">
+                    Total del pedido
+                  </p>
+                  <p className="text-[20px] font-extrabold text-gray-900">
+                    {formatearMoneda(total)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={realizarPedido}
+                  disabled={carritoVacio}
+                  className="w-full rounded-full bg-trego-orange py-3 text-[13px] font-extrabold text-white shadow-sm hover:bg-orange-600 active:scale-[0.99] disabled:opacity-50 transition-colors"
+                >
+                  {direccionSeleccionada ? "Realizar pago" : "Realizar pedido"}
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Si ESTAMOS editando, mostramos el componente de edición */
+          <div className="mt-3">
+            <EditorItemCarrito
+              item={itemEditando}
+              onSave={guardarEdicionItem}
+              onCancel={cancelarEdicion}
             />
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={cancelarEdicion}
-                className="flex-1 rounded-full border border-gray-200 bg-white px-4 py-2.5 text-[13px] font-extrabold text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={guardarComentario}
-                className="flex-1 rounded-full bg-trego-orange px-4 py-2.5 text-[13px] font-extrabold text-white shadow-sm hover:bg-orange-600 active:scale-[0.99] transition-colors"
-              >
-                Guardar nota
-              </button>
-            </div>
           </div>
         )}
       </div>
