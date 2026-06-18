@@ -36,6 +36,7 @@ import PerfilCliente from "./pages/perfil/PerfilScreen.js";
 import PerfilRestauranteScreen from "./pages/perfil/PerfilRestauranteScreen.js";
 import AltaOferta from "./pages/restaurantes/screens/AltaOferta.js";
 import EstadisticasPage from "./pages/restaurantes/screens/EstadisticasPage.js";
+import ReputacionPage from "./pages/restaurantes/screens/ReputacionPage.tsx";
 import { CarritoProvider } from "./context/CarritoContext";
 import ListarOfertas from "./pages/restaurantes/screens/ListarOfertas.js";
 
@@ -135,6 +136,10 @@ export default function AppRouter() {
           <Route
             path="/restaurantes/estadisticas/monto"
             element={<EstadisticasPage vista="monto" />}
+          />
+          <Route
+            path="/restaurantes/reputacion"
+            element={<ReputacionPage />}
           />
           <Route path="/restaurantes/listar-ofertas" element={<ListarOfertas />} />
         </Route>

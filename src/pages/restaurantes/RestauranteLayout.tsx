@@ -52,6 +52,10 @@ const SECCIONES: SidebarSection[] = [
       },
       { label: "Pedidos por fecha", path: "/restaurantes/estadisticas/fechas" },
       { label: "Monto promedio", path: "/restaurantes/estadisticas/monto" },
+      {
+        label: "Clasificación global",
+        path: "/restaurantes/reputacion",
+      },
     ],
   },
 ];
