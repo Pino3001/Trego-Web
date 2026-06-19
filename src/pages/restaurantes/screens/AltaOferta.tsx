@@ -11,6 +11,7 @@ import type { DTOProducto } from "../../../data/DTOProducto.js";
 import type { DTOOferta } from "../../../data/DTOOferta.js";
 import ToggleActivar from "../../../components/ToggleActivar.js";
 import type { DTOModificarOfertaRequest } from "../../../data/DTOModificarOfertaRequest.js";
+import { esProductoOfertaVigente } from "../../../utils/productos.js";
 
 const formatearFechaParaInput = (fechaISO?: string) => {
   if (!fechaISO) return "";
@@ -55,7 +56,7 @@ export default function AltaOferta({
     oferta ? oferta.descuento : 0,
   );
   const [habilitar, setHabilitar] = useState<boolean>(
-    producto?.ofertaActiva ?? false,
+    producto ? esProductoOfertaVigente(producto) : false,
   );
 
   const precioFinal =

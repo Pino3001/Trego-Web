@@ -62,6 +62,7 @@ export const ENDPOINTS = {
   DESHABILITAR_PRODUCTO: '/api/productos',
   LISTAR_PEDIDOS: `/api/pedido/listarPedidos`,
   LISTAR_SUBCATEGORIAS: `/api/subcategorias/listar`,
+  LISTAR_PRODUCTOS_OFERTA: '/api/productos/listarProductosOferta',
   CONFIRMAR_PEDIDO: `/api/pedido/confirmar`,
   ACTUALIZAR_ESTADO: `/api/pedido/estado`,
   CANCELAR_PEDIDO: `/api/pedido/reembolsar`,

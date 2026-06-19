@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -23,6 +24,7 @@ import {
 } from "../api/carritoApi.js";
 import { obtenerDireccionesGuardadas } from "../api/usuariosApi.js";
 import { confirmarPedido } from "../api/pedidosApi.js";
+import { armarProductoPedidoRequest } from "../api/mapeadores.js";
 
 function sonMismosIngredientes(
   a: DTOIngrediente[] | undefined,
@@ -85,7 +87,7 @@ export interface CarritoContextType {
   agregarProductoAlCarrito: (
     args: DTOProductoPedido,
     restauranteInfo?: DTORestaurante | null,
-  ) => Promise<void>;
+  ) => Promise<boolean>;
   eliminarProducto: (idProducto: number) => Promise<void>;
   cambiarCantidad: (idProducto: number, nuevaCantidad: number) => Promise<void>;
   cambiarComentarios: (
@@ -152,7 +154,6 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
     useState<DTOProducto | null>(null);
   const [restauranteDelDetalle, setRestauranteDelDetalle] =
     useState<DTORestaurante | null>(null);
-
   const [direccionModalAbierto, setDireccionModalAbierto] =
     useState<boolean>(false);
   const [direcciones, setDirecciones] = useState<DTODireccion[]>([]);
@@ -162,6 +163,13 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
   const [pagoModalAbierto, setPagoModalAbierto] = useState<boolean>(false);
   const [mensajeCarrito, setMensajeCarrito] = useState<string | null>(null);
   const [cargandoCarrito, setCargandoCarrito] = useState<boolean>(false);
+
+  /** Evita que un GET lento del carrito pise un POST/PATCH reciente. */
+  const carritoSyncGen = useRef(0);
+
+  const invalidarCargasCarritoPendientes = useCallback(() => {
+    carritoSyncGen.current += 1;
+  }, []);
 
   const usarApi = tieneSesion() && esSesionCliente();
 
@@ -209,14 +217,19 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
   const cargarCarritoDesdeApi = useCallback(
     async (silencioso = false) => {
       if (!tieneSesion()) return;
+      const gen = ++carritoSyncGen.current;
       if (!silencioso) setCargandoCarrito(true);
       try {
         const dto = await obtenerCarrito();
+        if (gen !== carritoSyncGen.current) return;
         aplicarCarritoDto(dto);
       } catch (err) {
+        if (gen !== carritoSyncGen.current) return;
         console.warn("[Trego] No se pudo cargar el carrito", err);
       } finally {
-        if (!silencioso) setCargandoCarrito(false);
+        if (gen === carritoSyncGen.current && !silencioso) {
+          setCargandoCarrito(false);
+        }
       }
     },
     [aplicarCarritoDto],
@@ -371,10 +384,11 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
   async function agregarProductoAlCarrito(
     pedido: DTOProductoPedido,
     restauranteInfo?: DTORestaurante | null,
-  ) {
+  ): Promise<boolean> {
     if (!pedido?.producto?.idProducto && !(pedido?.producto as any)?.id) {
       console.warn("Falta el producto o el idProducto");
-      return;
+      setMensajeCarrito("No se pudo agregar: producto inválido.");
+      return false;
     }
 
     const producto = pedido.producto;
@@ -386,15 +400,25 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
       setMensajeCarrito(
         "No podés agregar productos de un restaurante diferente.",
       );
-      return;
+      return false;
     }
 
     const idRestaurante =
-      restauranteInfo?.idRestaurante ?? pedido.producto?.idRestaurante;
+      restauranteInfo?.idRestaurante ??
+      pedido.producto?.idRestaurante ??
+      restaurante?.idRestaurante;
 
     if (tieneSesion()) {
+      invalidarCargasCarritoPendientes();
       try {
-        const dto = await agregarProductoAlCarritoApi(pedido);
+        const body = armarProductoPedidoRequest({
+          producto,
+          cantidad: pedido.cantidad,
+          comentarios: pedido.observaciones,
+          idRestaurante,
+          ingredientesQuitados: pedido.ingredientesAQuitar,
+        });
+        const dto = await agregarProductoAlCarritoApi(body);
         aplicarCarritoDto(dto);
         if (restauranteInfo && idRestaurante) {
           setRestaurante({
@@ -405,7 +429,7 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
         }
       } catch (err: any) {
         setMensajeCarrito(err.message ?? "No se pudo agregar al carrito");
-        return;
+        return false;
       }
     } else {
       const id = producto?.idProducto || (producto as any).id;
@@ -456,10 +480,12 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
     }
 
     setMensajeCarrito(() => null);
+    return true;
   }
 
   async function eliminarProducto(idProducto: number) {
     if (tieneSesion()) {
+      invalidarCargasCarritoPendientes();
       try {
         const item = items.find((i) => {
           const id = i.producto?.idProducto || (i.producto as any)?.id;
@@ -501,6 +527,7 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
         return id === idProducto;
       });
       if (!item?.producto) return;
+      invalidarCargasCarritoPendientes();
       try {
         await modificarProductoEnCarrito({
           producto: item.producto,
@@ -508,11 +535,10 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
           observaciones: item?.observaciones ?? "",
           ingredientesAQuitar: item?.ingredientesAQuitar ?? [],
         });
-        // 3. Recargamos silenciosamente (true) para no molestar con el spinner
         await cargarCarritoDesdeApi(true);
       } catch (err: any) {
         setMensajeCarrito(err.message ?? "No se pudo actualizar la cantidad");
-        await cargarCarritoDesdeApi(true); // Revertir en caso de error de red
+        await cargarCarritoDesdeApi(true);
       }
     }
   }
@@ -534,6 +560,7 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
         return id === idProducto;
       });
       if (!item?.producto) return;
+      invalidarCargasCarritoPendientes();
       try {
         await modificarProductoEnCarrito({
           producto: item.producto,
@@ -541,7 +568,7 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
           observaciones: comentarios,
           ingredientesAQuitar: item?.ingredientesAQuitar ?? [],
         });
-        await cargarCarritoDesdeApi(true); // Silencioso
+        await cargarCarritoDesdeApi(true);
       } catch (err: any) {
         setMensajeCarrito(err.message ?? "No se pudo guardar el comentario");
         await cargarCarritoDesdeApi(true);
@@ -569,6 +596,7 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
         return id === idProducto;
       });
       if (!item?.producto) return;
+      invalidarCargasCarritoPendientes();
       try {
         await modificarProductoEnCarrito({
           producto: item.producto,
@@ -576,7 +604,7 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
           observaciones: item?.observaciones ?? "",
           ingredientesAQuitar: lista,
         });
-        await cargarCarritoDesdeApi(true); // Silencioso
+        await cargarCarritoDesdeApi(true);
       } catch (err: any) {
         setMensajeCarrito(
           err.message ?? "No se pudieron actualizar los ingredientes",

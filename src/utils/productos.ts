@@ -9,30 +9,55 @@ export function precioConDescuento(
   return Math.round(precio * (1 - descuentoPorcentaje / 100));
 }
 
+function toDateString(
+  value: string | Date | null | undefined,
+): string | undefined {
+  if (!value) return undefined;
+  try {
+    const raw =
+      typeof value === "string" && value.length >= 10
+        ? value.slice(0, 10)
+        : undefined;
+    if (raw && /^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+    const date = typeof value === "string" ? new Date(value) : value;
+    if (Number.isNaN(date.getTime())) return undefined;
+    return date.toISOString().slice(0, 10);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Oferta dentro del rango de fechas (inclusive). No depende de ofertaActiva del backend. */
+export function ofertaVigentePorFechas(
+  oferta: DTOProducto["oferta"],
+): boolean {
+  if (!oferta?.fechaInicio || !oferta?.fechaFin) return false;
+
+  const hoy = new Date().toISOString().slice(0, 10);
+  const inicio = toDateString(oferta.fechaInicio);
+  const fin = toDateString(oferta.fechaFin);
+  if (!inicio || !fin) return false;
+
+  return hoy >= inicio && hoy <= fin;
+}
+
+/** Producto con oferta vigente hoy según fechas del objeto oferta. */
+export function esProductoOfertaVigente(
+  producto: DTOProducto | null | undefined,
+): boolean {
+  if (!producto?.oferta) return false;
+  return ofertaVigentePorFechas(producto.oferta);
+}
+
+export function productoTieneOferta(
+  producto: DTOProducto | null | undefined,
+): boolean {
+  return producto?.oferta != null;
+}
+
 export function productosConOferta(productos: DTOProducto[]): DTOProducto[] {
-  const hoy = new Date();
-  const hoyStr = hoy.toISOString().split("T")[0];
-  console.log("Viene: ", productos)
-  return productos.filter((p) => {
-    // Nuevo: verificar el booleano ofertasActivas
-    if (p.ofertaActiva !== true) return false;
-
-    if (!p.oferta?.fechaInicio || !p.oferta?.fechaFin) return false;
-
-    const inicioStr =
-      typeof p.oferta.fechaInicio === "string"
-        ? p.oferta.fechaInicio
-        : new Date(p.oferta.fechaInicio).toISOString().split("T")[0];
-
-    const finStr =
-      typeof p.oferta.fechaFin === "string"
-        ? p.oferta.fechaFin
-        : new Date(p.oferta.fechaFin).toISOString().split("T")[0];
-
-    if (!hoyStr || !inicioStr || !finStr) return false;
-
-    return hoyStr >= inicioStr && hoyStr <= finStr;
-  });
+  return (productos ?? []).filter(esProductoOfertaVigente);
 }
 
 export function filtrarPorCategoria(
@@ -57,46 +82,19 @@ export function ordenarPorPrecio(
   return lista;
 }
 
-/**
- * Convierte un valor (string o Date) a una fecha ISO en formato YYYY-MM-DD,
- * o undefined si el valor es inválido o no se puede convertir.
- */
-function toDateString(
-  value: string | Date | null | undefined,
-): string | undefined {
-  if (!value) return undefined;
-  try {
-    const date = typeof value === "string" ? new Date(value) : value;
-    if (isNaN(date.getTime())) return undefined; // Fecha inválida
-    return date.toISOString().split("T")[0];
-  } catch {
-    return undefined;
-  }
-}
-
-function isOfertaActiva(oferta: DTOProducto["oferta"]): boolean {
-  // Validación con encadenamiento opcional: si falta alguna propiedad, no está activa
-  if (!oferta?.fechaInicio || !oferta?.fechaFin) return false;
-
-  const hoy = new Date().toISOString().substring(0, 10);
-  const inicioStr = toDateString(oferta.fechaInicio);
-  const finStr = toDateString(oferta.fechaFin);
-
-  // Si alguna fecha no se pudo convertir, descartamos la oferta
-  if (inicioStr === undefined || finStr === undefined) return false;
-
-  return hoy >= inicioStr && hoy <= finStr;
-}
-
 export function obtenerPrecios(producto: DTOProducto): {
   original: number;
   conDescuento: number;
   tieneOferta: boolean;
 } {
   const original = producto.precio ?? 0;
-  const descuento = producto.oferta?.descuento ?? 0;
-  const ofertaActiva = isOfertaActiva(producto.oferta);
-  const tieneOferta = descuento > 0 && ofertaActiva;
+  const descuento =
+    producto.oferta?.descuento ??
+    (producto.oferta as { descuentoPorcentaje?: number } | undefined)
+      ?.descuentoPorcentaje ??
+    0;
+  const vigente = esProductoOfertaVigente(producto);
+  const tieneOferta = descuento > 0 && vigente;
   const conDescuento = tieneOferta
     ? precioConDescuento(original, descuento)
     : original;

@@ -8,10 +8,7 @@ import { EnumTipoProducto } from "../../data/EnumTipoProducto.js";
 import { DetalleCombo } from "./DetalleCombo.js";
 import { obtenerPrecios } from "../../utils/productos.js";
 
-// --- Funciones de Utilidad ---
-
 function obtenerIngredientes(producto: DTOProducto | null): string[] {
-  console.log("Ingredientes: ", producto?.ingredientes);
   if (producto?.ingredientes?.length) {
     return producto.ingredientes
       .map((i) => (typeof i === "string" ? i : i.nombre))
@@ -19,8 +16,6 @@ function obtenerIngredientes(producto: DTOProducto | null): string[] {
   }
   return [];
 }
-
-// --- Componente Principal ---
 
 export default function DetalleProductoModal(): React.JSX.Element {
   const {
@@ -33,11 +28,8 @@ export default function DetalleProductoModal(): React.JSX.Element {
 
   const abierto = !!productoEnDetalle;
   const producto = productoEnDetalle;
-  const { tieneOferta, conDescuento, original } = obtenerPrecios(
-    producto ?? {},
-  );
+  const { conDescuento } = obtenerPrecios(producto ?? {});
 
-  // Estados estrictamente tipados
   const [cantidad, setCantidad] = useState<number>(1);
   const [comentarios, setComentarios] = useState<string>("");
   const [quitados, setQuitados] = useState<string[]>([]);
@@ -79,7 +71,7 @@ export default function DetalleProductoModal(): React.JSX.Element {
     cerrarDetalleProducto();
   }
 
-  function agregar(): void {
+  async function agregar(): Promise<void> {
     if (!producto) return;
     if (ingredientes.length > 0 && quitados.length >= ingredientes.length) {
       setErrorIngredientes(MSG_TODOS_INGREDIENTES);
@@ -87,8 +79,7 @@ export default function DetalleProductoModal(): React.JSX.Element {
     }
 
     const idRestauranteActual =
-      producto?.idRestaurante ||
-      restauranteDelDetalle?.idRestaurante ||
+      producto.idRestaurante ||
       restauranteDelDetalle?.idRestaurante ||
       0;
 
@@ -98,14 +89,17 @@ export default function DetalleProductoModal(): React.JSX.Element {
     }));
 
     const productoPedido: DTOProductoPedido = {
-      cantidad: cantidad,
+      cantidad,
       ingredientesAQuitar: ingredientesObjetos,
       observaciones: comentarios,
-      producto: producto,
+      producto,
     };
 
-    agregarProductoAlCarrito(productoPedido, restauranteDelDetalle);
-    cerrar();
+    const ok = await agregarProductoAlCarrito(
+      productoPedido,
+      restauranteDelDetalle,
+    );
+    if (ok) cerrar();
   }
 
   return (
@@ -267,7 +261,7 @@ export default function DetalleProductoModal(): React.JSX.Element {
         <div className="mt-5">
           <button
             type="button"
-            onClick={agregar}
+            onClick={() => void agregar()}
             className="w-full rounded-full bg-trego-orange py-3.5 text-[14px] font-extrabold text-white shadow-md hover:bg-orange-600 active:scale-[0.99] transition-all"
           >
             Agregar al Carrito

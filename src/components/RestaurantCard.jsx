@@ -10,6 +10,7 @@ export default function RestaurantCard({
   restaurante,
   modoBusqueda = false,
   enGrid = false,
+  productosCoincidentes,
 }) {
   const {
     idUsuario,
@@ -25,12 +26,23 @@ export default function RestaurantCard({
     horarioServicio,
   } = restaurante;
 
+  const platos =
+    productosCoincidentes ??
+    restaurante._productosCoincidentes ??
+    [];
+
   const zona = direccion?.nombre ?? "Pocitos";
   const horario = formatearHorario(
     horarioServicio?.[0] ?? null,
     horarioServicio?.[1] ?? null,
   );
-  const tipoComida = descripcion || categoria || "Un tipo de comida";
+  const tipoComida =
+    platos.length > 0
+      ? `Vende: ${platos
+          .slice(0, 2)
+          .map((p) => p.nombre)
+          .join(", ")}${platos.length > 2 ? "…" : ""}`
+      : descripcion || categoria || "Un tipo de comida";
 
   const mostrarCerrado = modoBusqueda && !abierto;
   const mostrarSinReparto = modoBusqueda && !reparteEnZona;

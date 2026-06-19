@@ -97,7 +97,7 @@ export default function Header(props: HeaderProps) {
         <div className="w-64 pr-12 items-center justify-center flex">
           <button
             onClick={() => navigate(navigateTo ?? "/")}
-            className="shrink-0  cursor-pointer hover:scale-120 transition-transform"
+            className="shrink-0 cursor-pointer transition-transform hover:scale-105"
           >
             <img
               src={
@@ -135,7 +135,7 @@ export default function Header(props: HeaderProps) {
                   type="search"
                   value={busqueda}
                   onChange={(e) => onBusquedaChange?.(e.target.value)}
-                  placeholder={placeholder ?? "Buscar..."}
+                  placeholder={placeholder ?? "Buscar producto o restaurante"}
                   className={`min-w-0 flex-1 bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-500 ${ocultarBotonFiltros ? "px-6" : "px-2"}`}
                 />
                 <button
