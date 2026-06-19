@@ -14,7 +14,7 @@ import { obtenerPrecios } from "../../utils/productos.js";
 import EditorItemCarrito from "./EditorItemCarrito.jsx"; // <-- Asegurate de que la ruta sea correcta
 
 // ---------------------------------------------------------------------------
-// INTERFACES Y CLASES TAILWIND (Se mantienen igual)
+// INTERFACES Y CLASES TAILWIND
 // ---------------------------------------------------------------------------
 
 interface IngredientesChipsProps {
@@ -45,7 +45,7 @@ function clsBanner(positivo: boolean): string {
 }
 
 // ---------------------------------------------------------------------------
-// FUNCIONES AUXILIARES (Se mantienen igual)
+// FUNCIONES AUXILIARES
 // ---------------------------------------------------------------------------
 
 function formatearMoneda(n: number | string | undefined | null): string {
@@ -62,7 +62,7 @@ function extraerIdItem(item: DTOProductoPedido): number {
 }
 
 // ---------------------------------------------------------------------------
-// SUB-COMPONENTES (Se mantienen igual)
+// SUB-COMPONENTES
 // ---------------------------------------------------------------------------
 
 function IngredientesChips({
@@ -212,8 +212,9 @@ export default function CarritoModal(): React.JSX.Element {
     restauranteAbierto,
   } = useCarrito();
 
-  // --- NUEVO ESTADO PARA EL EDITOR ---
-  const [itemEditando, setItemEditando] = useState<DTOProductoPedido | null>(null);
+  const [itemEditando, setItemEditando] = useState<DTOProductoPedido | null>(
+    null,
+  );
   const carritoVacio = items.length === 0;
 
   const direccionLabel = useMemo(() => {
@@ -256,8 +257,6 @@ export default function CarritoModal(): React.JSX.Element {
     };
   }, [carritoAbierto, direccionSeleccionada, setDireccionSeleccionada]);
 
-  // --- Handlers ---
-
   function cerrar(): void {
     setMensajeCarrito(null);
     cancelarEdicion();
@@ -292,17 +291,13 @@ export default function CarritoModal(): React.JSX.Element {
     setItemEditando(null);
   }
 
-  // --- NUEVO HANDLER PARA GUARDAR TODO DESDE EL EDITOR ---
   function guardarEdicionItem(cambios: DTOProductoPedido): void {
     if (!itemEditando) return;
     const idReal = extraerIdItem(itemEditando);
 
-    // Actualizamos todo en el contexto
     cambiarCantidad(idReal, cambios.cantidad ?? 1);
     cambiarComentarios(idReal, cambios.observaciones ?? "");
     cambiarIngredientesQuitados(idReal, cambios.ingredientesAQuitar ?? []);
-    
-    // Cerramos el editor
     cancelarEdicion();
   }
 
@@ -335,7 +330,9 @@ export default function CarritoModal(): React.JSX.Element {
         </div>
 
         {mensajeCarrito && (
-          <div className={`${clsBanner(esMensajePositivo(mensajeCarrito))} mt-2`}>
+          <div
+            className={`${clsBanner(esMensajePositivo(mensajeCarrito))} mt-2`}
+          >
             {mensajeCarrito}
           </div>
         )}
@@ -374,7 +371,6 @@ export default function CarritoModal(): React.JSX.Element {
           </button>
         </div>
 
-        {/* Si NO estamos editando, mostramos la lista y el total */}
         {!itemEditando ? (
           <>
             <div className="mt-3 max-h-170 overflow-y-auto pr-1 flex flex-col gap-2.5 custom-scrollbar">
@@ -428,7 +424,6 @@ export default function CarritoModal(): React.JSX.Element {
             )}
           </>
         ) : (
-          /* Si ESTAMOS editando, mostramos el componente de edición */
           <div className="mt-3">
             <EditorItemCarrito
               item={itemEditando}

@@ -33,7 +33,9 @@ export default function HomePage() {
   const { filtrosAbiertos, cerrarFiltros } = useFiltros();
 
   // 1. Buscador con Debounce
-  const { busqueda, setBusqueda } = useBusqueda();
+  const { busqueda, setBusqueda } = useBusqueda({
+    placeholder: "Buscar restaurante...",
+  });
   const debouncedBusqueda = useDebounce(busqueda, 500);
 
   // 2. Manejo de Ubicación SIN useEffect (Elimina el warning de setState)
@@ -117,7 +119,7 @@ export default function HomePage() {
               <SectionRow titulo="Las Ofertas de Hoy" accion={<LinkMas />}>
                 {ofertas.slice(0, 4).map((r) => (
                   <RestaurantCard
-                    key={r.idUsuario}
+                    key={r.idRestaurante}
                     restaurante={r}
                     modoBusqueda={modoBusqueda}
                   />
