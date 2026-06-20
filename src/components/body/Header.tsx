@@ -11,7 +11,6 @@ interface HeaderProps {
   onBusquedaChange?: (value: string) => void;
   onBuscar?: () => void;
   onAbrirFiltros?: () => void;
-  abrirPerfil?: boolean;
   tipoUser?: "Cliente" | "Restaurante" | "Administrador";
   children?: ReactNode;
   onToggleRestauranteAbierto?: (
@@ -31,7 +30,15 @@ interface HeaderProps {
   onAbrirCarrito?: () => void;
   noMostrarbuscador?: boolean;
   navigateTo?: string;
-  onCambiarContraseña: () => void;
+  onCambiarContraseña?: () => void;
+  verPerfil?: boolean;
+  cambiarContrasenia?: boolean;
+  verHistorial?: boolean;
+  onChangeHistorial?: () => void;
+  menuUser?: boolean;
+  placeholder?: string;
+  ocultarBotonFiltros?: boolean;
+  fotoPerfil?: string | undefined;
 }
 
 export default function Header(props: HeaderProps) {
@@ -43,7 +50,6 @@ export default function Header(props: HeaderProps) {
     onBusquedaChange,
     onBuscar,
     onAbrirFiltros,
-    abrirPerfil, // Esto es momentaneo, despues cuandp tengammos lo de perfil cambiamos por lo que convenga
     tipoUser = "Cliente",
     children,
     onToggleRestauranteAbierto,
@@ -61,6 +67,14 @@ export default function Header(props: HeaderProps) {
     horaApertura,
     onChangeHoraApertura,
     onCambiarContraseña,
+    verHistorial,
+    verPerfil,
+    cambiarContrasenia,
+    onChangeHistorial,
+    menuUser = true,
+    ocultarBotonFiltros,
+    placeholder,
+    fotoPerfil,
   } = props;
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -68,13 +82,22 @@ export default function Header(props: HeaderProps) {
     onBuscar?.();
   };
 
+  const gradientesPorTipo: Record<string, string> = {
+    Cliente: "from-orange-600 to-trego-orange",
+    Restaurante: "from-emerald-500 to-trego-restaurante",
+    Administrador: "from-violet-500 to-trego-admin",
+  };
+
+  const gradiente =
+    gradientesPorTipo[tipoUser ?? ""] ?? "from-orange-400 to-trego-orange";
+
   return (
     <header className="sticky top-0 z-40 bg-white">
       <div className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-6">
         <div className="w-64 pr-12 items-center justify-center flex">
           <button
             onClick={() => navigate(navigateTo ?? "/")}
-            className="shrink-0  cursor-pointer hover:scale-120 transition-transform"
+            className="shrink-0 cursor-pointer transition-transform hover:scale-105"
           >
             <img
               src={
@@ -98,21 +121,22 @@ export default function Header(props: HeaderProps) {
               className="flex min-w-0 flex-1 justify-center"
             >
               <div className="flex h-11 items-center w-130 overflow-hidden rounded-full border border-gray-200 bg-white shadow-[0_1px_4px_rgba(0,0,0,0.08)] sm:h-12">
-                <button
-                  type="button"
-                  onClick={onAbrirFiltros}
-                  className="flex h-full w-11 shrink-0 items-center justify-center text-gray-700 hover:bg-gray-50"
-                  aria-label="Aplicar filtros"
-                  title="Aplicar filtros"
-                >
-                  <IconMenu className="h-5 w-5" />
-                </button>
+                {!ocultarBotonFiltros && (
+                  <button
+                    type="button"
+                    onClick={onAbrirFiltros}
+                    className="flex h-full w-11 shrink-0 items-center justify-center text-gray-700 hover:bg-gray-50"
+                    aria-label="Aplicar filtros"
+                  >
+                    <IconMenu className="h-5 w-5" />
+                  </button>
+                )}
                 <input
                   type="search"
                   value={busqueda}
                   onChange={(e) => onBusquedaChange?.(e.target.value)}
-                  placeholder="Buscar Producto"
-                  className="min-w-0 flex-1 bg-transparent px-1 text-sm text-gray-800 outline-none placeholder:text-gray-500"
+                  placeholder={placeholder ?? "Buscar producto o restaurante"}
+                  className={`min-w-0 flex-1 bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-500 ${ocultarBotonFiltros ? "px-6" : "px-2"}`}
                 />
                 <button
                   type="submit"
@@ -130,13 +154,29 @@ export default function Header(props: HeaderProps) {
             <button
               type="button"
               onClick={onAbrirCarrito}
-              className="relative flex h-10 w-10 items-center justify-center hover:scale-120 transition-transform rounded-full cursor-pointer bg-trego-cart shadow-sm sm:h-11 sm:w-11"
+              className="
+                          relative flex h-10 w-10 sm:h-11 sm:w-11
+                          items-center justify-center
+                          rounded-full cursor-pointer
+                          bg-gradient-to-br from-orange-500 to-trego-cart
+                          ring-2 ring-white shadow-md
+                          transition-transform hover:scale-110 active:scale-95
+                        "
               aria-label="Carrito"
             >
-              <IconCart className="h-5 w-5 text-white" />
+              <IconCart className="h-6 w-6 text-white" />
+
               {(cantidadTotal ?? 0) > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-extrabold text-white">
-                  {cantidadTotal}
+                <span
+                  className="
+                            absolute -right-1 -top-1
+                            flex h-5 min-w-5 items-center justify-center
+                            rounded-full bg-red-700
+                            px-1 text-[12px] font-bold text-white
+                            ring-2 ring-white           
+                          "
+                >
+                  {cantidadTotal && cantidadTotal > 99 ? "99+" : cantidadTotal}
                 </span>
               )}
             </button>
@@ -144,15 +184,29 @@ export default function Header(props: HeaderProps) {
           {/**Aca podemos colocar el boton que quieramos, ejemplo el de registrar usuario, etc */}
           {children}
 
-          {abrirPerfil && (
+          {menuUser ? (
             <div className="relative">
               <button
                 type="button"
                 onClick={() => setMenuAbierto(!menuAbierto)}
-                className="flex h-10 w-10 items-center justify-center hover:scale-120 rounded-full bg-trego-profile shadow-sm sm:h-11 sm:w-11 cursor-pointer transition-transform active:scale-95"
+                className={`flex h-10 w-10 sm:h-11 sm:w-11
+                            items-center justify-center
+                            rounded-full cursor-pointer
+                            bg-gradient-to-br ${gradiente}
+                            ring-2 ring-white shadow-md
+                            transition-transform hover:scale-115 active:scale-95
+                          `}
                 aria-label="Perfil"
               >
-                <IconUser className="h-5 w-5 text-white" />
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className="h-6 w-6 text-white" // ← de h-5 w-5 a h-6 w-6
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="8" r="4" />
+                  <path d="M4 20c0-3.87 3.58-7 8-7s8 3.13 8 7" />
+                </svg>
               </button>
 
               {/* Capa invisible para cerrar el menú si se hace clic fuera */}
@@ -167,6 +221,7 @@ export default function Header(props: HeaderProps) {
               {menuAbierto && (
                 <>
                   <MenuUsuario
+                    avatarUrl={fotoPerfil ?? ""}
                     nombre={perfilNombre ?? "Usuario"}
                     email={perfilEmail ?? ""}
                     tipoUser={tipoUser}
@@ -187,11 +242,15 @@ export default function Header(props: HeaderProps) {
                       setMenuAbierto(false);
                       onCambiarContraseña?.();
                     }}
+                    verHistorial={verHistorial ?? false}
+                    verPerfil={verPerfil ?? false}
+                    cambiarContrasenia={cambiarContrasenia ?? false}
+                    onChangeHistorial={() => onChangeHistorial?.()}
                   />
                 </>
               )}
             </div>
-          )}
+          ) : undefined}
         </div>
       </div>
       <div

@@ -12,6 +12,7 @@ import {
   type EnumCategoriaProducto,
 } from "../../../data/EnumCategoriaProducto.js";
 import type { DTOSubcategoria } from "../../../data/DTOSubcategoria.js";
+import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
 
 interface AltaComboProps {
   foto: ImageField;
@@ -55,50 +56,32 @@ export default function AltaCombo({
   const [productoSeleccionado, setProductoSeleccionado] = useState<
     DTOProducto | undefined
   >();
-  const [productosBackend, setProductosBackend] = useState<DTOProducto[]>([]);
+  const { productos, loadingProductos, errorProductos, recargarProductos } =
+    useProductoRestaurante();
 
   const handleImageChange = (file: File | null) => {
     onChangeImage(file);
   };
 
+  // Al agregar, sumamos el precio del producto al precio actual del combo
   const agregarProducto = (producto: DTOProducto) => {
+    const nuevoPrecio = precio + (producto.precio ?? 0);
+    onChangePrecio(nuevoPrecio);
     onChangeListaProd([...productosSeleccionados, producto]);
   };
 
+  // Al quitar, restamos el precio del producto eliminado
   const quitarProducto = (indice: number) => {
+    const producto = productosSeleccionados[indice];
+    const nuevoPrecio = precio - (producto?.precio ?? 0);
     const nuevaLista = productosSeleccionados.filter((_, i) => i !== indice);
+    onChangePrecio(nuevoPrecio);
     onChangeListaProd(nuevaLista);
   };
 
-  //Traer productos desde el backend
-  useEffect(() => {
-    let cancelado = false;
-
-    const cargarProductos = async () => {
-      try {
-        const productos = await listarProductos();
-        if (!cancelado) {
-          setProductosBackend(productos);
-        }
-      } catch (error) {
-        if (!cancelado) {
-          const mensaje =
-            error instanceof Error ? error.message : "Error inesperado";
-          onChangeApiError(mensaje);
-        }
-      }
-    };
-
-    cargarProductos();
-
-    return () => {
-      cancelado = true;
-    };
-  }, []);
-
   return (
     <>
-      <div className="bg-white rounded-3xl  p-8 flex flex-col gap-3">
+      <div className="bg-white rounded-3xl p-8 flex flex-col gap-3">
         {/* Row: image + fields */}
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex flex-col gap-5 m-auto">
@@ -110,7 +93,7 @@ export default function AltaCombo({
               className="w-55 h-40"
             />
 
-            <div className="w-55   m-auto">
+            <div className="w-55 m-auto">
               <TextInputNumber
                 value={precio}
                 onChange={onChangePrecio}
@@ -143,6 +126,7 @@ export default function AltaCombo({
               onSelect={(item) =>
                 onChangeCategoria(item?.id as EnumCategoriaProducto)
               }
+              error={error.categoria ?? ""}
             />
 
             <TextSelector
@@ -155,6 +139,7 @@ export default function AltaCombo({
               })}
               selected={subcategoria}
               onSelect={onChangeSubCategoria}
+              error={error.subcategoria ?? ""}
             />
           </div>
         </div>
@@ -182,20 +167,61 @@ export default function AltaCombo({
           </label>
 
           {/* Selector + add button */}
-          <div className="w-160 m-auto flex gap-4">
-            <TextBuscador
-              items={productosBackend}
-              placeholder="Agregar Producto"
-              selected={productoSeleccionado}
-              onSelect={(item) => {
-                setProductoSeleccionado(item); // feedback visual
-                if (item) agregarProducto(item);
-              }}
-              mapToItem={(t) => ({ id: t.idProducto ?? 0, label: t.nombre })}
-            />
+          <div className="w-160 m-auto flex flex-col gap-2">
+            <div>
+              <TextBuscador
+                items={productos ?? []}
+                placeholder="Agregar Producto"
+                selected={productoSeleccionado}
+                onSelect={(item) => {
+                  setProductoSeleccionado(item);
+                  if (item) agregarProducto(item);
+                }}
+                mapToItem={(t) => ({ id: t.idProducto ?? 0, label: t.nombre ?? ""})}
+              />
+            </div>
+            {/* Indicador de carga */}
+            {loadingProductos && (
+              <div className="flex items-center gap-2 text-xs text-gray-500 px-1">
+                <svg
+                  className="animate-spin h-4 w-4 text-trego-orange"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Cargando productos...
+              </div>
+            )}
+
+            {/* Mensaje de error */}
+            {errorProductos && !loadingProductos && (
+              <div className="flex items-center gap-2 text-xs text-red-600 px-1">
+                <span>Error al cargar productos.</span>
+                <button
+                  onClick={recargarProductos}
+                  className="underline hover:text-red-800 transition-colors"
+                >
+                  Reintentar
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Lista de ingredientes seleccionados */}
+          {/* Lista de productos seleccionados */}
           <div className="border border-gray-200 rounded-2xl p-3 min-h-20 bg-gray-50">
             <p className="text-xs font-semibold text-gray-500 mb-2 px-1">
               Lista De Productos
@@ -215,7 +241,7 @@ export default function AltaCombo({
                     <button
                       onClick={() => quitarProducto(index)}
                       className="text-white hover:text-blue-600 transition-colors"
-                      title="Eliminar ingrediente"
+                      title="Eliminar producto"
                     >
                       <svg
                         className="w-3.5 h-3.5"

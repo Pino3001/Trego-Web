@@ -62,7 +62,7 @@ export default function CambiarContraseñaPage({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    obtenerUsuarioActual()
+     obtenerUsuarioActual()
       .then((usuario) => {
         setEmail(usuario.email ?? "");
         setPaso("FORM");

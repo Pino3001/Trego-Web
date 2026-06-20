@@ -15,6 +15,7 @@ import OTPInput from "../../components/inicio/OTPInput.js";
 import { GoogleIcon, SMSIcon } from "../../components/icons.jsx";
 import { apiAuth } from "../../api/apiAuth.js";
 import TextoDivider from "../../components/TextoDivider.js";
+import { guardarSesion } from "../../utils/sesion.js";
 
 // ─── Tipos de estados del inicio ───────────────────────────────────────────────
 
@@ -80,7 +81,7 @@ export default function LoginCliente() {
       const data = await apiAuth.loginConGoogle(idToken);
 
       // Guardar el token que te devolvió Spring Boot para tus futuras peticiones
-      localStorage.setItem("jwtToken", data.token);
+      guardarSesion(data.token, data.rol);
       window.dispatchEvent(new Event("trego-sesion-iniciada"));
 
       /*Ver esto con mas detalle tenemos que usar un dato que google no pueda obtener de firebase*/
@@ -195,7 +196,7 @@ export default function LoginCliente() {
       const data = await apiAuth.loginConSMS(idToken);
 
       // Guardamos el JWT de Spring Boot (EL DEL BACKEND) en el navegador
-      localStorage.setItem("jwtToken", data.token);
+      guardarSesion(data.token, data.rol);
       window.dispatchEvent(new Event("trego-sesion-iniciada"));
 
       // Evaluamos si es un usuario nuevo (Lo mismo que antes, tenemos que ver cual va a ser la condicion de comparacion)
@@ -243,7 +244,7 @@ export default function LoginCliente() {
       {/* Anchor invisible para reCAPTCHA */}
       <div id="recaptcha-container" />
 
-      <Header />
+      <Header menuUser={false}/>
 
       <main className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gray-50 px-4 py-10">
         <div className="flex w-full max-w-4xl rounded-3xl mb-5 overflow-hidden shadow-2xl shadow-orange-100 bg-white">

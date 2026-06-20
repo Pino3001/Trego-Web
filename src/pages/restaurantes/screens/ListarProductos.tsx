@@ -2,17 +2,15 @@ import { useEffect, useState } from "react";
 import type { NotificationState } from "../types/NotificationState.js";
 import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
 import { AlertCircle, CheckCircle } from "lucide-react";
-import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
+import FiltrosRestaurantes from "../componentes/FiltrosResto.js";
 import { useFiltrosProductos } from "../../../hooks/useFiltrosProducto.js";
 import type { DTOIngrediente } from "../../../data/DTOIngrediente.js";
 import { useIngredientes } from "../../../hooks/useIngredientes.js";
 import ProductoCard from "../componentes/CardProducto.js";
-import { useNavigate } from "react-router";
 import type { DTOProducto } from "../../../data/DTOProducto.js";
 import ModificarProducto from "./ModificarProducto.js";
 
 export default function ListarProductos() {
-  const navigate = useNavigate();
   const [notification, setNotification] = useState<NotificationState>({
     show: false,
     message: "",
@@ -24,7 +22,6 @@ export default function ListarProductos() {
 
   const {
     hayFiltros,
-    ingredienteSeleccionadoId,
     limpiarFiltros,
     orden,
     productosFiltrados,

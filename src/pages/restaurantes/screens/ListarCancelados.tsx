@@ -4,7 +4,7 @@ import { EnumEstadoPedido } from "../../../data/EnumEstadoPedido.js";
 import { AlertCircle, CheckCircle, RefreshCw, Search } from "lucide-react";
 import CardPedidoAconfirmar from "../componentes/CardPedidoAconfirmar.js";
 import { usePedidos } from "../../../hooks/usePedidoRestaurante.js";
-import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
+import FiltrosRestaurantes from "../componentes/FiltrosResto.js";
 import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js";
 import { useFiltrosPedidos } from "../../../hooks/useFiltrosPedidos.js";
 import type { DTOProducto } from "../../../data/DTOProducto.js";

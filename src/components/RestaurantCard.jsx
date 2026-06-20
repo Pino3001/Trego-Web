@@ -1,15 +1,16 @@
-import { Link } from 'react-router'
-import { IconStar } from './icons'
-import { BadgeAbierto, BadgeOfertas } from './badges'
-import { formatearHorario } from '../utils/restaurantes'
+import { Link } from "react-router";
+import { IconStar } from "./icons";
+import { BadgeAbierto, BadgeOfertas } from "./badges";
+import { formatearHorario } from "../utils/restaurantes.js";
 
 const cardBase =
-  'block rounded-[18px] bg-trego-card p-3 shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition hover:shadow-[0_3px_12px_rgba(0,0,0,0.12)]'
+  "block rounded-[18px] bg-trego-card p-3 shadow-[0_2px_8px_rgba(0,0,0,0.08)] transition hover:shadow-[0_3px_12px_rgba(0,0,0,0.12)]";
 
 export default function RestaurantCard({
   restaurante,
   modoBusqueda = false,
   enGrid = false,
+  productosCoincidentes,
 }) {
   const {
     idUsuario,
@@ -23,28 +24,47 @@ export default function RestaurantCard({
     fotoPerfil,
     direccion,
     horarioServicio,
-  } = restaurante
+  } = restaurante;
 
-  const zona = direccion?.nombre ?? 'Pocitos'
-  const horario = formatearHorario(horarioServicio)
-  const tipoComida = descripcion || categoria || 'Un tipo de comida'
+  const platos =
+    productosCoincidentes ??
+    restaurante._productosCoincidentes ??
+    [];
 
-  const mostrarCerrado = modoBusqueda && !abierto
-  const mostrarSinReparto = modoBusqueda && !reparteEnZona
+  const zona = direccion?.nombre ?? "Pocitos";
+  const horario = formatearHorario(
+    horarioServicio?.[0] ?? null,
+    horarioServicio?.[1] ?? null,
+  );
+  const tipoComida =
+    platos.length > 0
+      ? `Vende: ${platos
+          .slice(0, 2)
+          .map((p) => p.nombre)
+          .join(", ")}${platos.length > 2 ? "…" : ""}`
+      : descripcion || categoria || "Un tipo de comida";
 
-  let badgeEstado
+  const mostrarCerrado = modoBusqueda && !abierto;
+  const mostrarSinReparto = modoBusqueda && !reparteEnZona;
+
+  let badgeEstado;
   if (mostrarCerrado) {
-    badgeEstado = <BadgeAbierto abierto={false} texto="Cerrado" />
+    badgeEstado = <BadgeAbierto abierto={false} texto="Cerrado" />;
   } else if (mostrarSinReparto) {
-    badgeEstado = <BadgeAbierto abierto={false} texto="No reparte en la zona" />
+    badgeEstado = (
+      <BadgeAbierto abierto={false} texto="Fuera de zona" />
+    );
   } else {
-    badgeEstado = <BadgeAbierto abierto={abierto} />
+    badgeEstado = <BadgeAbierto abierto={abierto} />;
   }
 
-  const widthClass = enGrid ? 'w-full' : 'w-[310px] shrink-0 sm:w-[330px]'
+  const widthClass = enGrid ? "w-full" : "w-[310px] shrink-0 sm:w-[330px]";
 
   return (
-    <Link to={`/restaurante/${idUsuario}`} className={`${cardBase} ${widthClass}`}>
+    <Link
+      to={`/restaurante/${idUsuario}`}
+      className={`${cardBase} ${widthClass}`}
+    >
       <article className="flex gap-3">
         <img
           src={fotoPerfil}
@@ -62,17 +82,23 @@ export default function RestaurantCard({
             <span className="font-medium">{zona}</span>
             <span className="flex items-center gap-0.5 font-semibold">
               <IconStar className="h-3.5 w-3.5 text-amber-400" />
-              {calificacionProm?.toFixed(1) ?? '—'}
+              {calificacionProm?.toFixed(1) ?? "—"}
             </span>
           </p>
         </div>
 
-        <aside className="flex w-[88px] shrink-0 flex-col items-end justify-between py-0.5">
+        <aside className="flex shrink-0 flex-col items-end justify-between py-0.5">
           {badgeEstado}
-          {tieneOfertas ? <BadgeOfertas /> : <span className="h-[26px]" aria-hidden />}
-          <span className="text-right text-[11px] leading-tight text-gray-600">{horario}</span>
+          {tieneOfertas ? (
+            <BadgeOfertas />
+          ) : (
+            <span className="h-[26px]" aria-hidden />
+          )}
+          <span className="text-right text-[11px] leading-tight text-gray-600">
+            {horario}
+          </span>
         </aside>
       </article>
     </Link>
-  )
+  );
 }

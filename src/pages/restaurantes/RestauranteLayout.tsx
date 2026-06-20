@@ -9,10 +9,10 @@ import {
   obtenerActual,
 } from "../../api/apiRestaurante.js";
 import { apiAuth } from "../../api/apiAuth.js";
-import { limpiarSesion } from "../../utils/sesion.js";
 import { obtenerUsuarioActual } from "../../api/usuariosApi.js";
 import type { SidebarSection } from "../../components/body/utilities/DataSidebar.js";
 import type { DTOAbrirCerrarLocalRequest } from "../../data/DTOAbrirCerrarLocalRequest.js";
+import { limpiarSesion } from "../../utils/sesion.js";
 
 const SECCIONES: SidebarSection[] = [
   {
@@ -40,6 +40,7 @@ const SECCIONES: SidebarSection[] = [
     items: [
       { label: "Alta Producto", path: "/restaurantes/altaProducto" },
       { label: "Mis Productos", path: "/restaurantes/ListarProductos" },
+      { label: "Listar Ofertas", path: "/restaurantes/listar-ofertas" },
     ],
   },
   {
@@ -87,6 +88,7 @@ export default function RestauranteLayout() {
   } | null>(null);
   const [perfilNombre, setPerfilNombre] = useState("Restaurante");
   const [perfilEmail, setPerfilEmail] = useState("");
+  const [fotoPerfil, setFotoPerfil] = useState<string | undefined>(undefined);
 
   // --- REGLAS DE SEGURIDAD ---
 
@@ -122,6 +124,7 @@ export default function RestauranteLayout() {
       .then((usuario) => {
         setPerfilNombre(usuario.nombre?.trim() || "Restaurante");
         setPerfilEmail(usuario.email ?? "");
+        setFotoPerfil(usuario.urlImagen);
       })
       .catch(() => {});
   }, [token]);
@@ -152,12 +155,15 @@ export default function RestauranteLayout() {
   }, [token, isHabilitado, cambio]);
 
   // Funcion para cambiar estado (Abierto/Cerrado) restaurante
-const handleToggleRestaurante = async (horaDesdeMenu?: string, aperturaDesdeMenu?: string) => {
+  const handleToggleRestaurante = async (
+    horaDesdeMenu?: string,
+    aperturaDesdeMenu?: string,
+  ) => {
     if (!token || !isHabilitado) return;
 
     const horaEfectiva = horaDesdeMenu ?? horaCierre;
     // 👇 Capturamos la apertura instantánea que viene del menú
-    const aperturaEfectiva = aperturaDesdeMenu ?? horaApertura; 
+    const aperturaEfectiva = aperturaDesdeMenu ?? horaApertura;
 
     if (!restauranteAbierto && (!horaEfectiva || horaEfectiva.trim() === "")) {
       console.warn("No se puede abrir sin una hora de cierre");
@@ -176,7 +182,7 @@ const handleToggleRestaurante = async (horaDesdeMenu?: string, aperturaDesdeMenu
         };
         await abrirLocal(hora!);
         setRestauranteAbierto(true);
-        
+
         // Sincronizamos el estado de React con lo que ingresó el usuario
         if (horaDesdeMenu !== undefined) setHoraCierre(horaDesdeMenu);
         if (aperturaDesdeMenu !== undefined) setHoraApertura(aperturaDesdeMenu);
@@ -305,10 +311,11 @@ const handleToggleRestaurante = async (horaDesdeMenu?: string, aperturaDesdeMenu
   return (
     <div className="h-screen w-screen flex flex-col bg-gray-50 overflow-hidden">
       <Header
-        abrirPerfil
+        verPerfil
         tipoUser="Restaurante"
         perfilNombre={perfilNombre}
         perfilEmail={perfilEmail}
+        fotoPerfil={fotoPerfil}
         onCambiarContraseña={() => navigate("/restaurantes/perfil/contraseña")}
         onVerPerfil={() => navigate("/perfil/restaurante")}
         horaCierre={horaCierre}

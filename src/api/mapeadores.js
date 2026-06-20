@@ -2,10 +2,10 @@
 
 /** Convierte respuestas del backend al formato que usa el front. */
 
-import { precioConDescuento } from "../utils/productos.js"
 import { reverseGeocodeGeoapify } from "./apiGeoapify.js"
 import { reverseGeocodeNominatim } from "./nominatim.js"
 import { ENDPOINTS } from "./endpoints.js"
+import { precioConDescuento, esProductoOfertaVigente } from "../utils/productos.js"
 
 function formatearHora(hora) {
   if (!hora) return null
@@ -52,7 +52,6 @@ export function mapearRestaurante(dto) {
 
 export function mapearProducto(dto) {
   if (!dto) return null
-  const ofertaActiva = !!dto.oferta
   return {
     idProducto: dto.idProducto,
     nombre: dto.nombre,
@@ -60,11 +59,15 @@ export function mapearProducto(dto) {
     precio: dto.precio,
     categoria: typeof dto.categoria === 'string' ? dto.categoria : dto.categoria?.name ?? '',
     fotoPlato: dto.urlImagen ?? dto.fotoPlato,
-    ofertaActiva,
     oferta: dto.oferta
       ? {
+          idOferta: dto.oferta.idOferta,
+          descuento: dto.oferta.descuento ?? dto.oferta.descuentoPorcentaje,
           descuentoPorcentaje: dto.oferta.descuento ?? dto.oferta.descuentoPorcentaje,
           descripcion: dto.oferta.descripcion,
+          fechaInicio: dto.oferta.fechaInicio,
+          fechaFin: dto.oferta.fechaFin,
+          urlImagen: dto.oferta.urlImagen,
         }
       : undefined,
     ingredientes: dto.ingredientes ?? [],
@@ -101,15 +104,14 @@ export function mapearLineaCarritoAItem(linea) {
     fotoPlato: p.urlImagen ?? p.fotoPlato,
     cantidad: linea.cantidad ?? 1,
     comentarios: linea.observaciones ?? '',
-    ingredientes: p.ingredientes ?? [],
     ingredientesQuitados: (linea.ingredientesAQuitar ?? []).map((i) => i.nombre ?? i),
   }
 }
 
-export function mapearCarritoDtoAItems(carritoDto) {
+/* export function mapearCarritoDtoAItems(carritoDto) {
   if (!carritoDto?.productos) return []
   return carritoDto.productos.map(mapearLineaCarritoAItem)
-}
+} */
 
 /** Texto corto para UI: "Calle 1234" */
 export function nombreDireccionDesdeCampos(calle, numero) {
@@ -290,10 +292,9 @@ export function mapearDireccionUi(direccion, indice) {
 export function precioProductoParaApi(producto) {
   if (!producto) return 0
   const base = Number(producto.precio) || 0
-  const descuento =
-    producto.ofertaActiva && producto.oferta
-      ? (producto.oferta.descuentoPorcentaje ?? 0)
-      : 0
+  const descuento = esProductoOfertaVigente(producto) && producto.oferta
+    ? (producto.oferta.descuento ?? producto.oferta.descuentoPorcentaje ?? 0)
+    : 0
   return precioConDescuento(base, descuento)
 }
 
@@ -316,10 +317,9 @@ export function ingredientesAQuitarParaApi(ingredientesQuitados, producto) {
   return quitados
     .map((entry) => {
       const nombre = typeof entry === 'string' ? entry : entry?.nombre
-      const normalizar = (texto) => String(texto ?? '').trim().toLowerCase()
       const match = catalogo.find(
         (i) =>
-          (nombre && normalizar(i.nombre) === normalizar(nombre)) ||
+          (nombre && i.nombre === nombre) ||
           (entry?.idIngrediente != null && i.idIngrediente === entry.idIngrediente),
       )
       const idIngrediente = match?.idIngrediente ?? entry?.idIngrediente ?? null

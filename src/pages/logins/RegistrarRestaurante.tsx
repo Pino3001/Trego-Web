@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { apiRegistrarRestaurante } from "../../api/apiRegistrarRestaurante.js";
-import { TextInput, type SeguridadPassword } from "../../components/TextInput.js";
+import {
+  TextInput,
+  type SeguridadPassword,
+} from "../../components/TextInput.js";
 import type { DTOLoginRegistro } from "../../data/DTOLoginRegistro.js";
 import Header from "../../components/body/Header.js";
 import TextoDivider from "../../components/TextoDivider.js";
 import OTPInput from "../../components/inicio/OTPInput.js";
 import logo from "../../assets/tregoRestaurante.svg";
-
+import { guardarSesion } from "../../utils/sesion.js";
 
 type AuthStep = "INGRESO" | "VERI_CODIGO" | "LOADING";
 
@@ -41,7 +44,7 @@ export default function RegistrarRestaurante() {
       );
 
       if (result.success && result.login?.token) {
-        localStorage.setItem("jwtToken", result.login.token);
+        guardarSesion(result.login.token, result.login.rol);
         localStorage.setItem("restauranteHabilitado", "false");
         window.dispatchEvent(new Event("trego-sesion-iniciada"));
         navigate("/restaurantes/solicitarAlta");
@@ -163,6 +166,7 @@ export default function RegistrarRestaurante() {
             LogIn
           </button>
         }
+        menuUser={false}
       />
 
       <main className="min-h-[calc(97vh-64px)] flex items-center justify-center bg-gray-50 ">
@@ -216,7 +220,8 @@ export default function RegistrarRestaurante() {
                     Código de verificación
                   </h1>
                   <p className="text-sm text-gray-500 mt-1">
-                    En desarrollo, revisá la consola del backend (no llega por email)
+                    En desarrollo, revisá la consola del backend (no llega por
+                    email)
                   </p>
                   {error ? (
                     <div className="mt-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 flex gap-2">
@@ -276,7 +281,7 @@ export default function RegistrarRestaurante() {
                     shadow-md hover:shadow-md hover:shadow-green-100
                   "
                 >
-                  Iniciar Sesión
+                  Registrarse
                 </button>
               </div>
             )}

@@ -1,4 +1,5 @@
 import type { DTOIngrediente } from "./DTOIngrediente.js";
+import type { DTOProducto } from "./DTOProducto.js";
 import type { DTOProductoSimplificado } from "./DTOProductoSimplificado.js";
 
 export interface DTOProductoPedido {
@@ -7,5 +8,5 @@ export interface DTOProductoPedido {
   observaciones?: string;
   cantidad?: number;
   subtotal?: number;
-  producto?: DTOProductoSimplificado;
+  producto?: DTOProducto;
 }

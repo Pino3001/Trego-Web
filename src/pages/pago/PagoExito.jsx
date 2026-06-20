@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import Header from '../../components/body/Header.js'
-import { useCarrito } from '../../context/CarritoContext.jsx'
+import { useCarrito } from '../../context/CarritoContext'
 import { consultarEstadoPago } from '../../api/pedidosApi.js'
+
 
 export default function PagoExito() {
   const navigate = useNavigate()

@@ -62,6 +62,7 @@ export const ENDPOINTS = {
   DESHABILITAR_PRODUCTO: '/api/productos',
   LISTAR_PEDIDOS: `/api/pedido/listarPedidos`,
   LISTAR_SUBCATEGORIAS: `/api/subcategorias/listar`,
+  LISTAR_PRODUCTOS_OFERTA: '/api/productos/listarProductosOferta',
   CONFIRMAR_PEDIDO: `/api/pedido/confirmar`,
   ACTUALIZAR_ESTADO: `/api/pedido/estado`,
   CANCELAR_PEDIDO: `/api/pedido/reembolsar`,
@@ -69,6 +70,7 @@ export const ENDPOINTS = {
   CERRAR_LOCAL: `/api/restaurantes/cerrarLocal`,
   ACTUALIZAR_CIERRE: `/api/restaurantes/actualizarCierre`,
   CREAR_OFERTA: "/api/restaurantes/ofertas/crear",
+  ACTIVAR_DESACTIVAR_OFERTA: "/api/restaurantes/ofertas/desactivar",
 
   //Registro
   REGISTRAR_RESTAURANTE: `/api/usuarios/registrar-restaurante/solicitar`,
@@ -79,6 +81,9 @@ export const ENDPOINTS = {
   ADMIN_RESTAURANTES_LISTA: '/api/administradores/restaurantes/lista',
   ADMIN_RESTAURANTE_HABILITAR: '/api/administradores/restaurantes/:id/habilitar',
   ADMIN_RESTAURANTE_NO_HABILITAR: '/api/administradores/restaurantes/:id/noHabilitar/:motivo',
+
+  // Administrador — subcategorías
+  SUBCATEGORIA_CREAR: '/api/subcategorias/crear',
 
   // Administrador — clientes
   CLIENTES_TODOS: '/api/clientes',

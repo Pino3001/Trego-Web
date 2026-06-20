@@ -14,6 +14,7 @@ import {
 import type { DTOSubcategoria } from "../../../data/DTOSubcategoria.js";
 import { EnumCategoriaProducto } from "../../../data/EnumCategoriaProducto.js";
 import { EnumTipoProducto } from "../../../data/EnumTipoProducto.js";
+import { useSubCategorias } from "../../../hooks/useSubCategorias.js";
 
 // ─── Tipos ─────────────────────────────────────────────────────
 export interface TipoProducto {
@@ -44,14 +45,14 @@ export default function AltaProducto() {
     cloudUrl: null,
     uploadState: "idle",
   });
-  const [listadoSubcategorias, setListadoSubcategorias] =
-    useState<DTOSubcategoria[]>();
-  const [categoriaProducto, setCategoriaProducto] =
-    useState<EnumCategoriaProducto>();
   const [descripcion, setDescripcion] = useState("");
-  const [subcategoria, setSubcategoria] = useState<
-    DTOSubcategoria | undefined
-  >();
+  const {
+    subcategoriasFiltradas,
+    categoriaFiltro,
+    setCategoriaFiltro,
+    subcategoriaSeleccionada,
+    seleccionarSubcategoria,
+  } = useSubCategorias({ onError: (msg) => setApiError("Error: " + msg) });
 
   // Estados para Plato (con ingredientes)
   const [tiempoPreparacion, setTiempoPreparacion] = useState(0);
@@ -59,28 +60,10 @@ export default function AltaProducto() {
   const [listaIngredientes, setListaIngredientes] = useState<DTOIngrediente[]>(
     [],
   );
-
   // Estados para Combo
   const [productosCombo, setProductosCombo] = useState<DTOProducto[]>([]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    let cancelado = false;
-    const cargarSubcategorias = async () => {
-      try {
-        const subcategorias = await listarSubcategorias();
-        if (!cancelado) setListadoSubcategorias(subcategorias);
-      } catch (error) {
-        if (!cancelado)
-          setApiError(error instanceof Error ? error.message : "Error");
-      }
-    };
-    cargarSubcategorias();
-    return () => {
-      cancelado = true;
-    };
-  }, []);
 
   // Manejador de imagen
   const handleImageChange = (file: File | null) => {
@@ -152,14 +135,23 @@ export default function AltaProducto() {
     if (tipo?.id === 3 && productosCombo.length === 0) {
       errs.combo = "Seleccione al menos un producto para el combo.";
     }
+    if (!tipo) {
+      errs.tipo = "No se selecciono el tipo de Producto";
+    }
+    if (!foto.cloudUrl) {
+      errs.foto = "Foto no cargada correctamente!.";
+    }
+    if (!subcategoriaSeleccionada?.idSubCategoria) {
+      errs.subcategoria = "Sin sub-categoria seleccionada!.";
+    }
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const changeTipo = (x: TipoProducto | undefined) => {
     setTipo(x);
-    setApiError("")
-  }
+    setApiError("");
+  };
 
   const handleSubmit = async () => {
     setApiError(null);
@@ -170,30 +162,18 @@ export default function AltaProducto() {
         categoria: EnumCategoriaProducto.Bebida,
       };
 
-      if (!tipo) {
-        setApiError("Tipo de producto no valido!.");
-        return;
-      }
-      if (!foto.cloudUrl) {
-        setApiError("Foto no cargada correctamente!.");
-        return;
-      }
-      if (!subcategoria?.idSubCategoria) {
-        setApiError("Sin sub-categoria seleccionada!.");
-        return;
-      }
       const data: DTOProducto = {
         nombre: nombre,
         descripcion: descripcion,
         precio: precio,
         subCategoria: subca,
-        urlImagen: foto.cloudUrl,
-        categoria: categoriaProducto ?? EnumCategoriaProducto.Bebida,
-        idSubCategoria: subcategoria.idSubCategoria,
-        tipo: tipo?.label,
+        urlImagen: foto.cloudUrl ?? "",
+        categoria: categoriaFiltro ?? EnumCategoriaProducto.Bebida,
+        idSubCategoria: subcategoriaSeleccionada?.idSubCategoria ?? 0,
+        tipo: tipo?.label ?? EnumTipoProducto.Articulo,
       };
 
-      switch (tipo.label) {
+      switch (tipo?.label) {
         case EnumTipoProducto.Plato:
           ((data.ingredientes = listaIngredientes),
             (data.plato = {
@@ -202,7 +182,10 @@ export default function AltaProducto() {
           break;
         case EnumTipoProducto.Combo:
           data.combo = {
-            productosIncluidosIds: productosCombo.map((p) => p.idProducto ?? 0),
+            productosIncluidos: productosCombo.map((p) => ({
+              id: p.idProducto ?? 0,
+              nombre: p.nombre ?? "",
+            })),
           };
           break;
       }
@@ -219,7 +202,7 @@ export default function AltaProducto() {
     setNombre("");
     setPrecio(0);
     setDescripcion("");
-    setSubcategoria(undefined);
+    seleccionarSubcategoria(undefined);
     setTiempoPreparacion(0);
     setListaIngredientes([]);
     setProductosCombo([]);
@@ -237,6 +220,11 @@ export default function AltaProducto() {
     resetForm();
     setTipo(TIPOS_PRODUCTO[0]); // vuelve al primer tipo
     setStep("FORM");
+  };
+
+  const onChangeCategoria = (categoria: EnumCategoriaProducto | undefined) => {
+    if (!categoria) return;
+    setCategoriaFiltro(categoria);
   };
 
   return (
@@ -308,21 +296,21 @@ export default function AltaProducto() {
                 nombre={nombre}
                 descripcion={descripcion}
                 precio={precio}
-                subcategoria={subcategoria}
+                subcategoria={subcategoriaSeleccionada}
                 tiempoPreparacion={tiempoPreparacion}
                 foto={foto}
                 onChangeNombre={setNombre}
                 onChangeDescripcion={setDescripcion}
                 onChangePrecio={setPrecio}
-                onChangeSubCategoria={setSubcategoria}
+                onChangeSubCategoria={seleccionarSubcategoria}
                 onChangeTiempoPrep={setTiempoPreparacion}
                 onChangeImage={handleImageChange}
                 onChangeListaDeIngredientes={setListaIngredientes}
                 error={errors}
                 onChangeApiError={setApiError}
-                categoria={categoriaProducto}
-                onChangeCategoria={setCategoriaProducto}
-                subcategorias={listadoSubcategorias}
+                categoria={categoriaFiltro}
+                onChangeCategoria={onChangeCategoria}
+                subcategorias={subcategoriasFiltradas}
               />
             )}
 
@@ -331,17 +319,17 @@ export default function AltaProducto() {
                 nombre={nombre}
                 descripcion={descripcion}
                 precio={precio}
-                subcategorias={listadoSubcategorias}
-                subcategoria={subcategoria}
+                subcategorias={subcategoriasFiltradas}
+                subcategoria={subcategoriaSeleccionada}
                 foto={foto}
                 onChangeNombre={setNombre}
                 onChangeDescripcion={setDescripcion}
                 onChangePrecio={setPrecio}
-                onChangeSubCategoria={setSubcategoria}
+                onChangeSubCategoria={seleccionarSubcategoria}
                 onChangeImage={handleImageChange}
                 error={errors}
-                categoria={categoriaProducto}
-                onChangeCategoria={setCategoriaProducto}
+                categoria={categoriaFiltro}
+                onChangeCategoria={onChangeCategoria}
               />
             )}
 
@@ -350,20 +338,20 @@ export default function AltaProducto() {
                 nombre={nombre}
                 descripcion={descripcion}
                 precio={precio}
-                subcategoria={subcategoria}
+                subcategoria={subcategoriaSeleccionada}
                 foto={foto}
                 onChangeNombre={setNombre}
                 onChangeDescripcion={setDescripcion}
                 onChangePrecio={setPrecio}
-                onChangeSubCategoria={setSubcategoria}
+                onChangeSubCategoria={seleccionarSubcategoria}
                 onChangeImage={handleImageChange}
                 productosSeleccionados={productosCombo}
                 onChangeListaProd={setProductosCombo}
                 error={errors}
                 onChangeApiError={setApiError}
-                categoria={categoriaProducto}
-                onChangeCategoria={setCategoriaProducto}
-                subcategorias={listadoSubcategorias}
+                categoria={categoriaFiltro}
+                onChangeCategoria={onChangeCategoria}
+                subcategorias={subcategoriasFiltradas}
               />
             )}
 

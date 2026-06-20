@@ -1,23 +1,35 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
+import { obtenerRestaurantesZona } from '../api/restaurantesApi'
 import {
-  buscarRestaurantes,
-  obtenerRestaurantesZona,
-} from '../api/restaurantesApi'
-
-const FILTROS_INICIALES = {
-  categoria: '',
-  calificacionMin: 0,
-  horarioDesde: '',
-  horarioHasta: '',
-}
+  buscarPlatosEnZona,
+  listarProductosOfertaEnZona,
+} from '../api/productosClienteApi.js'
+import {
+  FILTROS_INICIALES,
+  filtrarOfertasPlatos,
+  filtrarRestaurantes,
+  filtrarResultadosPlato,
+  hayFiltrosActivos,
+  ordenarOfertasPlatos,
+  ordenarRestaurantes,
+  ordenarResultadosPlato,
+} from '../utils/filtrosRestaurantes.js'
 
 export function useRestaurantes() {
-  const [restaurantes, setRestaurantes] = useState([])
+  const [restaurantesZona, setRestaurantesZona] = useState([])
+  const [resultadosPlato, setResultadosPlato] = useState([])
+  const [ofertasZona, setOfertasZona] = useState([])
   const [filtros, setFiltros] = useState(FILTROS_INICIALES)
   const [modoBusqueda, setModoBusqueda] = useState(false)
   const [terminoBusqueda, setTerminoBusqueda] = useState('')
   const [cargando, setCargando] = useState(false)
+  const [cargandoOfertas, setCargandoOfertas] = useState(false)
   const [error, setError] = useState(null)
+
+  const restaurantesZonaRef = useRef(restaurantesZona)
+  const ofertasZonaRef = useRef(ofertasZona)
+  restaurantesZonaRef.current = restaurantesZona
+  ofertasZonaRef.current = ofertasZona
 
   const mensajeErrorAmigable = (e) => {
     const msg = e?.message ?? ''
@@ -33,92 +45,135 @@ export function useRestaurantes() {
     return msg || 'Error al cargar restaurantes'
   }
 
+  const cargarOfertas = useCallback(async (coords, restaurantes = null) => {
+    if (!coords) return
+    setCargandoOfertas(true)
+    try {
+      const base = restaurantes ?? restaurantesZonaRef.current
+      const data = await listarProductosOfertaEnZona(coords, base)
+      setOfertasZona(data)
+    } catch {
+      setOfertasZona([])
+    } finally {
+      setCargandoOfertas(false)
+    }
+  }, [])
+
   const cargarZona = useCallback(
     async (coords) => {
       if (!coords) return
       setCargando(true)
       setError(null)
       setModoBusqueda(false)
+      setTerminoBusqueda('')
+      setResultadosPlato([])
       try {
         const data = await obtenerRestaurantesZona({
           latitud: coords.latitud,
           longitud: coords.longitud,
         })
-        setRestaurantes(data)
+        setRestaurantesZona(data)
+        await cargarOfertas(coords, data)
       } catch (e) {
         setError(mensajeErrorAmigable(e))
-        setRestaurantes([])
+        setRestaurantesZona([])
+        setOfertasZona([])
       } finally {
         setCargando(false)
       }
     },
-    [],
+    [cargarOfertas],
   )
 
-  const buscar = useCallback(async (coords, nombre) => {
-    if (!coords || !nombre.trim()) return
-    setCargando(true)
-    setError(null)
-    setModoBusqueda(true)
-    setTerminoBusqueda(nombre)
-    try {
-      const data = await buscarRestaurantes({
-        latitud: coords.latitud,
-        longitud: coords.longitud,
-        nombre: nombre.trim(),
-      })
-      setRestaurantes(data)
-    } catch (e) {
-      setError(e.message ?? 'Error en la búsqueda')
-      setRestaurantes([])
-    } finally {
-      setCargando(false)
-    }
+  const buscarPlato = useCallback(
+    async (coords, termino) => {
+      if (!coords || !termino.trim()) return
+      setCargando(true)
+      setError(null)
+      setModoBusqueda(true)
+      setTerminoBusqueda(termino.trim())
+
+      try {
+        let base = restaurantesZonaRef.current
+        if (base.length === 0) {
+          base = await obtenerRestaurantesZona({
+            latitud: coords.latitud,
+            longitud: coords.longitud,
+          })
+          setRestaurantesZona(base)
+        }
+
+        const resultados = await buscarPlatosEnZona(base, termino.trim())
+        setResultadosPlato(resultados)
+
+        if (ofertasZonaRef.current.length === 0) {
+          await cargarOfertas(coords, base)
+        }
+      } catch (e) {
+        setError(e.message ?? 'Error en la búsqueda de platos')
+        setResultadosPlato([])
+      } finally {
+        setCargando(false)
+      }
+    },
+    [cargarOfertas],
+  )
+
+  const aplicarFiltros = useCallback((nuevosFiltros) => {
+    setFiltros(nuevosFiltros)
   }, [])
 
-  const aplicarFiltros = useCallback(
-    async (coords, nuevosFiltros) => {
-      setFiltros(nuevosFiltros)
+  const limpiarFiltros = useCallback(async (coords) => {
+    setFiltros({ ...FILTROS_INICIALES })
+    setModoBusqueda(false)
+    setTerminoBusqueda('')
+    setResultadosPlato([])
+    if (coords) {
       await cargarZona(coords)
-    },
-    [cargarZona],
-  )
-
-  const limpiarFiltros = useCallback(
-    async (coords) => {
-      const vacios = { ...FILTROS_INICIALES }
-      setFiltros(vacios)
-      await cargarZona(coords)
-    },
-    [cargarZona],
-  )
+    }
+  }, [cargarZona])
 
   const recargar = useCallback(
     (coords) => {
       if (modoBusqueda && terminoBusqueda) {
-        return buscar(coords, terminoBusqueda)
+        return buscarPlato(coords, terminoBusqueda)
       }
       return cargarZona(coords)
     },
-    [modoBusqueda, terminoBusqueda, buscar, cargarZona],
+    [modoBusqueda, terminoBusqueda, buscarPlato, cargarZona],
   )
+
+  const restaurantes = useMemo(() => {
+    const filtrados = filtrarRestaurantes(restaurantesZona, filtros)
+    return ordenarRestaurantes(filtrados, filtros.ordenamiento)
+  }, [restaurantesZona, filtros])
+
+  const resultadosBusquedaPlato = useMemo(() => {
+    const filtrados = filtrarResultadosPlato(resultadosPlato, filtros)
+    return ordenarResultadosPlato(filtrados, filtros.ordenamiento)
+  }, [resultadosPlato, filtros])
+
+  const mejoresOfertas = useMemo(() => {
+    const filtradas = filtrarOfertasPlatos(ofertasZona, filtros)
+    return ordenarOfertasPlatos(filtradas, filtros.ordenamiento)
+  }, [ofertasZona, filtros])
 
   return {
     restaurantes,
+    resultadosBusquedaPlato,
+    mejoresOfertas,
     filtros,
     cargando,
+    cargandoOfertas,
     error,
     modoBusqueda,
     terminoBusqueda,
     cargarZona,
-    buscar,
+    buscarPlato,
     aplicarFiltros,
     limpiarFiltros,
     recargar,
-    hayFiltrosActivos:
-      !!filtros.categoria ||
-      filtros.calificacionMin > 0 ||
-      !!filtros.horarioDesde ||
-      !!filtros.horarioHasta,
+    setOrdenamiento: (orden) => setFiltros((f) => ({ ...f, ordenamiento: orden })),
+    hayFiltrosActivos: hayFiltrosActivos(filtros),
   }
 }

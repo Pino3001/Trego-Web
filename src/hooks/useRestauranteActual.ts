@@ -23,8 +23,6 @@ export function useRestauranteActual({ onError }: UseRestauranteActualOptions = 
     try {
       const data = await obtenerActual();
       setRestaurante(data);
-      console.log("Viene imagen: ", data.fotoPerfil )
-      console.log("¡Token encontrado!",localStorage.getItem("jwtToken"));
     } catch (e) {
       const mensaje = e instanceof Error ? e.message : 'Error al obtener el restaurante';
       setError(mensaje);

@@ -20,7 +20,7 @@ import {
 } from "../../utils/funcionesFormateo.js";
 import type { DTORestaurante } from "../../data/DTORestaurante.js";
 import { useRestauranteActual } from "../../hooks/useRestauranteActual.js";
-import { CategoriaRestaurante } from "../../data/CategoriaRestaurante.js";
+import { EnumCategoriaRestaurante } from "../../data/CategoriaRestaurante.js";
 import { CATEGORIAS_RESTAURANTE } from "../../constants/categorias.js";
 import type { UploadState } from "../../components/typos/ImageField.js";
 import {
@@ -227,7 +227,7 @@ export default function PerfilRestaurante() {
       fotoPerfil: restaurante?.fotoPerfil ?? "",
       fotoPortada: restaurante?.fotoPortada ?? "",
       descripcion: restaurante?.descripcion ?? "",
-      categoria: restaurante?.categoria ?? CategoriaRestaurante.Otros,
+      categoria: restaurante?.categoria ?? EnumCategoriaRestaurante.Otros,
       radioEntrega: restaurante?.radioEntrega ?? 5,
     });
     setIsEditing(true);
@@ -255,6 +255,7 @@ export default function PerfilRestaurante() {
 
     setIsSaving(true);
     try {
+      console.log("Esto es lo que manda: ", restauranteEdit)
       await modificarRestaurantePerfil(restauranteEdit);
       if (recargar) {
         await recargar();
@@ -423,7 +424,7 @@ export default function PerfilRestaurante() {
                     <div className="flex flex-wrap items-center gap-2 mt-2">
                       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full bg-[#EAF3EE] text-[#1B6B3A] border border-[#1B6B3A] transition-all duration-200">
                         <Tag size={10} />
-                        {categoria ?? CategoriaRestaurante.Otros}
+                        {categoria ?? EnumCategoriaRestaurante.Otros}
                       </span>
 
                       <span
@@ -577,18 +578,18 @@ export default function PerfilRestaurante() {
               </div>
               {!isEditing ? (
                 <p className="text-sm text-slate-700 pl-9">
-                  {restaurante?.categoria ?? CategoriaRestaurante.Otros}
+                  {restaurante?.categoria ?? EnumCategoriaRestaurante.Otros}
                 </p>
               ) : (
                 <div className="pl-9 relative">
                   <select
                     value={
-                      restauranteEdit?.categoria ?? CategoriaRestaurante.Otros
+                      restauranteEdit?.categoria ?? EnumCategoriaRestaurante.Otros
                     }
                     onChange={(e) =>
                       setRestauranteEdit((prev) => ({
                         ...prev,
-                        categoria: e.target.value as CategoriaRestaurante,
+                        categoria: e.target.value as EnumCategoriaRestaurante,
                       }))
                     }
                     className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm text-slate-700 bg-white appearance-none focus:outline-none focus:ring-[3px] focus:ring-[#1B6B3A]/25 cursor-pointer pr-8 transition-shadow"

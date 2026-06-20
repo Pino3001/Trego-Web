@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import ModalBase, { Z_MODAL } from './ModalBase'
-import { useCarrito } from '../../context/CarritoContext'
+import { useCarrito } from '../../context/CarritoContext.js'
 
 function obtenerUrlPago(preferencia) {
   const initPoint = preferencia?.initPoint || preferencia?.init_point || preferencia?.url

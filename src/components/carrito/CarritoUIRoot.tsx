@@ -1,17 +1,13 @@
-import CarritoModal from "./CarritoModal.jsx";
-import DetalleProductoModal from "./DetalleProductoModal.jsx";
+import CarritoModal from "./CarritoModal.js";
+import DetalleProductoModal from "./DetalleProductoModal.js";
 import DireccionEnvioModal from "./DireccionEnvioModal.jsx";
 import PagoModal from "./PagoModal.jsx";
 
-export default function CarritoUIRoot({
-  restauranteAbierto,
-}: {
-  restauranteAbierto?: boolean;
-}) {
+export default function CarritoUIRoot() {
   return (
     <>
       <DetalleProductoModal />
-      <CarritoModal restauranteAbierto={restauranteAbierto} />
+      <CarritoModal />
       <DireccionEnvioModal />
       <PagoModal />
     </>

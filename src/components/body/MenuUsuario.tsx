@@ -1,4 +1,13 @@
-import { Check, ChevronRight, Edit, Key, LogOut, Store, User } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  ClipboardClock,
+  Edit,
+  Key,
+  LogOut,
+  Store,
+  User,
+} from "lucide-react";
 import { DateTimeInput } from "../DateTimeInput.js";
 import { useEffect, useRef, useState } from "react";
 import { getInitials } from "../../utils/funcionesFormateo.js";
@@ -14,11 +23,17 @@ interface MenuUsuarioProps {
   onVerPerfil?: () => void;
   onCambiarContrasenia?: () => void;
   onCerrarSesion: () => void;
-  onToggleRestaurante?: ((horaCierre?: string, horaApertura?: string) => void) | undefined;
+  onToggleRestaurante?:
+    | ((horaCierre?: string, horaApertura?: string) => void)
+    | undefined;
   horaCierre?: string | undefined;
   horaApertura?: string | undefined;
   onChangeHoraCierre?: ((item: string | undefined) => void) | undefined;
   onChangeHoraApertura?: ((item: string | undefined) => void) | undefined;
+  verPerfil?: boolean;
+  cambiarContrasenia?: boolean;
+  verHistorial?: boolean;
+  onChangeHistorial?: () => void;
 }
 // ─── Componente ───────────────────────────────────────────────────────────────
 
@@ -36,6 +51,10 @@ export default function MenuUsuario({
   onChangeHoraCierre,
   onChangeHoraApertura,
   onCambiarContrasenia,
+  verPerfil,
+  cambiarContrasenia,
+  verHistorial,
+  onChangeHistorial,
 }: MenuUsuarioProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,11 +76,11 @@ export default function MenuUsuario({
   }, [horaApertura]);
 
   // Validar antes de intentar abrir
-const handleToggle = () => {
+  const handleToggle = () => {
     setIsEditing(false);
 
     if (restauranteAbierto) {
-      onToggleRestaurante?.(); 
+      onToggleRestaurante?.();
       return;
     }
 
@@ -77,7 +96,7 @@ const handleToggle = () => {
 
     setError(null);
     setErrorApertura(null);
-    
+
     onToggleRestaurante?.(internalHora, internalHoraApertura);
     onChangeHoraCierre?.(internalHora);
     onChangeHoraApertura?.(internalHoraApertura);
@@ -238,11 +257,11 @@ const handleToggle = () => {
           </>
         )}
 
-        {onVerPerfil ? (
+        {verPerfil ? (
           <button
             type="button"
             onClick={onVerPerfil}
-            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-gray-50 transition-colors"
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-red-50 transition-colors"
           >
             <User size={32} className="text-gray-400 shrink-0" />
             <span className="flex-1 text-sm font-medium text-gray-800">
@@ -252,11 +271,11 @@ const handleToggle = () => {
           </button>
         ) : undefined}
 
-        {onCambiarContrasenia ? (
+        {cambiarContrasenia ? (
           <button
             type="button"
             onClick={onCambiarContrasenia}
-            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-gray-50 transition-colors"
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-red-50 transition-colors"
           >
             <Key size={32} className="text-gray-400 shrink-0" />
             <span className="flex-1 text-sm font-medium text-gray-800">
@@ -268,6 +287,19 @@ const handleToggle = () => {
 
         <hr className="border-gray-100 my-1 mx-1" />
 
+        {verHistorial ? (
+          <button
+            type="button"
+            onClick={onChangeHistorial}
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-red-50 transition-colors"
+          >
+            <ClipboardClock size={32} className="text-gray-400 shrink-0" />
+            <span className="text-sm font-medium text-gray-800">
+              Mis Pedidos
+            </span>
+          </button>
+        ) : undefined}
+        
         {/* Cerrar sesión */}
         <button
           type="button"

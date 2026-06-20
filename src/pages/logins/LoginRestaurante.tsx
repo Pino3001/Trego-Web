@@ -7,7 +7,7 @@ import Header from "../../components/body/Header.js";
 import logo from "../../assets/tregoRestaurante.svg";
 import TextoDivider from "../../components/TextoDivider.js";
 import { TextInput } from "../../components/TextInput.js";
-
+import { guardarSesion } from "../../utils/sesion.js";
 
 type AuthStep = "INGRESO" | "LOADING";
 
@@ -55,14 +55,16 @@ export default function LoginRestaurante() {
       const data = await apiAuth.login(loginResponse);
 
       // Guardar el token que te devolvió Spring Boot para tus futuras peticiones
-      localStorage.setItem("jwtToken", data.token);
+      guardarSesion(data.token, data.rol);
 
-      const response = await obtenerActual()
+      const response = await obtenerActual();
+
       // Asumimos que el backend te devuelve este dato (o lo sacas de isNewUser)
       localStorage.setItem(
         "restauranteHabilitado",
         response.habilitado ? "true" : "false",
       );
+      console.log("Token", data.token);
       window.dispatchEvent(new Event("trego-sesion-iniciada"));
 
       if (data.rol === "Restaurante") {
@@ -71,11 +73,10 @@ export default function LoginRestaurante() {
         } else {
           navigate("/restaurantes/solicitarAlta"); // Va a llenar los papeles
         }
-      }else {
+      } else {
         setStep("INGRESO");
         setError("El correo ingresado no pertenece a un Restaurante.");
       }
-
     } catch (err: unknown) {
       setStep("INGRESO");
 
@@ -130,6 +131,7 @@ export default function LoginRestaurante() {
             Registrarse
           </button>
         }
+        menuUser={false}
       />
 
       <main className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gray-50 px-4 py-10">

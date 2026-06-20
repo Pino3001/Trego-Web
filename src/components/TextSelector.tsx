@@ -14,7 +14,8 @@ interface TextSelectProps<T> {
   onSelect: (item: T | undefined) => void;
   selected?: T | undefined;
   mapToItem: (item: T) => SelectItem;
-  className?: string
+  className?: string;
+  error?: string;
 }
 
 export const TextSelector = <T,>({
@@ -24,7 +25,8 @@ export const TextSelector = <T,>({
   onSelect,
   selected = undefined,
   mapToItem,
-  className
+  className,
+  error,
 }: TextSelectProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const [dropdownDir, setDropdownDir] = useState<"down" | "up">("down");
@@ -188,6 +190,7 @@ export const TextSelector = <T,>({
           </ul>,
           document.body,
         )}
+      {error && <p className="text-xs text-red-500 mt-1 px-5">{error}</p>}
     </div>
   );
 };

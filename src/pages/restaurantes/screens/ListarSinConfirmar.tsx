@@ -13,7 +13,7 @@ import { useProductoRestaurante } from "../../../hooks/useProductoRestaurante.js
 import { filtrarPedidosPorProducto } from "../utilitis/funcionesListado.js";
 import type { DTOProducto } from "../../../data/DTOProducto.js";
 import { useFiltrosPedidos } from "../../../hooks/useFiltrosPedidos.js";
-import FiltrosRestaurantes from "../componentes/FiltrosPedidos.js";
+import FiltrosRestaurantes from "../componentes/FiltrosResto.js";
 
 export default function ListarSinConfirmar() {
   const [notification, setNotification] = useState<NotificationState>({
