@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ImageUploadField from "../../../components/ImagenUploadField.js";
 import type { ImageField } from "../../../components/typos/ImageField.js";
 import { TextInputNumber } from "../../../components/TextImputNumber.js";
@@ -11,7 +11,10 @@ import type { DTOProducto } from "../../../data/DTOProducto.js";
 import type { DTOOferta } from "../../../data/DTOOferta.js";
 import ToggleActivar from "../../../components/ToggleActivar.js";
 import type { DTOModificarOfertaRequest } from "../../../data/DTOModificarOfertaRequest.js";
-import { esProductoOfertaVigente } from "../../../utils/productos.js";
+import {
+  guardarOverrideOfertaActiva,
+  resolverOfertaActivaFlag,
+} from "../../../utils/productos.js";
 
 const formatearFechaParaInput = (fechaISO?: string) => {
   if (!fechaISO) return "";
@@ -22,12 +25,14 @@ interface AltaOfertaProps {
   producto?: DTOProducto;
   onCancelar: () => void;
   oferta?: DTOOferta;
+  onOfertaActivaChange?: (idProducto: number, activa: boolean) => void;
 }
 
 export default function AltaOferta({
   producto,
   onCancelar,
   oferta,
+  onOfertaActivaChange,
 }: AltaOfertaProps) {
   const [foto, setFoto] = useState<ImageField>({
     file: null,
@@ -56,7 +61,7 @@ export default function AltaOferta({
     oferta ? oferta.descuento : 0,
   );
   const [habilitar, setHabilitar] = useState<boolean>(
-    producto ? esProductoOfertaVigente(producto) : false,
+    producto ? resolverOfertaActivaFlag(producto) : false,
   );
 
   const precioFinal =
@@ -127,22 +132,18 @@ export default function AltaOferta({
     return Object.keys(newErrors).length === 0;
   };
 
-  useEffect(() => {
-    handleDesactivar();
-  }, [habilitar]);
-
-  const handleDesactivar = async () => {
+  const validarFechasParaActivar = (): Record<string, string> => {
     const newErrors: Record<string, string> = {};
 
-    if (fechaDesde && fechaHasta && fechaDesde > fechaHasta)
+    if (fechaDesde && fechaHasta && fechaDesde > fechaHasta) {
       newErrors.fechaHasta = "La fecha fin debe ser posterior a la de inicio";
+    }
 
     const hoyObj = new Date();
     const hoy = new Date(hoyObj.getTime() - hoyObj.getTimezoneOffset() * 60000)
       .toISOString()
       .split("T")[0]!;
 
-    // Validaciones de Fecha
     if (!fechaDesde) {
       newErrors.fechaDesde = "Ingresá la fecha de inicio";
     } else if (fechaDesde > hoy) {
@@ -155,48 +156,69 @@ export default function AltaOferta({
       newErrors.fechaHasta = "La fecha de fin no puede ser anterior a hoy";
     }
 
-    if (fechaDesde && fechaHasta && fechaDesde > fechaHasta) {
-      newErrors.fechaHasta = "La fecha fin debe ser posterior a la de inicio";
-    }
-    if (Object.keys(newErrors).length === 0) {
-      try {
-        const fechaInicioFormateada = fechaDesde
-          ? `${fechaDesde}T00:00:00`
-          : undefined;
-        const fechaFinFormateada = fechaHasta
-          ? `${fechaHasta}T00:00:00`
-          : undefined;
+    return newErrors;
+  };
 
-        const activarDesactivar: DTOModificarOfertaRequest = {
-          fechaInicio: fechaInicioFormateada ?? "",
-          fechaFin: fechaFinFormateada ?? "",
-          habilitar: habilitar,
-          idProducto: producto?.idProducto ?? 0,
-        };
+  const handleToggleHabilitar = async (activar: boolean) => {
+    const estadoAnterior = habilitar;
+    setHabilitar(activar);
 
-        await activarDesactivarOferta(activarDesactivar);
-
-        setNotificacion({
-          tipo: "exito",
-          mensaje: habilitar
-            ? "¡La oferta se encuentra activa!"
-            : "¡La oferta se encuentra desactivada!",
-        });
-      } catch (error) {
-        console.error("Error al cambiar el estado de la oferta:", error);
-
-        const mensajeError =
-          error instanceof Error
-            ? error.message
-            : "Ocurrió un error inesperado al modificar la oferta.";
-
-        setNotificacion({
-          tipo: "error",
-          mensaje: mensajeError,
-        });
+    if (activar) {
+      const erroresFechas = validarFechasParaActivar();
+      if (Object.keys(erroresFechas).length > 0) {
+        setErrors(erroresFechas);
+        setHabilitar(estadoAnterior);
+        return;
       }
+      setErrors({});
+    } else {
+      setErrors({});
     }
-    setErrors(newErrors);
+
+    const fechaInicioFormateada = fechaDesde
+      ? `${fechaDesde}T00:00:00`
+      : undefined;
+    const fechaFinFormateada = fechaHasta
+      ? `${fechaHasta}T00:00:00`
+      : undefined;
+
+    const idProducto = producto?.idProducto ?? 0;
+
+    try {
+      const activarDesactivar: DTOModificarOfertaRequest = {
+        fechaInicio: fechaInicioFormateada ?? "",
+        fechaFin: fechaFinFormateada ?? "",
+        habilitar: activar,
+        idProducto,
+      };
+
+      await activarDesactivarOferta(activarDesactivar);
+
+      if (idProducto > 0) {
+        guardarOverrideOfertaActiva(idProducto, activar);
+        onOfertaActivaChange?.(idProducto, activar);
+      }
+
+      setNotificacion({
+        tipo: "exito",
+        mensaje: activar
+          ? "¡La oferta se encuentra activa!"
+          : "¡La oferta se encuentra desactivada!",
+      });
+    } catch (error) {
+      console.error("Error al cambiar el estado de la oferta:", error);
+      setHabilitar(estadoAnterior);
+
+      const mensajeError =
+        error instanceof Error
+          ? error.message
+          : "Ocurrió un error inesperado al modificar la oferta.";
+
+      setNotificacion({
+        tipo: "error",
+        mensaje: mensajeError,
+      });
+    }
   };
 
   const handleCrear = async () => {
@@ -275,7 +297,7 @@ export default function AltaOferta({
         {/* Botón Derecha */}
         {oferta && (
           <div className="absolute right-0 top-1/2 -translate-y-1/2">
-            <ToggleActivar value={habilitar} onChange={setHabilitar} />
+            <ToggleActivar value={habilitar} onChange={handleToggleHabilitar} />
           </div>
         )}
       </div>

@@ -1,4 +1,4 @@
-import { obtenerPrecios } from './productos.js'
+import { obtenerPrecios, esProductoOfertaVigente } from './productos.js'
 
 export const OPCIONES_ORDEN = [
   { value: 'calificacion_desc', label: 'Mejor calificación' },
@@ -123,6 +123,7 @@ export function filtrarOfertasPlatos(ofertasZona, filtros) {
     .filter((item) => {
       const id = item.idRestaurante ?? item.producto?.idRestaurante
       if (!id || !item.producto) return false
+      if (!esProductoOfertaVigente(item.producto)) return false
 
       const calificacion = item.calificacionProm ?? 0
       if (filtros.calificacionMin > 0 && calificacion < filtros.calificacionMin) {

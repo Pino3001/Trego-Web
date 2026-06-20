@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { listarProductos } from "../api/apiRestaurante.js";
 import type { DTOProducto } from "../data/DTOProducto.js";
 import {
+  aplicarOverridesOfertaActiva,
   esProductoOfertaVigente,
+  guardarOverrideOfertaActiva,
   productoTieneOferta,
   productosConOferta,
 } from "../utils/productos.js";
@@ -27,7 +29,7 @@ export function useProductoRestaurante({
     setErrorProductos(null);
     try {
       const data = await listarProductos();
-      setProductos(data);
+      setProductos(aplicarOverridesOfertaActiva(data));
     } catch (err) {
       setErrorProductos(
         err instanceof Error ? err.message : "Error al cargar productos",
@@ -56,6 +58,18 @@ export function useProductoRestaurante({
     [],
   );
 
+  const actualizarOfertaActiva = useCallback(
+    (idProducto: number, activa: boolean) => {
+      guardarOverrideOfertaActiva(idProducto, activa);
+      setProductos((prev) =>
+        prev.map((p) =>
+          p.idProducto === idProducto ? { ...p, ofertaActiva: activa } : p,
+        ),
+      );
+    },
+    [],
+  );
+
   return {
     productos,
     productosOfertas,
@@ -67,6 +81,7 @@ export function useProductoRestaurante({
     setOfertasActivas,
     recargarProductos: fetchProductos,
     isProductoOfertaActiva,
+    actualizarOfertaActiva,
   };
 }
 

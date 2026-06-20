@@ -52,13 +52,22 @@ export function mapearRestaurante(dto) {
 
 export function mapearProducto(dto) {
   if (!dto) return null
+  const urlImagen = dto.urlImagen ?? dto.fotoPlato
   return {
     idProducto: dto.idProducto,
     nombre: dto.nombre,
     descripcion: dto.descripcion ?? '',
     precio: dto.precio,
     categoria: typeof dto.categoria === 'string' ? dto.categoria : dto.categoria?.name ?? '',
-    fotoPlato: dto.urlImagen ?? dto.fotoPlato,
+    urlImagen,
+    fotoPlato: urlImagen,
+    tipo: dto.tipo,
+    disponible: dto.disponible,
+    plato: dto.plato,
+    articulo: dto.articulo,
+    combo: dto.combo,
+    idSubCategoria: dto.idSubCategoria,
+    subCategoria: dto.subCategoria,
     oferta: dto.oferta
       ? {
           idOferta: dto.oferta.idOferta,
@@ -72,6 +81,7 @@ export function mapearProducto(dto) {
       : undefined,
     ingredientes: dto.ingredientes ?? [],
     idRestaurante: dto.idRestaurante,
+    ofertaActiva: dto.ofertaActiva,
   }
 }
 

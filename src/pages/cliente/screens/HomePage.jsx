@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import FiltersModal from "../../../components/FiltersModal.jsx";
 import LocationPrompt from "../../../components/LocationPrompt.jsx";
 import EmptyState from "../../../components/EmptyState.jsx";
@@ -16,6 +16,8 @@ import { useRestaurantes } from "../../../hooks/useRestaurantes.js";
 import { useFiltros } from "../../../context/FiltrosContext.js";
 import { useBusqueda } from "../../../context/BusquedaContext.js";
 import { useDebounce } from "../../../hooks/useDebounce.ts";
+import { useCarrito } from "../../../context/CarritoContext.js";
+import { resolverProductoOfertaParaCarrito } from "../../../api/productosClienteApi.js";
 
 export default function HomePage() {
   const geo = useGeolocation(false);
@@ -38,6 +40,9 @@ export default function HomePage() {
     hayFiltrosActivos,
   } = useRestaurantes();
   const { filtrosAbiertos, cerrarFiltros } = useFiltros();
+  const { abrirDetalleProducto, validarRestauranteAbierto } = useCarrito();
+  const [cargandoOfertaSeleccionada, setCargandoOfertaSeleccionada] =
+    useState(false);
 
   const { busqueda, setBusqueda } = useBusqueda({
     placeholder: "Buscar producto o restaurante",
@@ -97,6 +102,32 @@ export default function HomePage() {
   const handleRecargar = () => {
     if (geo.tieneUbicacion) recargar(geo.coords);
   };
+
+  const handleSeleccionarOferta = useCallback(
+    async (oferta) => {
+      if (cargandoOfertaSeleccionada) return;
+      setCargandoOfertaSeleccionada(true);
+      try {
+        const { producto, restaurante } = await resolverProductoOfertaParaCarrito(
+          oferta,
+          { restaurantesZona: restaurantes },
+        );
+        if (!producto) return;
+        if (restaurante) {
+          validarRestauranteAbierto(restaurante.abierto ?? true);
+        }
+        abrirDetalleProducto(producto, restaurante);
+      } finally {
+        setCargandoOfertaSeleccionada(false);
+      }
+    },
+    [
+      abrirDetalleProducto,
+      cargandoOfertaSeleccionada,
+      restaurantes,
+      validarRestauranteAbierto,
+    ],
+  );
 
   const sinUbicacion =
     (geo.ubicacionDenegada || ubicacionCancelada) && !geo.tieneUbicacion;
@@ -212,6 +243,7 @@ export default function HomePage() {
                     <OfertaPlatoCard
                       key={`${oferta.idRestaurante}-${oferta.producto?.idProducto}`}
                       oferta={oferta}
+                      onSeleccionar={handleSeleccionarOferta}
                     />
                   ))}
                 </div>

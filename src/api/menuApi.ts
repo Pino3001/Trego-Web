@@ -76,15 +76,10 @@ export async function obtenerMenuRestaurante(
   }
 
   const data: DTORestaurante = await response.json();
-  const menu: MenuResponse = {
-    productos: data?.productos ?? [],
-    restaurante: data,
-    mensaje: await leerMensajeError(response) ?? ""
-  }
+  const menu = mapearMenuRespuesta(data);
   if (!menu) {
     throw new MenuApiError('Respuesta de menú inválida', 500);
   }
 
-  // Ya incluye restaurante, productos y mensaje
   return menu;
 }

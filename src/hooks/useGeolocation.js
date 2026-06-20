@@ -33,6 +33,10 @@ function guardarUbicacion(coords) {
   }
 }
 
+export function leerCoordsGuardadas() {
+  return leerUbicacionGuardada()
+}
+
 export function leerPrefUbicacion() {
   try {
     const raw = localStorage.getItem(LS_UBICACION_PREF)

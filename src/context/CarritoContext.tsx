@@ -25,6 +25,7 @@ import {
 import { obtenerDireccionesGuardadas } from "../api/usuariosApi.js";
 import { confirmarPedido } from "../api/pedidosApi.js";
 import { armarProductoPedidoRequest } from "../api/mapeadores.js";
+import { mensajeAmigableApi } from "../utils/mensajesError.js";
 
 function sonMismosIngredientes(
   a: DTOIngrediente[] | undefined,
@@ -309,8 +310,24 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
     producto: DTOProducto,
     restauranteInfo?: DTORestaurante | null,
   ) {
+    if (restauranteInfo?.idRestaurante) {
+      const id = Number(restauranteInfo.idRestaurante);
+      setRestaurante((prev) => {
+        if (prev?.idRestaurante != null && Number(prev.idRestaurante) === id) {
+          return prev;
+        }
+        return {
+          idRestaurante: id,
+          nombre: restauranteInfo.nombre ?? "",
+          abierto: restauranteInfo.abierto ?? true,
+          horaApertura: restauranteInfo.horaApertura ?? null,
+          horaCierre: restauranteInfo.horaCierre ?? null,
+        };
+      });
+    }
     setProductoEnDetalle(producto);
     setRestauranteDelDetalle(restauranteInfo ?? null);
+    setMensajeCarrito(null);
   }
 
   function cerrarDetalleProducto() {
@@ -349,25 +366,32 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
     setDireccionSeleccionada(null);
   }
 
-  function asegurarRestaurante(
+  async function asegurarRestaurante(
     restauranteInfo?: DTORestaurante | null,
-  ): boolean {
+  ): Promise<boolean> {
     if (!restauranteInfo?.idRestaurante) return true;
 
-    const id = restauranteInfo.idRestaurante;
+    const id = Number(restauranteInfo.idRestaurante);
 
     if (!restaurante?.idRestaurante) {
       setRestaurante({
         idRestaurante: id,
         nombre: restauranteInfo?.nombre ?? "",
-        abierto: restauranteInfo?.abierto ?? false,
+        abierto: restauranteInfo?.abierto ?? true,
+        horaApertura: restauranteInfo.horaApertura ?? null,
+        horaCierre: restauranteInfo.horaCierre ?? null,
       });
       return true;
     }
-    if (restaurante.idRestaurante === id) return true;
+    if (Number(restaurante.idRestaurante) === id) return true;
 
     if (tieneSesion()) {
-      eliminarCarritoCompleto().catch(() => {});
+      invalidarCargasCarritoPendientes();
+      try {
+        await eliminarCarritoCompleto();
+      } catch {
+        // Si falla el DELETE seguimos con carrito local limpio
+      }
     }
     setItems([]);
     setCarritoDto(null);
@@ -375,7 +399,9 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
     setRestaurante({
       idRestaurante: id,
       nombre: restauranteInfo?.nombre ?? "",
-      abierto: restauranteInfo?.abierto ?? false,
+      abierto: restauranteInfo?.abierto ?? true,
+      horaApertura: restauranteInfo.horaApertura ?? null,
+      horaCierre: restauranteInfo.horaCierre ?? null,
     });
     setMensajeCarrito("Se vació el carrito porque cambiaste de restaurante.");
     return true;
@@ -394,7 +420,7 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
     const producto = pedido.producto;
 
     try {
-      asegurarRestaurante(restauranteInfo);
+      await asegurarRestaurante(restauranteInfo);
     } catch (error) {
       console.error("Error en asegurarRestaurante:", error);
       setMensajeCarrito(
@@ -419,16 +445,26 @@ export function CarritoProvider({ children }: CarritoProviderProps) {
           ingredientesQuitados: pedido.ingredientesAQuitar,
         });
         const dto = await agregarProductoAlCarritoApi(body);
+        if (!dto) {
+          setMensajeCarrito("No se pudo agregar al carrito");
+          return false;
+        }
+        // Evita que un GET en vuelo (carga inicial) pise el POST recién hecho
+        invalidarCargasCarritoPendientes();
         aplicarCarritoDto(dto);
         if (restauranteInfo && idRestaurante) {
           setRestaurante({
-            idRestaurante: idRestaurante,
+            idRestaurante: Number(idRestaurante),
             nombre: restauranteInfo.nombre ?? "",
-            abierto: restauranteInfo.abierto ?? false,
+            abierto: restauranteInfo.abierto ?? true,
+            horaApertura: restauranteInfo.horaApertura ?? null,
+            horaCierre: restauranteInfo.horaCierre ?? null,
           });
         }
       } catch (err: any) {
-        setMensajeCarrito(err.message ?? "No se pudo agregar al carrito");
+        setMensajeCarrito(
+          mensajeAmigableApi(err.message ?? "No se pudo agregar al carrito"),
+        );
         return false;
       }
     } else {
