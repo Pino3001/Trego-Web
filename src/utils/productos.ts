@@ -28,6 +28,81 @@ function toDateString(
   }
 }
 
+const OFERTA_ACTIVA_OVERRIDES_KEY = "trego_oferta_activa_overrides";
+
+function leerOverridesOfertaActiva(): Record<number, boolean> {
+  try {
+    const raw = sessionStorage.getItem(OFERTA_ACTIVA_OVERRIDES_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, boolean>;
+    return Object.fromEntries(
+      Object.entries(parsed).map(([k, v]) => [Number(k), v]),
+    );
+  } catch {
+    return {};
+  }
+}
+
+/** Persiste ofertaActiva cuando el back no la devuelve en el JSON. */
+export function guardarOverrideOfertaActiva(
+  idProducto: number,
+  activa: boolean,
+): void {
+  const overrides = leerOverridesOfertaActiva();
+  overrides[idProducto] = activa;
+  sessionStorage.setItem(
+    OFERTA_ACTIVA_OVERRIDES_KEY,
+    JSON.stringify(overrides),
+  );
+}
+
+/** Aplica overrides de sesión sobre productos del API. */
+export function aplicarOverridesOfertaActiva(
+  productos: DTOProducto[],
+): DTOProducto[] {
+  const overrides = leerOverridesOfertaActiva();
+  return (productos ?? []).map((p) => {
+    const id = p.idProducto;
+    if (id != null && id in overrides) {
+      return { ...p, ofertaActiva: overrides[id] as boolean };
+    }
+    return p;
+  });
+}
+
+/** Flag habilitada por el restaurante. Solo true si el producto lo indica explícitamente. */
+export function resolverOfertaActivaFlag(
+  producto: DTOProducto | null | undefined,
+): boolean {
+  if (!producto?.oferta) return false;
+  return producto.ofertaActiva === true;
+}
+
+/**
+ * Quita datos de oferta en productos que no están activos para el cliente.
+ * idsOfertaActiva: productos confirmados por listarProductosOferta (oferta_activa en BD).
+ */
+export function sanitizarOfertasCliente(
+  productos: DTOProducto[],
+  idsOfertaActiva: ReadonlySet<number> = new Set(),
+): DTOProducto[] {
+  return (productos ?? []).map((p) => {
+    if (!p.oferta) return p;
+
+    const id = p.idProducto;
+    const activa =
+      p.ofertaActiva === true ||
+      (id != null && idsOfertaActiva.has(id));
+
+    if (!activa || !ofertaVigentePorFechas(p.oferta)) {
+      const { oferta: _oferta, ...rest } = p;
+      return { ...rest, ofertaActiva: false };
+    }
+
+    return { ...p, ofertaActiva: true };
+  });
+}
+
 /** Oferta dentro del rango de fechas (inclusive). No depende de ofertaActiva del backend. */
 export function ofertaVigentePorFechas(
   oferta: DTOProducto["oferta"],
@@ -42,11 +117,12 @@ export function ofertaVigentePorFechas(
   return hoy >= inicio && hoy <= fin;
 }
 
-/** Producto con oferta vigente hoy según fechas del objeto oferta. */
+/** Producto con oferta vigente hoy: habilitada y dentro del rango de fechas. */
 export function esProductoOfertaVigente(
   producto: DTOProducto | null | undefined,
 ): boolean {
   if (!producto?.oferta) return false;
+  if (!resolverOfertaActivaFlag(producto)) return false;
   return ofertaVigentePorFechas(producto.oferta);
 }
 

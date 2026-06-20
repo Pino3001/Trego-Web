@@ -25,6 +25,7 @@ export default function ListarOfertas() {
     recargarProductos,
     ofertasActivas,
     setOfertasActivas,
+    actualizarOfertaActiva,
     isProductoOfertaActiva,
   } = useProductoRestaurante({
     soloOfertasInicial: true,
@@ -72,6 +73,7 @@ export default function ListarOfertas() {
             setProductoSelect(undefined);
             recargarProductos();
           }}
+          onOfertaActivaChange={actualizarOfertaActiva}
           oferta={productoSelect.oferta}
         />
       );

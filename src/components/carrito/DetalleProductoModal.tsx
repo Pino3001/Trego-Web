@@ -24,6 +24,8 @@ export default function DetalleProductoModal(): React.JSX.Element {
     cerrarDetalleProducto,
     agregarProductoAlCarrito,
     modalSuperior,
+    mensajeCarrito,
+    setMensajeCarrito,
   } = useCarrito();
 
   const abierto = !!productoEnDetalle;
@@ -36,15 +38,20 @@ export default function DetalleProductoModal(): React.JSX.Element {
   const [errorIngredientes, setErrorIngredientes] = useState<string | null>(
     null,
   );
+  const [agregando, setAgregando] = useState(false);
 
   const ingredientes = useMemo(() => obtenerIngredientes(producto), [producto]);
+  const mostrarIngredientes =
+    producto?.tipo === EnumTipoProducto.Plato || ingredientes.length > 0;
 
   useEffect(() => {
     setQuitados([]);
     setErrorIngredientes(null);
     setCantidad(1);
     setComentarios("");
-  }, [producto?.idProducto]);
+    setAgregando(false);
+    setMensajeCarrito(null);
+  }, [producto?.idProducto, setMensajeCarrito]);
 
   const MSG_TODOS_INGREDIENTES =
     "No podés quitar todos los ingredientes. Dejá al menos uno en el plato.";
@@ -72,7 +79,7 @@ export default function DetalleProductoModal(): React.JSX.Element {
   }
 
   async function agregar(): Promise<void> {
-    if (!producto) return;
+    if (!producto || agregando) return;
     if (ingredientes.length > 0 && quitados.length >= ingredientes.length) {
       setErrorIngredientes(MSG_TODOS_INGREDIENTES);
       return;
@@ -95,11 +102,17 @@ export default function DetalleProductoModal(): React.JSX.Element {
       producto,
     };
 
-    const ok = await agregarProductoAlCarrito(
-      productoPedido,
-      restauranteDelDetalle,
-    );
-    if (ok) cerrar();
+    setAgregando(true);
+    setMensajeCarrito(null);
+    try {
+      const ok = await agregarProductoAlCarrito(
+        productoPedido,
+        restauranteDelDetalle,
+      );
+      if (ok) cerrar();
+    } finally {
+      setAgregando(false);
+    }
   }
 
   return (
@@ -177,7 +190,7 @@ export default function DetalleProductoModal(): React.JSX.Element {
             </div>
           </div>
 
-          {producto?.tipo === EnumTipoProducto.Plato && (
+          {mostrarIngredientes && (
             <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
               <p className="text-[12px] font-extrabold text-gray-800 uppercase tracking-wide">
                 Ingredientes
@@ -258,13 +271,20 @@ export default function DetalleProductoModal(): React.JSX.Element {
           </div>
         </div>
 
+        {mensajeCarrito && (
+          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-medium text-red-700">
+            {mensajeCarrito}
+          </p>
+        )}
+
         <div className="mt-5">
           <button
             type="button"
+            disabled={agregando}
             onClick={() => void agregar()}
-            className="w-full rounded-full bg-trego-orange py-3.5 text-[14px] font-extrabold text-white shadow-md hover:bg-orange-600 active:scale-[0.99] transition-all"
+            className="w-full rounded-full bg-trego-orange py-3.5 text-[14px] font-extrabold text-white shadow-md hover:bg-orange-600 active:scale-[0.99] transition-all disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Agregar al Carrito
+            {agregando ? "Agregando…" : "Agregar al Carrito"}
           </button>
         </div>
       </div>

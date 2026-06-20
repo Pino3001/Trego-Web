@@ -2,6 +2,7 @@ import type { DTOCarrito } from "../data/DTOCarito.js";
 import type { DTOProductoPedido } from "../data/DTOProductoPedido.js";
 import { ENDPOINTS } from "./endpoints.js";
 import { fetchConAuth } from "./header/fetchConAuth.js";
+import { mensajeAmigableApi } from "../utils/mensajesError.js";
 
 async function leerJson(response: any) {
   const text = await response.text();
@@ -14,13 +15,13 @@ async function leerJson(response: any) {
 }
 
 async function manejarError(response: Response) {
-  let mensaje = response.statusText;
+  let body = "";
   try {
-    const body = await response.text();
-    // Si el backend devuelve un mensaje JSON o texto plano, lo usamos
-    if (body) mensaje = body;
-  } catch {}
-  throw new Error(`Error ${response.status}: ${mensaje}`);
+    body = await response.text();
+  } catch {
+    // ignore
+  }
+  throw new Error(mensajeAmigableApi(body || response.statusText, response.status));
 }
 
 export async function obtenerCarrito() {
