@@ -16,7 +16,7 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`hidden md:flex flex-col w-64 shrink-0 border-r border-${colorClass} bg-white pt-8 px-4 gap-6`}
+      className={`hidden md:flex flex-col w-64 shrink-0 min-h-0 h-full overflow-y-auto border-r border-${colorClass} bg-white pt-8 px-4 pb-6 gap-6`}
     >
       {secciones.map(({ section, items }) => (
         <div key={section} className="flex flex-col gap-1">
