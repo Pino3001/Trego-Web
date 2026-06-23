@@ -88,6 +88,10 @@ export const ENDPOINTS = {
   // Administrador — clientes
   CLIENTES_TODOS: '/api/clientes',
 
+  // Administrador — activación / desactivación de cuentas
+  ADMIN_USUARIO_HABILITAR_DESHABILITAR:
+    '/api/administradores/HabilitarDeshabilitar/:id/:habilitar',
+
   // Administrador — alta de administradores
   ADMIN_CREAR_ADMINISTRADOR: '/api/administradores/CrearAdministrador',
 }
