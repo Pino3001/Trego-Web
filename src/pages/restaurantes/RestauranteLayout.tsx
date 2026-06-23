@@ -82,6 +82,7 @@ export default function RestauranteLayout() {
   const [horaApertura, setHoraApertura] = useState<string | undefined>(
     undefined,
   );
+  const [cierreProgramado, setCierreProgramado] = useState<string | null>(null);
   const [isLoadingToggle, setIsLoadingToggle] = useState(false);
   const [cambio, setCambio] = useState<boolean>(false);
   const [mostrarAvisoCierre, setMostrarAvisoCierre] = useState(false);
@@ -141,6 +142,7 @@ export default function RestauranteLayout() {
       try {
         const data = await obtenerActual();
         setRestauranteAbierto(data.abierto ?? false);
+        setCierreProgramado(data.cierreProgramado ?? null);
         if (data.horaCierre) {
           const horaSinSegundos = data.horaCierre.slice(0, 5);
           const horaAperturaSinSegundos = data.horaApertura?.slice(0, 5);
@@ -180,6 +182,7 @@ export default function RestauranteLayout() {
       if (restauranteAbierto) {
         await cerrarLocal();
         setRestauranteAbierto(false);
+        setCierreProgramado(null);
       } else {
         const hora: DTOAbrirCerrarLocalRequest = {
           horaApertura: aperturaEfectiva ?? "", // 👇 Usamos la efectiva aquí
@@ -191,6 +194,7 @@ export default function RestauranteLayout() {
         // Sincronizamos el estado de React con lo que ingresó el usuario
         if (horaDesdeMenu !== undefined) setHoraCierre(horaDesdeMenu);
         if (aperturaDesdeMenu !== undefined) setHoraApertura(aperturaDesdeMenu);
+        setCambio(true);
       }
     } catch (error) {
       console.error("Error al alternar estado:", error);
@@ -207,6 +211,7 @@ export default function RestauranteLayout() {
     if (restauranteAbierto && nuevaHora && token && isHabilitado) {
       try {
         await actualizarHoraCierre(nuevaHora);
+        setCambio(true);
       } catch (error) {
         console.error("Error al actualizar la hora de cierre:", error);
       }
@@ -237,29 +242,19 @@ export default function RestauranteLayout() {
   };
 
   useEffect(() => {
-    if (!restauranteAbierto || !horaCierre) {
+    if (!restauranteAbierto || !cierreProgramado) {
       setMostrarAvisoCierre(false);
       setTiempoRestante(null);
       return;
     }
 
+    // El backend persiste cierreProgramado como instante absoluto
     const calcularRestante = () => {
-      const partes = horaCierre.split(":");
-      if (partes.length !== 2) return null;
-      const h = Number(partes[0]);
-      const m = Number(partes[1]);
-      if (isNaN(h) || isNaN(m)) return null;
-
-      const ahora = new Date();
-      const cierreHoy = new Date(ahora);
-      cierreHoy.setHours(h, m, 0, 0);
-
-      if (cierreHoy.getTime() < ahora.getTime()) {
-        cierreHoy.setDate(cierreHoy.getDate() + 1);
-      }
+      const cierre = new Date(cierreProgramado);
+      if (isNaN(cierre.getTime())) return null;
 
       const diffSegundos = Math.floor(
-        (cierreHoy.getTime() - ahora.getTime()) / 1000,
+        (cierre.getTime() - Date.now()) / 1000,
       );
       return diffSegundos;
     };
@@ -306,11 +301,11 @@ export default function RestauranteLayout() {
     return () => {
       if (intervalo) clearInterval(intervalo);
     };
-  }, [restauranteAbierto, horaCierre, avisoDescartado]);
+  }, [restauranteAbierto, cierreProgramado, avisoDescartado]);
 
   useEffect(() => {
     setAvisoDescartado(false);
-  }, [restauranteAbierto, horaCierre]);
+  }, [restauranteAbierto, cierreProgramado]);
 
   useEffect(() => {
     setMenuNavegacionAbierto(false);
