@@ -1,4 +1,4 @@
-export enum CategoriaRestaurante {
+export enum EnumCategoriaRestaurante {
   Parrillada = "Parrillada",
   Vegano = "Vegano",
   Pizza = "Pizza",
@@ -11,15 +11,15 @@ export enum CategoriaRestaurante {
   Otros = "Otros",
 }
 
-export const CATEGORIA_RESTAURANTE: CategoriaRestaurante[] = [
-  CategoriaRestaurante.Parrillada,
-  CategoriaRestaurante.Vegano,
-  CategoriaRestaurante.Pizza,
-  CategoriaRestaurante.ComidaRapida,
-  CategoriaRestaurante.Postres,
-  CategoriaRestaurante.Rotiseria,
-  CategoriaRestaurante.Heladeria,
-  CategoriaRestaurante.Chiveteria,
-  CategoriaRestaurante.Panaderia,
-  CategoriaRestaurante.Otros,
+export const CATEGORIA_RESTAURANTE: EnumCategoriaRestaurante[] = [
+  EnumCategoriaRestaurante.Parrillada,
+  EnumCategoriaRestaurante.Vegano,
+  EnumCategoriaRestaurante.Pizza,
+  EnumCategoriaRestaurante.ComidaRapida,
+  EnumCategoriaRestaurante.Postres,
+  EnumCategoriaRestaurante.Rotiseria,
+  EnumCategoriaRestaurante.Heladeria,
+  EnumCategoriaRestaurante.Chiveteria,
+  EnumCategoriaRestaurante.Panaderia,
+  EnumCategoriaRestaurante.Otros,
 ];

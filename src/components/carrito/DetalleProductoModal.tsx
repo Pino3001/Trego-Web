@@ -8,10 +8,7 @@ import { EnumTipoProducto } from "../../data/EnumTipoProducto.js";
 import { DetalleCombo } from "./DetalleCombo.js";
 import { obtenerPrecios } from "../../utils/productos.js";
 
-// --- Funciones de Utilidad ---
-
 function obtenerIngredientes(producto: DTOProducto | null): string[] {
-  console.log("Ingredientes: ", producto?.ingredientes);
   if (producto?.ingredientes?.length) {
     return producto.ingredientes
       .map((i) => (typeof i === "string" ? i : i.nombre))
@@ -20,8 +17,6 @@ function obtenerIngredientes(producto: DTOProducto | null): string[] {
   return [];
 }
 
-// --- Componente Principal ---
-
 export default function DetalleProductoModal(): React.JSX.Element {
   const {
     productoEnDetalle,
@@ -29,66 +24,51 @@ export default function DetalleProductoModal(): React.JSX.Element {
     cerrarDetalleProducto,
     agregarProductoAlCarrito,
     modalSuperior,
+    mensajeCarrito,
+    setMensajeCarrito,
   } = useCarrito();
 
   const abierto = !!productoEnDetalle;
   const producto = productoEnDetalle;
-  const { tieneOferta, conDescuento, original } = obtenerPrecios(
-    producto ?? {},
-  );
+  const { conDescuento } = obtenerPrecios(producto ?? {});
 
-  // Estados estrictamente tipados
   const [cantidad, setCantidad] = useState<number>(1);
   const [comentarios, setComentarios] = useState<string>("");
   const [quitados, setQuitados] = useState<string[]>([]);
-  const [errorIngredientes, setErrorIngredientes] = useState<string | null>(
-    null,
-  );
+  const [agregando, setAgregando] = useState(false);
 
   const ingredientes = useMemo(() => obtenerIngredientes(producto), [producto]);
+  const mostrarIngredientes =
+    producto?.tipo === EnumTipoProducto.Plato || ingredientes.length > 0;
 
   useEffect(() => {
     setQuitados([]);
-    setErrorIngredientes(null);
     setCantidad(1);
     setComentarios("");
-  }, [producto?.idProducto]);
-
-  const MSG_TODOS_INGREDIENTES =
-    "No podés quitar todos los ingredientes. Dejá al menos uno en el plato.";
+    setAgregando(false);
+    setMensajeCarrito(null);
+  }, [producto?.idProducto, setMensajeCarrito]);
 
   function toggleQuitado(nombre: string): void {
-    if (quitados.includes(nombre)) {
-      setQuitados((prev) => prev.filter((x) => x !== nombre));
-      setErrorIngredientes(null);
-      return;
-    }
-    if (ingredientes.length > 0 && quitados.length + 1 >= ingredientes.length) {
-      setErrorIngredientes(MSG_TODOS_INGREDIENTES);
-      return;
-    }
-    setQuitados((prev) => [...prev, nombre]);
-    setErrorIngredientes(null);
+    setQuitados((prev) =>
+      prev.includes(nombre)
+        ? prev.filter((x) => x !== nombre)
+        : [...prev, nombre],
+    );
   }
 
   function cerrar(): void {
     setCantidad(1);
     setComentarios("");
     setQuitados([]);
-    setErrorIngredientes(null);
     cerrarDetalleProducto();
   }
 
-  function agregar(): void {
-    if (!producto) return;
-    if (ingredientes.length > 0 && quitados.length >= ingredientes.length) {
-      setErrorIngredientes(MSG_TODOS_INGREDIENTES);
-      return;
-    }
+  async function agregar(): Promise<void> {
+    if (!producto || agregando) return;
 
     const idRestauranteActual =
-      producto?.idRestaurante ||
-      restauranteDelDetalle?.idRestaurante ||
+      producto.idRestaurante ||
       restauranteDelDetalle?.idRestaurante ||
       0;
 
@@ -98,14 +78,23 @@ export default function DetalleProductoModal(): React.JSX.Element {
     }));
 
     const productoPedido: DTOProductoPedido = {
-      cantidad: cantidad,
+      cantidad,
       ingredientesAQuitar: ingredientesObjetos,
       observaciones: comentarios,
-      producto: producto,
+      producto,
     };
 
-    agregarProductoAlCarrito(productoPedido, restauranteDelDetalle);
-    cerrar();
+    setAgregando(true);
+    setMensajeCarrito(null);
+    try {
+      const ok = await agregarProductoAlCarrito(
+        productoPedido,
+        restauranteDelDetalle,
+      );
+      if (ok) cerrar();
+    } finally {
+      setAgregando(false);
+    }
   }
 
   return (
@@ -183,7 +172,7 @@ export default function DetalleProductoModal(): React.JSX.Element {
             </div>
           </div>
 
-          {producto?.tipo === EnumTipoProducto.Plato && (
+          {mostrarIngredientes && (
             <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
               <p className="text-[12px] font-extrabold text-gray-800 uppercase tracking-wide">
                 Ingredientes
@@ -195,12 +184,6 @@ export default function DetalleProductoModal(): React.JSX.Element {
               ) : (
                 <p className="mt-1 text-[12px] text-gray-400">
                   Tocá los que no querés en tu plato.
-                </p>
-              )}
-
-              {errorIngredientes && (
-                <p className="mt-2 rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-[12px] font-bold text-orange-800">
-                  {errorIngredientes}
                 </p>
               )}
 
@@ -264,13 +247,20 @@ export default function DetalleProductoModal(): React.JSX.Element {
           </div>
         </div>
 
+        {mensajeCarrito && (
+          <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[12px] font-medium text-red-700">
+            {mensajeCarrito}
+          </p>
+        )}
+
         <div className="mt-5">
           <button
             type="button"
-            onClick={agregar}
-            className="w-full rounded-full bg-trego-orange py-3.5 text-[14px] font-extrabold text-white shadow-md hover:bg-orange-600 active:scale-[0.99] transition-all"
+            disabled={agregando}
+            onClick={() => void agregar()}
+            className="w-full rounded-full bg-trego-orange py-3.5 text-[14px] font-extrabold text-white shadow-md hover:bg-orange-600 active:scale-[0.99] transition-all disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Agregar al Carrito
+            {agregando ? "Agregando…" : "Agregar al Carrito"}
           </button>
         </div>
       </div>

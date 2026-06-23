@@ -104,7 +104,7 @@ export default function RecuperarContraseñaPage({
 
   return (
     <>
-      <Header tipoUser={tipo} onLogout={() => navigate(cfg.loginPath)} />
+      <Header tipoUser={tipo} onLogout={() => navigate(cfg.loginPath)} menuUser={false}/>
 
       <main className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-gray-50 px-4 py-10">
         <div className="flex w-full max-w-4xl rounded-3xl mb-5 overflow-hidden shadow-2xl shadow-green-100 bg-white">

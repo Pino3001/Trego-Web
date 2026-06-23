@@ -1,72 +1,92 @@
-import { useEffect, useMemo, useState } from 'react'
-import {
-  obtenerNombresIngredientes,
-  toggleIngredienteQuitado,
-  validarIngredientesQuitados,
-} from './ingredientesProducto.js'
+import { useEffect, useMemo, useState } from "react";
+import type { DTOProductoPedido } from "../../data/DTOProductoPedido.js";
+import type { DTOIngrediente } from "../../data/DTOIngrediente.js";
+import { obtenerPrecios, precioConDescuento } from "../../utils/productos.js";
 
-function formatearMoneda(n) {
-  return `${Number(n) || 0}$`
+function formatearMoneda(n: number) {
+  return `${Number(n) || 0}$`;
 }
 
-export default function EditorItemCarrito({ item, onSave, onCancel, guardando = false }) {
-  const [cantidad, setCantidad] = useState(item?.cantidad ?? 1)
-  const [comentarios, setComentarios] = useState(item?.comentarios ?? '')
-  const [quitados, setQuitados] = useState(item?.ingredientesQuitados ?? [])
-  const [errorIngredientes, setErrorIngredientes] = useState(null)
-  const [errorGuardar, setErrorGuardar] = useState(null)
-
-  const ingredientes = useMemo(() => obtenerNombresIngredientes(item), [item])
+interface EditorItemCarritoProps {
+  item?: DTOProductoPedido;
+  onSave: (item: DTOProductoPedido) => void;
+  onCancel?: () => void;
+  guardando?: boolean;
+}
+export default function EditorItemCarrito({
+  item,
+  onSave,
+  onCancel,
+  guardando = false,
+}: EditorItemCarritoProps) {
+  const [cantidad, setCantidad] = useState<number>(item?.cantidad ?? 1);
+  const [comentarios, setComentarios] = useState<string>(
+    item?.observaciones ?? "",
+  );
+  const [quitados, setQuitados] = useState<DTOIngrediente[]>(
+    item?.ingredientesAQuitar ?? [],
+  );
+  const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
+  const { conDescuento } = obtenerPrecios(item?.producto ?? {});
+  const ingredientesProducto = item?.producto?.ingredientes ?? [];
 
   useEffect(() => {
-    setCantidad(item?.cantidad ?? 1)
-    setComentarios(item?.comentarios ?? '')
-    setQuitados(item?.ingredientesQuitados ?? [])
-    setErrorIngredientes(null)
-    setErrorGuardar(null)
-  }, [item?.idProducto])
+    setCantidad(item?.cantidad ?? 1);
+    setComentarios(item?.observaciones ?? "");
+    setQuitados(item?.ingredientesAQuitar ?? []);
+    setErrorGuardar(null);
+  }, [item?.producto?.idProducto]);
 
-  function toggleQuitado(nombre) {
-    const result = toggleIngredienteQuitado(ingredientes, quitados, nombre)
-    setQuitados(result.quitados)
-    setErrorIngredientes(result.error)
+  function toggleQuitado(ing: DTOIngrediente) {
+    setQuitados((prev) => {
+      const yaEstaQuitado = prev.some(
+        (q) => q.idIngrediente === ing.idIngrediente,
+      );
+
+      // Si ya está en la lista de quitados, lo removemos (lo volvemos a agregar al plato)
+      if (yaEstaQuitado) {
+        return prev.filter((q) => q.idIngrediente !== ing.idIngrediente);
+      }
+
+      // Si no está, lo agregamos a la lista de quitados
+      return [...prev, ing];
+    });
   }
 
-  async function guardar() {
-    const errorIng = validarIngredientesQuitados(ingredientes, quitados)
-    if (errorIng) {
-      setErrorIngredientes(errorIng)
-      return
-    }
-    setErrorGuardar(null)
+  function guardar() {
     try {
-      await onSave({
-        cantidad,
-        comentarios,
-        ingredientesQuitados: quitados,
-      })
+      const result: DTOProductoPedido = {
+        cantidad: cantidad,
+        ingredientesAQuitar: quitados,
+        observaciones: comentarios,
+      };
+      onSave(result);
     } catch (err) {
       setErrorGuardar(
-        err instanceof Error ? err.message : 'No se pudo guardar los cambios',
-      )
+        err instanceof Error ? err.message : "No se pudo guardar los cambios",
+      );
     }
   }
 
-  if (!item) return null
+  if (!item) return null;
 
   return (
     <div className="rounded-2xl border border-orange-200 bg-white p-4 shadow-sm">
       <div className="flex items-start gap-3">
-        {item.fotoPlato && (
+        {item.producto && (
           <img
-            src={item.fotoPlato}
-            alt={item.nombre}
+            src={item.producto.urlImagen}
+            alt={item.producto.nombre}
             className="h-14 w-14 shrink-0 rounded-xl object-cover bg-gray-200"
           />
         )}
         <div className="min-w-0 flex-1">
-          <p className="text-[12px] font-extrabold text-gray-800">Editar producto</p>
-          <p className="truncate text-[13px] font-bold text-gray-900">{item.nombre}</p>
+          <p className="text-[12px] font-extrabold text-gray-800">
+            Editar producto
+          </p>
+          <p className="truncate text-[13px] font-bold text-gray-900">
+            {item.producto?.nombre}
+          </p>
         </div>
       </div>
 
@@ -82,7 +102,7 @@ export default function EditorItemCarrito({ item, onSave, onCancel, guardando = 
             >
               -
             </button>
-            <div className="min-w-[40px] text-center text-[16px] font-extrabold text-gray-900">
+            <div className="min-w-10 text-center text-[16px] font-extrabold text-gray-900">
               {cantidad}
             </div>
             <button
@@ -97,45 +117,46 @@ export default function EditorItemCarrito({ item, onSave, onCancel, guardando = 
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-3">
-          <p className="text-[11px] font-extrabold text-gray-800">Ingredientes</p>
-          {ingredientes.length === 0 ? (
+          <p className="text-[11px] font-extrabold text-gray-800">
+            Ingredientes
+          </p>
+          {ingredientesProducto.length === 0 ? (
             <p className="mt-1 text-[11px] text-gray-500">
               Este producto no tiene ingredientes configurados.
             </p>
           ) : (
             <p className="mt-1 text-[11px] text-gray-500">
-              Tocá los ingredientes que querés sacar (tiene que quedar al menos uno).
-            </p>
-          )}
-          {errorIngredientes && (
-            <p className="mt-2 rounded-lg border border-orange-200 bg-orange-50 px-2.5 py-2 text-[11px] font-bold text-orange-800">
-              {errorIngredientes}
+              Tocá los ingredientes que querés sacar.
             </p>
           )}
           <div className="mt-2 flex flex-wrap gap-2">
-            {ingredientes.map((ing) => {
-              const quitado = quitados.includes(ing)
+            {ingredientesProducto.map((ing) => {
+              const quitado = quitados.some(
+                (q) => q.idIngrediente === ing.idIngrediente,
+              );
               return (
                 <button
                   type="button"
-                  key={ing}
+                  key={ing.idIngrediente}
                   onClick={() => toggleQuitado(ing)}
                   disabled={guardando}
                   className={`rounded-full px-3 py-1 text-[11px] font-bold transition disabled:opacity-50 ${
                     quitado
-                      ? 'bg-gray-200 text-gray-500 line-through'
-                      : 'bg-trego-orange/10 text-trego-orange hover:bg-trego-orange/15'
+                      ? "bg-gray-200 text-gray-500 line-through"
+                      : "bg-trego-orange/10 text-trego-orange hover:bg-trego-orange/15"
                   }`}
                 >
-                  {ing}
+                  {ing.nombre}
                 </button>
-              )
+              );
             })}
           </div>
         </div>
 
         <div className="rounded-xl border border-gray-200 bg-white p-3">
-          <p className="text-[11px] font-extrabold text-gray-800">Comentarios (opcional)</p>
+          <p className="text-[11px] font-extrabold text-gray-800">
+            Comentarios (opcional)
+          </p>
           <textarea
             value={comentarios}
             onChange={(e) => setComentarios(e.target.value)}
@@ -154,9 +175,9 @@ export default function EditorItemCarrito({ item, onSave, onCancel, guardando = 
       )}
 
       <p className="mt-3 text-[12px] text-gray-500">
-        Subtotal:{' '}
+        Subtotal:{" "}
         <span className="font-extrabold text-gray-900">
-          {formatearMoneda((item.precio ?? 0) * cantidad)}
+          {formatearMoneda(conDescuento * cantidad)}
         </span>
       </p>
 
@@ -175,9 +196,9 @@ export default function EditorItemCarrito({ item, onSave, onCancel, guardando = 
           disabled={guardando}
           className="flex-1 rounded-full bg-trego-orange px-4 py-2.5 text-[12px] font-extrabold text-white shadow-md hover:bg-orange-600 disabled:opacity-60"
         >
-          {guardando ? 'Guardando...' : 'Guardar'}
+          {guardando ? "Guardando..." : "Guardar"}
         </button>
       </div>
     </div>
-  )
+  );
 }

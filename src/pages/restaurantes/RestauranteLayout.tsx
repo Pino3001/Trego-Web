@@ -92,6 +92,7 @@ export default function RestauranteLayout() {
   } | null>(null);
   const [perfilNombre, setPerfilNombre] = useState("Restaurante");
   const [perfilEmail, setPerfilEmail] = useState("");
+  const [fotoPerfil, setFotoPerfil] = useState<string | undefined>(undefined);
 
   // --- REGLAS DE SEGURIDAD ---
 
@@ -127,6 +128,7 @@ export default function RestauranteLayout() {
       .then((usuario) => {
         setPerfilNombre(usuario.nombre?.trim() || "Restaurante");
         setPerfilEmail(usuario.email ?? "");
+        setFotoPerfil(usuario.urlImagen);
       })
       .catch(() => {});
   }, [token]);
@@ -317,6 +319,7 @@ export default function RestauranteLayout() {
         tipoUser="Restaurante"
         perfilNombre={perfilNombre}
         perfilEmail={perfilEmail}
+        fotoPerfil={fotoPerfil}
         onCambiarContraseña={() => navigate("/restaurantes/perfil/contraseña")}
         onVerPerfil={() => navigate("/perfil/restaurante")}
         horaCierre={horaCierre}

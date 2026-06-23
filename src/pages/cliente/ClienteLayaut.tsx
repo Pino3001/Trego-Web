@@ -13,14 +13,19 @@ import { useBusqueda } from "../../context/BusquedaContext.js";
 import { limpiarSesion } from "../../utils/sesion.js";
 import { useCarrito } from "../../context/CarritoContext.js";
 import { useCliente } from "../../hooks/useCliente.js";
+import { useEffect } from "react";
 
 export default function ClienteLayaut() {
   const navigate = useNavigate();
   const location = useLocation();
   const { abrirCarrito, cantidadTotal } = useCarrito();
   const { abrirFiltros } = useFiltros();
-  const { busqueda, setBusqueda } = useBusqueda();
+  const { busqueda, setBusqueda, placeholder } = useBusqueda();
   const { cliente } = useCliente();
+
+  // ─── Configuración de búsqueda por ruta ───────────────────────────────────
+  const esMenuRestaurante = matchPath("/restaurante/:id", location.pathname);
+
   // Lista de rutas que no quiero que muestre el buscador
   const rutasSinBuscador = ["/Historial", "/perfil", "/pedidos/:pedidoId"];
 
@@ -72,9 +77,12 @@ export default function ClienteLayaut() {
         onVerPerfil={handleVerPerfil}
         perfilNombre={cliente?.nombre ?? ""}
         perfilEmail={cliente?.email ?? ""}
+        fotoPerfil={cliente?.urlImagen ?? ""}
         verPerfil
         verHistorial
         onChangeHistorial={() => navigate("/Historial")}
+        placeholder={placeholder}
+        ocultarBotonFiltros={!!esMenuRestaurante}
       />
 
       <main className="flex-1 flex flex-col overflow-y-auto relative">

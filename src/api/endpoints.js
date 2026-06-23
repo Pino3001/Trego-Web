@@ -20,7 +20,6 @@ export const ENDPOINTS = {
   // Carrito
   CARRITO: '/api/carrito',
   CARRITO_PRODUCTOS: '/api/carrito/productos',
-  CARRITO_TOTAL: '/api/carrito/total',
   CARRITO_ITEMS: '/api/carrito/items',
 
   // Pagos
@@ -62,6 +61,7 @@ export const ENDPOINTS = {
   DESHABILITAR_PRODUCTO: '/api/productos',
   LISTAR_PEDIDOS: `/api/pedido/listarPedidos`,
   LISTAR_SUBCATEGORIAS: `/api/subcategorias/listar`,
+  LISTAR_PRODUCTOS_OFERTA: '/api/productos/listarProductosOferta',
   CONFIRMAR_PEDIDO: `/api/pedido/confirmar`,
   ACTUALIZAR_ESTADO: `/api/pedido/estado`,
   CANCELAR_PEDIDO: `/api/pedido/reembolsar`,

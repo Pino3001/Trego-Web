@@ -25,6 +25,7 @@ export default function ListarOfertas() {
     recargarProductos,
     ofertasActivas,
     setOfertasActivas,
+    actualizarOfertaActiva,
     isProductoOfertaActiva,
   } = useProductoRestaurante({
     soloOfertasInicial: true,
@@ -72,6 +73,7 @@ export default function ListarOfertas() {
             setProductoSelect(undefined);
             recargarProductos();
           }}
+          onOfertaActivaChange={actualizarOfertaActiva}
           oferta={productoSelect.oferta}
         />
       );
@@ -141,7 +143,7 @@ export default function ListarOfertas() {
           <div className="grid grid-cols-3 items-center px-2 md:grid-cols-3 justify-center gap-4">
             {productosFiltrados.map((prod) => (
               <OfertaRestoCard
-                key={prod.oferta?.idOferta}
+                key={prod.oferta?.idOferta ?? prod.idProducto}
                 producto={prod}
                 onClick={() => setProductoSelect(prod)}
                 esActiva={isProductoOfertaActiva(prod)}

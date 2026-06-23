@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import MenuSidebar from "../../../components/menu/MenuSidebar.jsx";
 import ComentariosRestaurantePanel from "../../../components/menu/ComentariosRestaurantePanel.jsx";
 import { IconBack, IconTag } from "../../../components/icons.jsx";
@@ -8,12 +8,16 @@ import { useMenuRestaurante } from "../../../hooks/useMenuRestaurante.js";
 import ProductoMenuCard from "../../../components/menu/ProductoMenuCard.js";
 import OfertaCard from "../../../components/menu/OfertaCard.js";
 import RestauranteBanner from "../../../components/menu/RestauranteBanner.js";
+import { useBusqueda } from "../../../context/BusquedaContext.js";
+import { useDebounce } from "../../../hooks/useDebounce.js";
 
 export default function RestauranteMenuPage() {
   const { id } = useParams();
   const { abrirDetalleProducto, validarRestauranteAbierto } = useCarrito();
 
   const [resenasInfo, setResenasInfo] = useState(null);
+  const { busqueda } = useBusqueda({ placeholder: 'Buscar en el menú...' });
+  const debouncedBusqueda = useDebounce(busqueda, 500);
 
   const {
     menu,
@@ -43,6 +47,25 @@ export default function RestauranteMenuPage() {
     // Paso 2 del CU: muestra detalle, cantidad, ingredientes y comentarios
     abrirDetalleProducto(producto, menu?.restaurante);
   };
+
+  // Filtrar encima de lo que ya filtra useMenuRestaurante (por categoría/precio)
+  const productosVisibles = useMemo(() => {
+    const term = debouncedBusqueda.trim().toLowerCase();
+    if (!term) return productosFiltrados;
+
+    return productosFiltrados.filter(
+      (p) =>
+        p.nombre?.toLowerCase().includes(term) ||
+        p.descripcion?.toLowerCase().includes(term),
+    );
+  }, [productosFiltrados, debouncedBusqueda]);
+
+  // También filtrar las ofertas si el usuario escribe algo
+  const ofertasVisibles = useMemo(() => {
+    const term = debouncedBusqueda.trim().toLowerCase();
+    if (!term) return ofertas;
+    return ofertas.filter((p) => p.nombre?.toLowerCase().includes(term));
+  }, [ofertas, debouncedBusqueda]);
 
   if (cargando) {
     return (
@@ -131,7 +154,7 @@ export default function RestauranteMenuPage() {
                 Ofertas del dia
               </h2>
               <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-3 scrollbar-thin">
-                {ofertas.map((p) => (
+                {ofertasVisibles.map((p) => (
                   <OfertaCard
                     key={p.idProducto}
                     producto={p}
@@ -153,7 +176,7 @@ export default function RestauranteMenuPage() {
               </p>
             ) : (
               <ul className="flex flex-col gap-3">
-                {productosFiltrados.map((p) => (
+                {productosVisibles.map((p) => (
                   <li key={p.idProducto}>
                     <ProductoMenuCard producto={p} onAgregar={handleAgregar} />
                   </li>

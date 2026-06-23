@@ -23,13 +23,11 @@ export function formatearHorario(
   horaCierre?: string | null | unknown,
 ): string {
   const aperturaStr = String(horaApertura ?? '').trim();
-  if (!aperturaStr) return '—';
-
-  const aperturaFormateada = formatearHora(aperturaStr);
-
   const cierreStr = String(horaCierre ?? '').trim();
-  if (!cierreStr) return aperturaFormateada;
 
-  const cierreFormateada = formatearHora(cierreStr);
+  // Si no hay string, pasamos un valor por defecto para mantener la estructura hh:mm
+  const aperturaFormateada = aperturaStr ? formatearHora(aperturaStr) : '--:--';
+  const cierreFormateada = cierreStr ? formatearHora(cierreStr) : '--:--';
+
   return `${aperturaFormateada} - ${cierreFormateada}`;
 }

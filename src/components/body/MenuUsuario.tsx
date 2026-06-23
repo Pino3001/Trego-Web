@@ -290,7 +290,7 @@ export default function MenuUsuario({
         {verHistorial ? (
           <button
             type="button"
-            onClick={onCerrarSesion}
+            onClick={onChangeHistorial}
             className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-red-50 transition-colors"
           >
             <ClipboardClock size={32} className="text-gray-400 shrink-0" />
@@ -299,6 +299,7 @@ export default function MenuUsuario({
             </span>
           </button>
         ) : undefined}
+        
         {/* Cerrar sesión */}
         <button
           type="button"

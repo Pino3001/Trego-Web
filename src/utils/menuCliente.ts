@@ -1,18 +1,17 @@
 import type { DTOProducto } from "../data/DTOProducto.js";
 import type { DTORestaurante } from "../data/DTORestaurante.js";
 import { EnumCategoriaProducto } from "../data/EnumCategoriaProducto.js";
+import {
+  esProductoOfertaVigente,
+  obtenerPrecios,
+} from "./productos.js";
 
 export function precioFinalProducto(producto: DTOProducto): number {
-  if (producto.oferta?.descuento) {
-    return Math.round(
-      producto?.precio ?? 0 * (1 - producto.oferta.descuento / 100),
-    );
-  }
-  return producto.precio ?? 0;
+  return obtenerPrecios(producto).conDescuento;
 }
 
 export function productoTieneOferta(producto: DTOProducto): boolean {
-  return producto.oferta != null;
+  return esProductoOfertaVigente(producto);
 }
 
 export function filtrarProductosLocales(
@@ -86,7 +85,8 @@ export function restauranteParaUi(restaurante: DTORestaurante) {
 }
 
 export function productoParaCarrito(producto: DTOProducto | undefined) {
-  const descuento = producto?.oferta?.descuento ?? 0;
+  const vigente = esProductoOfertaVigente(producto);
+  const descuento = vigente ? (producto?.oferta?.descuento ?? 0) : 0;
   return {
     idProducto: producto?.idProducto,
     nombre: producto?.nombre,
@@ -95,8 +95,8 @@ export function productoParaCarrito(producto: DTOProducto | undefined) {
     fotoPlato: producto?.urlImagen,
     categoria: producto?.categoria,
     disponible: producto?.disponible ?? true,
-    ofertaActiva: !!producto?.oferta,
-    oferta: producto?.oferta
+    ofertaActiva: vigente,
+    oferta: vigente && producto?.oferta
       ? {
           descuentoPorcentaje: producto.oferta.descuento,
           descripcion: producto.oferta.descripcion,

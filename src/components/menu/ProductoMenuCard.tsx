@@ -29,9 +29,7 @@ export default function ProductoMenuCard({
         {producto.tipo === EnumTipoProducto.Combo ? (
           producto.combo && (
             <div className="flex gap-2">
-              <p className="my-auto text-[12px] text-gray-600">
-                Incluye: 
-              </p>
+              <p className="my-auto text-[12px] text-gray-600">Incluye:</p>
               <DetalleCombo
                 productos={producto.combo.productosIncluidos ?? []}
               />
@@ -46,18 +44,11 @@ export default function ProductoMenuCard({
         <p className="mt-2 flex items-baseline gap-2">
           {tieneOferta ? (
             <>
-              <span className="text-[14px] text-gray-600 ">Precio: </span>
-              <span className="flex gap-2">
-                <span className="text-[14px] text-gray-400 ">Antes </span>
-                <span className="text-[14px] text-gray-400 line-through">
-                  {original}$
-                </span>
+              <span className="text-[16px] font-bold text-red-700">
+                {conDescuento}$
               </span>
-              <span className="flex gap-2">
-                <span className="text-[14px] text-gray-400 ">/ Ahora </span>
-                <span className="text-[16px] font-bold text-red-700">
-                  {conDescuento}$
-                </span>
+              <span className="text-[16px] font-semibold text-gray-500 line-through">
+                {original}$
               </span>
             </>
           ) : (

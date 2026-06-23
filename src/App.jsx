@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import SeleccionarRol from "./pages/SeleccionarRol.js";
 import LoginCliente from "./pages/logins/LoginCliente.js";
 import LoginAdmin from "./pages/logins/LoginAdmin.js";
@@ -63,9 +63,11 @@ export default function AppRouter() {
         />
 
         {/* --- RUTAS DE RETORNO MERCADO PAGO --- */}
-        <Route path="/success" element={<PagoExito />} />
-        <Route path="/failure" element={<PagoError />} />
-        <Route path="/pending" element={<PagoPendiente />} />
+        <Route element={<CarritoProvider><Outlet /></CarritoProvider>}>
+          <Route path="/success" element={<PagoExito />} />
+          <Route path="/failure" element={<PagoError />} />
+          <Route path="/pending" element={<PagoPendiente />} />
+        </Route>
 
         {/* --- RUTAS PRIVADAS (ENVUELTAS EN EL LAYOUT) --- */}
         {/* Este Route padre inyecta el Header y Sidebar. Los hijos se renderizan en el <Outlet /> todo lo que lleve la barra lateral de restaurante debe ir dentro de este Route*/}

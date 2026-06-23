@@ -1,4 +1,4 @@
-import type { CategoriaRestaurante } from "./CategoriaRestaurante.js";
+import type { EnumCategoriaRestaurante } from "./CategoriaRestaurante.js";
 import type { DTODireccion } from "./DTODireccion.js";
 import type { DTOIngrediente } from "./DTOIngrediente.js";
 import type { DTOProducto } from "./DTOProducto.js";
@@ -14,7 +14,7 @@ export interface DTORestaurante {
   fotoPortada?: string;
   direccion?: DTODireccion;
   descripcion?: string;
-  categoria?: CategoriaRestaurante | null;
+  categoria?: EnumCategoriaRestaurante | null;
   calificacionProm?: number | null;
   radioEntrega?: number;
   habilitado?: boolean;
