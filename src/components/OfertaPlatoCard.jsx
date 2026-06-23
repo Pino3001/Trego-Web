@@ -86,4 +86,4 @@ export default function OfertaPlatoCard({ oferta, enGrid = false, onSeleccionar 
     </button>
   )
 }
-
+

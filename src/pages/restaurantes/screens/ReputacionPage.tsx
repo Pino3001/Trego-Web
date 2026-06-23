@@ -4,6 +4,7 @@ import { listarComentariosRestaurante } from "../../../api/comentariosApi.js";
 import EstrellasCalificacion from "../../../components/menu/EstrellasCalificacion.jsx";
 import { useRestauranteActual } from "../../../hooks/useRestauranteActual.js";
 import type { DTOComentario } from "../../../data/DTOComentario.js";
+import { RESTAURANTE_PAGE_CLASS } from "../componentes/RestaurantePageShell.js";
 
 function formatearFecha(iso?: string | null): string {
   if (!iso) return "";
@@ -79,9 +80,9 @@ export default function ReputacionPage() {
   const loading = cargandoPerfil || cargando;
 
   return (
-    <div className="flex-1 w-full h-full p-4 md:p-8 overflow-y-auto bg-gray-50 text-gray-800 font-sans">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Clasificación global</h1>
+    <div className={RESTAURANTE_PAGE_CLASS}>
+      <div className="mb-5 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Clasificación global</h1>
         <p className="mt-1 text-sm text-gray-500">
           Calificación promedio y comentarios de tus clientes.
         </p>
