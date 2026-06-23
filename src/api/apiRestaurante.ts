@@ -8,7 +8,7 @@ import type { DTOPedido } from "../data/DTOPedido.js";
 import type { DTOProducto } from "../data/DTOProducto.js";
 import type { DTORestaurante } from "../data/DTORestaurante.js";
 import type { DTOSubcategoria } from "../data/DTOSubcategoria.js";
-import type { EnumEstadoPedido } from "../data/EnumEstadoPedido.js";
+import { EnumEstadoPedido } from "../data/EnumEstadoPedido.js";
 import { ENDPOINTS } from "./endpoints.js";
 import { fetchConAuth } from "./header/fetchConAuth.js";
 
@@ -268,6 +268,28 @@ export async function listarPedidos(
   }
 
   return response.json();
+}
+
+/** Une pedidos de todos los estados del restaurante autenticado. */
+export async function listarTodosPedidosRestaurante(): Promise<DTOPedido[]> {
+  const estados = Object.values(EnumEstadoPedido).filter(
+    (valor): valor is EnumEstadoPedido => typeof valor === "string",
+  );
+
+  const listas = await Promise.all(
+    estados.map((estado) => listarPedidos({ estado })),
+  );
+
+  const porId = new Map<number, DTOPedido>();
+  for (const pedidos of listas) {
+    for (const pedido of pedidos) {
+      if (pedido.idPedido != null) {
+        porId.set(pedido.idPedido, pedido);
+      }
+    }
+  }
+
+  return [...porId.values()];
 }
 
 /**

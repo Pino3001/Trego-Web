@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, BarChart3, Loader2 } from "lucide-react";
-import { obtenerEstadisticas } from "../../../api/apiRestaurante.js";
+import {
+  listarTodosPedidosRestaurante,
+  obtenerEstadisticas,
+} from "../../../api/apiRestaurante.js";
 import type { DTOEstadisticas } from "../../../data/DTOEstadisticas.js";
 import type { DTOProductoSimplificado } from "../../../data/DTOProductoSimplificado.js";
+import {
+  pedidosEnRango,
+  type PedidoConFechaHora,
+} from "../../../utils/estadisticasPedidosPorFecha.js";
+import { RESTAURANTE_PAGE_CLASS } from "../componentes/RestaurantePageShell.js";
 
 export type VistaEstadisticas = "platos" | "fechas" | "monto";
 
@@ -144,12 +152,12 @@ function TablaPlatos({ productos }: { productos: DTOProductoSimplificado[] }) {
   );
 }
 
-function TablaVentasPorFecha({
-  ventas,
+function TablaPedidosPorFecha({
+  pedidos,
 }: {
-  ventas: [string, number][];
+  pedidos: PedidoConFechaHora[];
 }) {
-  if (ventas.length === 0) {
+  if (pedidos.length === 0) {
     return (
       <p className="py-8 text-center text-gray-500">
         No hay pedidos en este período.
@@ -157,39 +165,33 @@ function TablaVentasPorFecha({
     );
   }
 
-  const maxVentas = Math.max(...ventas.map(([, n]) => n), 1);
-
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200 text-left text-gray-600">
             <th className="pb-3 pr-4 font-medium">Fecha</th>
-            <th className="pb-3 pr-4 font-medium">Pedidos</th>
-            <th className="pb-3 font-medium">Comparación</th>
+            <th className="pb-3 pr-4 font-medium">Horario</th>
+            <th className="pb-3 pr-4 font-medium">Pedido</th>
+            <th className="pb-3 pr-4 font-medium">Estado</th>
+            <th className="pb-3 font-medium">Total</th>
           </tr>
         </thead>
         <tbody>
-          {ventas.map(([fecha, cantidad]) => {
-            const porcentaje = Math.round((cantidad / maxVentas) * 100);
-
-            return (
-              <tr key={fecha} className="border-b border-gray-100 last:border-0">
-                <td className="py-3 pr-4 font-medium text-gray-800">
-                  {formatearFechaCorta(fecha)}
-                </td>
-                <td className="py-3 pr-4 text-gray-700">{cantidad}</td>
-                <td className="py-3">
-                  <div className="h-2 w-full max-w-48 rounded-full bg-gray-100">
-                    <div
-                      className="h-2 rounded-full bg-trego-orange"
-                      style={{ width: `${porcentaje}%` }}
-                    />
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
+          {pedidos.map(({ pedido, fecha, horario }) => (
+            <tr
+              key={pedido.idPedido}
+              className="border-b border-gray-100 last:border-0"
+            >
+              <td className="py-3 pr-4 font-medium text-gray-800">{fecha}</td>
+              <td className="py-3 pr-4 text-gray-700">{horario}</td>
+              <td className="py-3 pr-4 text-gray-700">#{pedido.idPedido}</td>
+              <td className="py-3 pr-4 text-gray-600">{pedido.estado ?? "-"}</td>
+              <td className="py-3 text-gray-700">
+                {formatearMoneda(pedido.total ?? 0)}
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </div>
@@ -254,6 +256,9 @@ export default function EstadisticasPage({ vista }: EstadisticasPageProps) {
   const [fechaDesde, setFechaDesde] = useState(fechaHaceDias(30));
   const [fechaHasta, setFechaHasta] = useState(hoyISO());
   const [datos, setDatos] = useState<DTOEstadisticas | null>(null);
+  const [pedidosPorFecha, setPedidosPorFecha] = useState<
+    PedidoConFechaHora[] | null
+  >(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -272,34 +277,45 @@ export default function EstadisticasPage({ vista }: EstadisticasPageProps) {
     setError(null);
 
     try {
-      const resultado = await obtenerEstadisticas(
-        toFechaInicio(fechaDesde),
-        toFechaFin(fechaHasta),
-      );
-      setDatos(resultado);
+      if (vista === "fechas") {
+        const pedidos = await listarTodosPedidosRestaurante();
+        setPedidosPorFecha(pedidosEnRango(pedidos, fechaDesde, fechaHasta));
+        setDatos(null);
+      } else {
+        const resultado = await obtenerEstadisticas(
+          toFechaInicio(fechaDesde),
+          toFechaFin(fechaHasta),
+        );
+        setDatos(resultado);
+        setPedidosPorFecha(null);
+      }
     } catch (err) {
       setDatos(null);
+      setPedidosPorFecha(null);
       setError(
         err instanceof Error ? err.message : "Error al obtener estadísticas.",
       );
     } finally {
       setLoading(false);
     }
-  }, [fechaDesde, fechaHasta]);
+  }, [fechaDesde, fechaHasta, vista]);
 
   useEffect(() => {
     cargarEstadisticas();
   }, [cargarEstadisticas, vista]);
 
-  const ventasOrdenadas = mapaOrdenadoPorFecha(datos?.ventasPorFecha);
   const ingresosOrdenados = mapaOrdenadoPorFecha(datos?.ingresosPorFecha);
+  const mostrandoCargaInicial =
+    loading && (vista === "fechas" ? !pedidosPorFecha : !datos);
 
   return (
-    <div className="flex-1 w-full h-full p-4 md:p-8 overflow-y-auto bg-gray-50 text-gray-800 font-sans">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{TITULOS[vista]}</h1>
+    <div className={RESTAURANTE_PAGE_CLASS}>
+      <div className="mb-5 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">{TITULOS[vista]}</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Consultá las estadísticas de tu local en el período seleccionado.
+          {vista === "fechas"
+            ? "Listado de pedidos del período con fecha y horario de creación."
+            : "Consultá las estadísticas de tu local en el período seleccionado."}
         </p>
       </div>
 
@@ -349,7 +365,7 @@ export default function EstadisticasPage({ vista }: EstadisticasPageProps) {
       )}
 
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
-        {loading && !datos ? (
+        {mostrandoCargaInicial ? (
           <div className="flex items-center justify-center gap-2 py-12 text-gray-500">
             <Loader2 className="h-5 w-5 animate-spin" />
             <span>Cargando estadísticas...</span>
@@ -360,7 +376,7 @@ export default function EstadisticasPage({ vista }: EstadisticasPageProps) {
               <TablaPlatos productos={datos?.productosMasVendidos ?? []} />
             )}
             {vista === "fechas" && (
-              <TablaVentasPorFecha ventas={ventasOrdenadas} />
+              <TablaPedidosPorFecha pedidos={pedidosPorFecha ?? []} />
             )}
             {vista === "monto" && (
               <TablaMontoPromedio ingresos={ingresosOrdenados} />

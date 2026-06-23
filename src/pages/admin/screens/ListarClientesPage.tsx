@@ -4,6 +4,7 @@ import type { DTOClienteResponse } from "../../../data/DTOClienteResponse.js";
 import { administradorApi } from "../../../api/administradorApi.js";
 import EmptyState from "../../../components/EmptyState.jsx";
 import AccionesEstadoCuenta from "../components/AccionesEstadoCuenta.js";
+import AdminPageShell, { AdminPageHeader } from "../components/AdminPageShell.js";
 
 
 type FiltroEstado = "todos" | "habilitados" | "deshabilitados";
@@ -47,9 +48,9 @@ function MetricaCard({
   valor: number;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <p className="text-sm font-medium text-gray-500">{etiqueta}</p>
-      <p className="mt-2 text-3xl font-bold text-gray-900">{valor}</p>
+    <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
+      <p className="text-xs sm:text-sm font-medium text-gray-500">{etiqueta}</p>
+      <p className="mt-1 sm:mt-2 text-2xl sm:text-3xl font-bold text-gray-900">{valor}</p>
     </div>
   );
 }
@@ -147,15 +148,12 @@ export default function ListarClientesPage() {
 
   return (
     <>
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Todos los clientes
-          </h1>
-          <p className="mt-2 text-gray-500">
-            Vista general de clientes registrados en la plataforma.
-          </p>
-        </div>
+      <AdminPageShell>
+      <div className="mx-auto w-full max-w-5xl">
+        <AdminPageHeader
+          titulo="Todos los clientes"
+          descripcion="Vista general de clientes registrados en la plataforma."
+        />
 
         {mensajeExito && (
           <div className="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
@@ -170,7 +168,7 @@ export default function ListarClientesPage() {
         )}
 
         {!cargando && !error && (
-          <div className="mb-8 grid gap-4 sm:grid-cols-3">
+          <div className="mb-6 sm:mb-8 grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3">
             <MetricaCard etiqueta="Total registrados" valor={metricas.total} />
             <MetricaCard etiqueta="Habilitados" valor={metricas.habilitados} />
             <MetricaCard
@@ -181,8 +179,8 @@ export default function ListarClientesPage() {
         )}
 
         {!cargando && !error && (
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
-            <label className="flex min-w-[200px] flex-1 flex-col gap-1">
+          <div className="mb-6 flex flex-col gap-3 sm:gap-4 sm:flex-row sm:flex-wrap sm:items-end">
+            <label className="flex w-full flex-1 min-w-0 sm:min-w-[200px] flex-col gap-1">
               <span className="text-sm font-medium text-gray-700">Buscar</span>
               <input
                 type="search"
@@ -193,7 +191,7 @@ export default function ListarClientesPage() {
               />
             </label>
 
-            <label className="flex flex-col gap-1">
+            <label className="flex w-full sm:w-auto flex-col gap-1">
               <span className="text-sm font-medium text-gray-700">Estado</span>
               <select
                 value={filtroEstado}
@@ -208,7 +206,7 @@ export default function ListarClientesPage() {
               </select>
             </label>
 
-            <label className="flex flex-col gap-1">
+            <label className="flex w-full sm:w-auto flex-col gap-1">
               <span className="text-sm font-medium text-gray-700">Orden</span>
               <select
                 value={orden}
@@ -243,7 +241,7 @@ export default function ListarClientesPage() {
                 <button
                   type="button"
                   onClick={() => setSeleccionado(cliente)}
-                  className="w-full rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-orange-300 hover:shadow-md"
+                  className="w-full rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 text-left shadow-sm transition hover:border-orange-300 hover:shadow-md"
                 >
                   <div className="flex items-start gap-3">
                     {cliente.fotoPerfil ? (
@@ -258,7 +256,7 @@ export default function ListarClientesPage() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-3">
-                        <p className="truncate text-lg font-semibold text-gray-900">
+                        <p className="truncate text-base sm:text-lg font-semibold text-gray-900">
                           {cliente.nombre ?? "Sin nombre"}
                         </p>
                         <span
@@ -285,6 +283,7 @@ export default function ListarClientesPage() {
           </ul>
         )}
       </div>
+      </AdminPageShell>
 
       {seleccionado && (
         <div
@@ -298,12 +297,12 @@ export default function ListarClientesPage() {
             role="dialog"
             aria-modal="true"
             aria-label={`Detalle de ${seleccionado.nombre ?? "cliente"}`}
-            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl"
+            className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white shadow-xl"
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <div className="p-6">
-              <div className="mb-6 flex items-start justify-between gap-4">
-                <div className="flex items-start gap-4">
+            <div className="p-4 sm:p-6">
+              <div className="mb-4 sm:mb-6 flex items-start justify-between gap-3 sm:gap-4">
+                <div className="flex min-w-0 items-start gap-3 sm:gap-4">
                   {seleccionado.fotoPerfil ? (
                     <img
                       src={seleccionado.fotoPerfil}
@@ -316,8 +315,8 @@ export default function ListarClientesPage() {
                     </span>
                   )}
 
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">
+                  <div className="min-w-0">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 break-words">
                       {seleccionado.nombre ?? "Sin nombre"}
                     </h2>
                     <span
