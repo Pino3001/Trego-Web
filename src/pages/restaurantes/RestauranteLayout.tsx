@@ -318,7 +318,7 @@ export default function RestauranteLayout() {
 
   // Si pasa todas las reglas, renderizamos la pantalla normal
   return (
-    <div className="h-[100dvh] w-screen flex flex-col bg-gray-50 overflow-hidden">
+    <div className="h-dvh w-screen flex flex-col bg-gray-50 overflow-hidden">
       <Header
         verPerfil
         tipoUser="Restaurante"
@@ -327,6 +327,7 @@ export default function RestauranteLayout() {
         perfilEmail={perfilEmail}
         fotoPerfil={fotoPerfil}
         onCambiarContraseña={() => navigate("/restaurantes/perfil/contraseña")}
+        cambiarContrasenia
         onVerPerfil={() => navigate("/perfil/restaurante")}
         horaCierre={horaCierre}
         onChangeHoraCierre={handleChangeHoraCierre}
