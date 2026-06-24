@@ -19,6 +19,7 @@ export interface DTORestaurante {
   radioEntrega?: number;
   habilitado?: boolean;
   abierto?: boolean;
+  cuentaHabilitada?: boolean;
   horaApertura?: string | null;
   horaCierre?: string | null;
   cierreProgramado?: string | null;
