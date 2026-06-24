@@ -4,6 +4,7 @@ import Sidebar from "../../components/body/Sidebar.js";
 import { useEffect, useRef, useState } from "react";
 import {
   abrirLocal,
+  actualizarCierreProgramado,
   actualizarHoraCierre,
   cerrarLocal,
   obtenerActual,
@@ -86,6 +87,7 @@ export default function RestauranteLayout() {
   const [isLoadingToggle, setIsLoadingToggle] = useState(false);
   const [cambio, setCambio] = useState<boolean>(false);
   const [mostrarAvisoCierre, setMostrarAvisoCierre] = useState(false);
+  const [mostrarAvisoCerrado, setMostrarAvisoCerrado] = useState(false);
   const [avisoDescartado, setAvisoDescartado] = useState(false);
   const [tiempoRestante, setTiempoRestante] = useState<{
     minutos: number;
@@ -218,6 +220,19 @@ export default function RestauranteLayout() {
     }
   };
 
+  // El usuario fija manualmente el instante exacto de cierre. Arranca igual a la
+  // hora de cierre (lo calcula el backend al abrir) pero puede cambiarlo a otra
+  // fecha/hora. Tras guardar, re-fetch para traer el valor confirmado.
+  const handleChangeCierreProgramado = async (nuevoCierre: string) => {
+    if (!restauranteAbierto || !nuevoCierre || !token || !isHabilitado) return;
+    try {
+      await actualizarCierreProgramado(nuevoCierre);
+      setCambio(true);
+    } catch (error) {
+      console.error("Error al actualizar el cierre programado:", error);
+    }
+  };
+
   const handleLogout = async () => {
     // Si el local está abierto, lo cerramos antes de salir
     /*     if (restauranteAbierto) {
@@ -290,6 +305,8 @@ export default function RestauranteLayout() {
         } finally {
           setRestauranteAbierto(false);
           setCambio(true);
+          setMostrarAvisoCierre(false);
+          setMostrarAvisoCerrado(true);
         }
       }
     };
@@ -328,6 +345,8 @@ export default function RestauranteLayout() {
         onChangeHoraCierre={handleChangeHoraCierre}
         horaApertura={horaApertura}
         onChangeHoraApertura={setHoraApertura}
+        cierreProgramado={cierreProgramado ? cierreProgramado.slice(0, 16) : undefined}
+        onChangeCierreProgramado={handleChangeCierreProgramado}
         restauranteAbierto={restauranteAbierto}
         onToggleRestauranteAbierto={handleToggleRestaurante}
         onLogout={handleLogout}
@@ -357,7 +376,15 @@ export default function RestauranteLayout() {
               {tiempoRestante.segundos.toString().padStart(2, "0")}
             </p>
             <p className="text-sm text-gray-600 mb-4">
-              Se cerrará automáticamente al llegar a las {horaCierre} hs.
+              Se cerrará automáticamente al llegar a las{" "}
+              {cierreProgramado
+                ? new Date(cierreProgramado).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false,
+                  })
+                : horaCierre}{" "}
+              hs.
             </p>
             <button
               onClick={() => {
@@ -365,6 +392,26 @@ export default function RestauranteLayout() {
                 setAvisoDescartado(true);
               }}
               className="w-full py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-xl transition-colors"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
+      {mostrarAvisoCerrado && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 bg-opacity-50">
+          <div className="bg-white rounded-2xl shadow-xl w-[min(20rem,calc(100vw-2rem))] p-5 sm:p-6 text-center">
+            <div className="text-4xl mb-4">🔒</div>
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">
+              El local se cerró
+            </h2>
+            <p className="text-sm text-gray-600 mb-4">
+              Se alcanzó el horario de cierre programado y el local dejó de estar
+              visible para los clientes.
+            </p>
+            <button
+              onClick={() => setMostrarAvisoCerrado(false)}
+              className="w-full py-2 bg-trego-restaurante hover:opacity-90 text-white font-medium rounded-xl transition-colors"
             >
               Entendido
             </button>
