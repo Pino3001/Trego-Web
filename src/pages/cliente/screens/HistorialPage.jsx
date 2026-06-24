@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { AlertCircle, CheckCircle2, History, Store } from "lucide-react";
+import { AlertCircle, CheckCircle2, History, Store, XCircle } from "lucide-react";
 import { listarRestaurantesTodos } from "../../../api/restaurantesApi.js";
 import EmptyState from "../../../components/EmptyState.jsx";
 import RealizarReclamoModal from "../../../components/reclamos/RealizarReclamoModal.jsx";
-import { obtenerMisPedidos } from "../../../api/pedidosApi.js";
+import { cancelarPedido, obtenerMisPedidos } from "../../../api/pedidosApi.js";
 
 function formatearFecha(iso) {
   if (!iso) return "—";
@@ -42,8 +42,15 @@ const ESTADOS_HISTORIAL = [
 
 const ESTADOS_SIN_RECLAMO = new Set(["Pagado", "Cancelado", "Reembolsado"]);
 
+/** Solo pedidos pagados y aún no confirmados por el restaurante. */
+const ESTADOS_CANCELABLES_CLIENTE = new Set(["Pagado"]);
+
 function estadoPermiteReclamo(estado) {
   return !!estado && !ESTADOS_SIN_RECLAMO.has(estado);
+}
+
+function estadoPermiteCancelar(estado) {
+  return !!estado && ESTADOS_CANCELABLES_CLIENTE.has(estado);
 }
 
 function etiquetaEstado(estado) {
@@ -96,6 +103,7 @@ export default function HistorialPage() {
   const [pedidosConReclamo, setPedidosConReclamo] = useState(() => new Set());
   const [pedidoParaReclamo, setPedidoParaReclamo] = useState(null);
   const [mensajeExito, setMensajeExito] = useState(null);
+  const [cancelandoPedidoId, setCancelandoPedidoId] = useState(null);
 
   const cargarDatos = useCallback(async () => {
     setCargando(true);
@@ -245,6 +253,39 @@ export default function HistorialPage() {
     setPedidosConReclamo((prev) => new Set(prev).add(idPedido));
     setMensajeExito("Reclamo realizado. El restaurante revisará tu caso.");
     window.setTimeout(() => setMensajeExito(null), 6000);
+  }
+
+  async function handleCancelarPedido(pedido) {
+    if (!pedido?.idPedido || !estadoPermiteCancelar(pedido.estado)) return;
+
+    const confirmacion = window.confirm(
+      `¿Cancelar el pedido #${pedido.idPedido}? El restaurante aún no lo confirmó. Esta acción no se puede deshacer.`,
+    );
+    if (!confirmacion) return;
+
+    setCancelandoPedidoId(pedido.idPedido);
+    setError(null);
+
+    try {
+      await cancelarPedido(pedido);
+      setPedidos((prev) =>
+        prev.map((p) =>
+          p.idPedido === pedido.idPedido
+            ? { ...p, estado: "Reembolsado" }
+            : p,
+        ),
+      );
+      setMensajeExito(
+        "Pedido cancelado. Te contactaremos para gestionar el reembolso.",
+      );
+      window.setTimeout(() => setMensajeExito(null), 6000);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudo cancelar el pedido.",
+      );
+    } finally {
+      setCancelandoPedidoId(null);
+    }
   }
 
   return (
@@ -441,6 +482,20 @@ export default function HistorialPage() {
                       </dd>
                     </div>
                   </dl>
+
+                  {estadoPermiteCancelar(pedido.estado) && (
+                    <button
+                      type="button"
+                      onClick={() => handleCancelarPedido(pedido)}
+                      disabled={cancelandoPedidoId === pedido.idPedido}
+                      className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <XCircle className="h-4 w-4" aria-hidden />
+                      {cancelandoPedidoId === pedido.idPedido
+                        ? "Cancelando..."
+                        : "Cancelar pedido"}
+                    </button>
+                  )}
 
                   {puedeReclamar(pedido) && (
                     <button

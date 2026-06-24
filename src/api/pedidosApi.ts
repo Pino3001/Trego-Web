@@ -114,3 +114,32 @@ export async function obtenerMisPedidos(): Promise<DTOPedido[]> {
   const data = await leerJson(response)
   return Array.isArray(data) ? (data as DTOPedido[]) : []
 }
+
+/** Cancela un pedido del cliente vía reembolso (POST /api/pedido/reembolsar). */
+export async function cancelarPedido(pedido: DTOPedido): Promise<DTOPedido> {
+  const response = await fetchConAuth(ENDPOINTS.CANCELAR_PEDIDO, {
+    method: 'POST',
+    body: JSON.stringify(pedido),
+  })
+
+  if (!response.ok) {
+    let mensaje = `Error ${response.status}`
+    try {
+      const errorData = await response.json()
+      mensaje = errorData.message || errorData.error || JSON.stringify(errorData)
+    } catch {
+      mensaje = await response.text().catch(() => 'Error desconocido')
+    }
+
+    if (response.status === 400) {
+      throw new Error(mensaje || 'Pedido inválido o no tiene pago asociado.')
+    }
+    if (response.status === 409) {
+      throw new Error(mensaje || 'El pedido ya había sido cancelado.')
+    }
+
+    throw new Error(mensaje || 'No se pudo cancelar el pedido.')
+  }
+
+  return (await leerJson(response)) as DTOPedido
+}
