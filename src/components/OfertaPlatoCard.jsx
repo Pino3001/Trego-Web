@@ -11,9 +11,18 @@ function formatearPrecio(n) {
 export default function OfertaPlatoCard({ oferta, enGrid = false, onSeleccionar }) {
   const producto = oferta.producto ?? {}
   const { conDescuento, original, tieneOferta } = obtenerPrecios(producto)
+
+  // ✅ En scroll horizontal: tamaño fijo pequeño
+  // ✅ En grid: ancho completo pero altura fija, no cuadrada
   const sizeClass = enGrid
-    ? "aspect-square w-full"
-    : "aspect-square w-[calc((100%-0.75rem)/2)] min-w-[136px] max-w-[172px] shrink-0 snap-start sm:w-[172px]";
+    ? "w-full"
+    : "w-[calc((100%-0.75rem)/2)] min-w-[136px] max-w-[172px] shrink-0 snap-start sm:w-[172px]"
+
+  // ✅ Altura de imagen diferente según contexto
+  const imgClass = enGrid
+    ? "relative h-36 sm:h-40 shrink-0 bg-[#d4d4d9]"
+    : "relative h-[44%] min-h-[72px] shrink-0 bg-[#d4d4d9]"
+
   const imagen =
     producto.fotoPlato ??
     producto.urlImagen ??
@@ -28,7 +37,8 @@ export default function OfertaPlatoCard({ oferta, enGrid = false, onSeleccionar 
       onClick={() => onSeleccionar?.(oferta)}
       className={`${cardBase} ${sizeClass} flex flex-col cursor-pointer`}
     >
-      <div className="relative h-[44%] min-h-[72px] shrink-0 bg-[#d4d4d9]">
+      {/* Imagen */}
+      <div className={imgClass}>
         {imagen ? (
           <img
             src={imagen}
@@ -51,6 +61,7 @@ export default function OfertaPlatoCard({ oferta, enGrid = false, onSeleccionar 
         )}
       </div>
 
+      {/* Contenido */}
       <article className="flex flex-1 flex-col justify-between gap-1.5 p-2.5">
         <div className="min-h-0">
           <h3 className="line-clamp-2 text-[13px] font-bold leading-snug text-gray-900">
@@ -86,4 +97,3 @@ export default function OfertaPlatoCard({ oferta, enGrid = false, onSeleccionar 
     </button>
   )
 }
-
