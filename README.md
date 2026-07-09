@@ -234,8 +234,7 @@ http://localhost:5173
 
 | Inicio | Restaurantes Registrados |
 |-------------------------|----------------------|
-| <img width="634" height="287" alt="Captura desde 2026-07-09 15-35-58" src="https://github.com/user-attachments/assets/46c7e371-d218-48b1-8758-d86b1daf666b" /> | <img width="634" height="287" alt="image" src="https://github.com/user-attachments/assets/32b78c11-665c-4e8c-9464-d524630fca4b" />
- |
+| <img width="634" height="287" alt="Captura desde 2026-07-09 15-35-58" src="https://github.com/user-attachments/assets/46c7e371-d218-48b1-8758-d86b1daf666b" /> | <img width="634" height="287" alt="image" src="https://github.com/user-attachments/assets/32b78c11-665c-4e8c-9464-d524630fca4b" /> |
 
 ---
 
