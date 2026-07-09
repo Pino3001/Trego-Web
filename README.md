@@ -246,17 +246,6 @@ http://localhost:5173
 
 ---
 
-# 📂 Repositorios relacionados
-
-| Proyecto | Repositorio |
-|----------|-------------|
-| 🌐 Aplicación Web | https://github.com/Pino3001/Trego-Web |
-| 🚀 Deploy Web (Vercel) | https://github.com/neimex23/Trego-Web |
-| 📱 Aplicación Android | https://github.com/Pino3001/Trego-android |
-| ⚙️ Backend REST | https://github.com/neimex23/Trego-Backend |
-
----
-
 # 👨‍💻 Autores
 
 Proyecto desarrollado por el **Grupo 6** como trabajo final de la carrera **Tecnólogo en Informática**.
