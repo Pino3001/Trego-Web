@@ -1,4 +1,4 @@
-# TREGO Web
+# TREGO Web 
 
 > Aplicación web de **TREGO**, una plataforma de pedidos de comida en línea desarrollada como proyecto final de la carrera **Tecnólogo en Informática**.
 
@@ -6,18 +6,30 @@ TREGO Web permite la gestión de la plataforma desde distintos perfiles de usuar
 
 ---
 
-## Características
+# 🔗 Enlaces
 
-### Restaurante
+| Recurso | Enlace |
+|----------|---------|
+| 🌐 Aplicación desplegada | https://trego-theta.vercel.app/ |
+| 💻 Repositorio Web | https://github.com/Pino3001/Trego-Web |
+| 📱 Aplicación Android | https://github.com/Pino3001/Trego-android |
+| ⚙️ Backend REST | https://github.com/neimex23/Trego-Backend |
+| 🚀 Repositorio del Deploy (Vercel) | https://github.com/neimex23/Trego-Web |
+
+---
+
+# 🚀 Características
+
+## Restaurante
 
 - 🍽️ Gestión de productos, platos, artículos y combos.
 - 🏷️ Creación y administración de ofertas.
 - 📦 Gestión de pedidos recibidos.
 - 📍 Configuración de zonas y radios de entrega.
 - 🖼️ Administración de imágenes mediante Cloudinary.
-- ⭐ Consulta de comentarios y calificaciones recibidas.
+- ⭐ Consulta de comentarios y calificaciones de los clientes.
 
-### Administrador
+## Administrador
 
 - 🏪 Alta y validación de restaurantes.
 - 👥 Gestión de usuarios.
@@ -26,61 +38,103 @@ TREGO Web permite la gestión de la plataforma desde distintos perfiles de usuar
 
 ---
 
-# Arquitectura
+# 📋 Funcionalidades implementadas
 
-La aplicación fue desarrollada con React (con soporte de TypeScript via definiciones .d.ts), implementando una arquitectura modular basada en componentes reutilizables y separación de responsabilidades. 
+- Autenticación mediante Firebase Authentication.
+- Administración de restaurantes.
+- Gestión de productos, platos, artículos y combos.
+- Gestión de ofertas promocionales.
+- Gestión de pedidos.
+- Configuración de zonas y radios de entrega.
+- Administración de imágenes con Cloudinary.
+- Consulta de comentarios y calificaciones.
+- Panel administrativo para la gestión de usuarios y validación de restaurantes.
 
-La comunicación con el backend se realiza mediante servicios REST, mientras que Firebase proporciona los mecanismos de autenticación.
+---
 
-```
-Browser → React (Client)
-├─ Components / Pages
-├─ Context / Hooks
-├─ Services (src/api) — Axios + Firebase SDK
-└─ Utils / Assets
-Services → REST API OR Firebase (Auth / Firestore) → DB / Cloudinary (imágenes)
+# 🏗️ Arquitectura
+
+La aplicación fue desarrollada utilizando **React** y **Vite**, siguiendo una arquitectura modular basada en componentes reutilizables y separación de responsabilidades.
+
+La comunicación con el backend se realiza mediante una API REST, utilizando principalmente **Fetch API** y, en algunos servicios específicos, **Axios**. La autenticación es gestionada por **Firebase Authentication**, mientras que **Cloudinary** se utiliza para el almacenamiento de imágenes.
+
+El proyecto incorpora además definiciones de tipos mediante archivos **TypeScript (`.d.ts`)**, facilitando la integración con determinados módulos sin que la aplicación esté desarrollada completamente en TypeScript.
+
+```text
+Browser
+    │
+    ▼
+React + Vite
+├── Components
+├── Pages
+├── Context
+├── Hooks
+├── API (Fetch / Axios)
+├── Utils
+└── Assets
+    │
+    ▼
+REST API ─────────────► Backend TREGO
+    │
+    ├── Firebase Authentication
+    ├── Cloudinary
+    └── Geoapify
 ```
 
 ---
 
-# Stack Tecnológico
+# 🛠️ Stack Tecnológico
 
 | Tecnología | Uso |
 |------------|-----|
 | React 19 | Biblioteca para la interfaz de usuario |
-| TypeScript | Lenguaje principal |
-| Vite | Herramienta de desarrollo y compilación |
-| React Router | Navegación |
+| JavaScript (ES6+) | Lenguaje principal |
+| TypeScript (.d.ts) | Definiciones de tipos |
+| Vite | Bundler y entorno de desarrollo |
+| React Router | Navegación entre vistas |
 | TailwindCSS | Estilos |
-| Axios | Consumo de APIs |
+| Fetch API | Consumo principal de la API REST |
+| Axios | Consumo de servicios específicos |
 | Firebase Authentication | Autenticación |
 | Cloudinary | Gestión de imágenes |
+| Geoapify | Geocodificación y autocompletado de direcciones |
 
 ---
 
-## 📁 Organización del código
+# 📁 Organización del proyecto
 
 ```text
-src/
-├── api/            # Comunicación con el backend
-├── assets/         # Recursos gráficos
-├── components/     # Componentes reutilizables
-├── constants/      # Constantes de la aplicación
-├── context/        # Context API
-├── data/           # Modelos y datos auxiliares
-├── hooks/          # Hooks personalizados
-├── pages/          # Pantallas de la aplicación
-├── utils/          # Funciones auxiliares
+/
+├── public/
+│   ├── favicon.svg
+│   └── icons.svg
 │
-├── App.jsx
-└── main.jsx
+├── src/
+│   ├── api/            # Comunicación con el backend
+│   ├── assets/         # Recursos gráficos
+│   ├── components/     # Componentes reutilizables
+│   ├── constants/      # Constantes globales
+│   ├── context/        # Context API
+│   ├── data/           # Modelos y datos auxiliares
+│   ├── hooks/          # Hooks personalizados
+│   ├── pages/          # Pantallas de la aplicación
+│   ├── utils/          # Funciones auxiliares
+│   ├── App.jsx
+│   └── main.jsx
+│
+├── .env.example
+├── firebase.config.js
+├── index.html
+├── package.json
+├── vite.config.js
+└── README.md
 ```
 
 ---
 
-# Instalación
+# ⚙️ Instalación
 
-## Clonar el repositorio
+### Clonar el repositorio
 
 ```bash
 git clone https://github.com/Pino3001/Trego-Web.git
@@ -108,9 +162,9 @@ Completar las variables correspondientes.
 
 ---
 
-# Variables de entorno
+# 🔐 Variables de entorno
 
-La aplicación utiliza variables con prefijo `VITE_`.
+La aplicación utiliza variables con el prefijo `VITE_`.
 
 ```env
 VITE_FIREBASE_API_KEY=
@@ -126,13 +180,13 @@ VITE_CLOUDINARY_UPLOAD_PRESET=
 VITE_API_URL=
 ```
 
-> **Importante:** No incluir credenciales privadas dentro del repositorio.
+> **Importante:** Nunca incluir credenciales privadas dentro del repositorio.
 
 ---
 
-# Ejecución
+# ▶️ Ejecución
 
-Modo desarrollo
+Iniciar el servidor de desarrollo
 
 ```bash
 npm run dev
@@ -140,85 +194,86 @@ npm run dev
 
 La aplicación estará disponible en
 
-```
+```text
 http://localhost:5173
 ```
 
 ---
 
-# Scripts
+# 📦 Scripts disponibles
 
 | Script | Descripción |
 |---------|-------------|
-| npm run dev | Inicia el servidor de desarrollo |
-| npm run build | Genera la versión de producción |
-| npm run preview | Previsualiza la build generada |
-| npm run lint | Ejecuta ESLint |
+| `npm run dev` | Inicia el servidor de desarrollo |
+| `npm run build` | Genera la versión de producción |
+| `npm run preview` | Previsualiza la build generada |
+| `npm run lint` | Ejecuta ESLint |
 
 ---
 
-# Capturas de pantalla
+# 📸 Capturas de pantalla
 
 | Inicio de sesión | Panel Restaurante |
 |------------------|-------------------|
-| Imagen | Imagen |
+| *(Imagen)* | *(Imagen)* |
 
 | Gestión de Productos | Gestión de Pedidos |
 |----------------------|--------------------|
-| Imagen | Imagen |
+| *(Imagen)* | *(Imagen)* |
 
 | Gestión de Ofertas | Panel Administrador |
 |--------------------|---------------------|
-| Imagen | Imagen |
+| *(Imagen)* | *(Imagen)* |
 
 ---
 
-# Backend
+# 🔗 Servicios utilizados
 
-Esta aplicación consume los servicios REST desarrollados para la plataforma TREGO.
-
-Servicios utilizados:
-
-- API REST
+- Backend REST TREGO
 - Firebase Authentication
 - Cloudinary
 - Geoapify
 
 ---
 
-# Buenas prácticas
+# ✅ Buenas prácticas
 
 - Mantener las credenciales fuera del repositorio.
 - Utilizar variables de entorno para la configuración.
 - Ejecutar `npm run lint` antes de publicar cambios.
-- Generar siempre una build de producción antes del despliegue.
+- Generar una build de producción antes del despliegue.
+- Mantener la separación entre componentes, lógica de negocio y acceso a datos.
 
 ---
 
-# Repositorios relacionados
+# 📂 Repositorios relacionados
 
-- 📱 Aplicación Android
-- 🌐 Aplicación Web (este repositorio)
-- ⚙️ Backend REST
+| Proyecto | Repositorio |
+|----------|-------------|
+| 🌐 Aplicación Web | https://github.com/Pino3001/Trego-Web |
+| 🚀 Deploy Web (Vercel) | https://github.com/neimex23/Trego-Web |
+| 📱 Aplicación Android | https://github.com/Pino3001/Trego-android |
+| ⚙️ Backend REST | https://github.com/neimex23/Trego-Backend |
 
 ---
 
-## 👨‍💻 Autores
+# 👨‍💻 Autores
 
-**Grupo 6 - Proyecto Final**
+Proyecto desarrollado por el **Grupo 6** como trabajo final de la carrera **Tecnólogo en Informática**.
 
 - Alexis La Cruz
 - Ezequiel Medina
 - Maikol Brion
 - Dámaso Tor
 - Horacio Duarte
-- Nicolas Fernandez
-- Cristian Gonzalez
+- Nicolás Fernández
+- Cristian González
 - Mateo Sparano
+
 ---
 
-## 📄 Licencia
+# 📄 Licencia
 
-Este proyecto fue desarrollado con fines académicos como trabajo final de carrera.
+Este proyecto fue desarrollado con fines exclusivamente académicos como trabajo final de la carrera **Tecnólogo en Informática**.
 
-No se autoriza su utilización comercial sin el consentimiento de sus autores.
+No se autoriza su utilización comercial sin el consentimiento expreso de sus autores.
