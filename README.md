@@ -213,17 +213,29 @@ http://localhost:5173
 
 # 📸 Capturas de pantalla
 
-| Inicio de sesión | Panel Restaurante |
-|------------------|-------------------|
-| *(Imagen)* | *(Imagen)* |
+## 👤 Clientes
 
-| Gestión de Productos | Gestión de Pedidos |
+| Inicio | Menú Restaurantes |
+|--------|---------------------|
+| <img width="634" height="287" alt="Captura desde 2026-07-09 15-28-46" src="https://github.com/user-attachments/assets/a2e35fa7-03fa-49f0-9bb0-aa8ca07b53fe" /> | <img width="634" height="287" alt="Captura desde 2026-07-09 15-31-34" src="https://github.com/user-attachments/assets/bba04bcc-97ae-4b3e-863c-f7b5cac170f9" />
+|
+
+---
+
+## 🍽️ Restaurantes
+
+| Inicio | Gestión de Productos |
 |----------------------|--------------------|
-| *(Imagen)* | *(Imagen)* |
+| <img width="634" height="287" alt="Captura desde 2026-07-09 15-33-23" src="https://github.com/user-attachments/assets/28c4dc14-78da-4229-8592-8fe6b7dd780a" /> | <img width="634" height="287" alt="Captura desde 2026-07-09 15-34-20" src="https://github.com/user-attachments/assets/34648d28-926c-4329-b0f6-6788845c71e5" />|
 
-| Gestión de Ofertas | Panel Administrador |
-|--------------------|---------------------|
-| *(Imagen)* | *(Imagen)* |
+---
+
+## 🛠️ Administradores
+
+| Inicio | Restaurantes Registrados |
+|-------------------------|----------------------|
+| <img width="634" height="287" alt="Captura desde 2026-07-09 15-35-58" src="https://github.com/user-attachments/assets/46c7e371-d218-48b1-8758-d86b1daf666b" /> | <img width="634" height="287" alt="image" src="https://github.com/user-attachments/assets/32b78c11-665c-4e8c-9464-d524630fca4b" />
+ |
 
 ---
 
