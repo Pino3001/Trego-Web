@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import FiltersModal from "../../../components/FiltersModal.jsx";
 import LocationPrompt from "../../../components/LocationPrompt.jsx";
 import EmptyState from "../../../components/EmptyState.jsx";
 import SectionRow from "../../../components/SectionRow.jsx";
 import RestaurantCard from "../../../components/RestaurantCard.jsx";
+import SubCategoriaCard from "../../../components/SubCategoriaCard.jsx";
 import OfertaPlatoCard from "../../../components/OfertaPlatoCard.jsx";
 import OrdenamientoSelect from "../../../components/OrdenamientoSelect.jsx";
+import { MapPin } from "lucide-react";
 import {
   leerPrefUbicacion,
   ubicacionPromptYaRespondido,
@@ -15,6 +17,7 @@ import { useRestaurantes } from "../../../hooks/useRestaurantes.js";
 import { useFiltros } from "../../../context/FiltrosContext.js";
 import { useBusqueda } from "../../../context/BusquedaContext.js";
 import { useDebounce } from "../../../hooks/useDebounce.ts";
+import { useSubCategorias } from "../../../hooks/useSubCategorias.js";
 import Footer from "../../../components/body/Footer.js";
 import { useNavigate } from "react-router";
 
@@ -59,6 +62,8 @@ export default function HomePage() {
     setOrdenamiento,
     hayFiltrosActivos,
   } = useRestaurantes();
+  
+  const { subcategorias } = useSubCategorias();
   const { filtrosAbiertos, cerrarFiltros } = useFiltros();
 
   const { busqueda, setBusqueda } = useBusqueda({
@@ -78,12 +83,7 @@ export default function HomePage() {
     !ubicacionCancelada &&
     !ubicacionPromptYaRespondido();
 
-  const restaurantesRef = useRef(restaurantes);
-  useEffect(() => {
-    restaurantesRef.current = restaurantes;
-  }, [restaurantes]);
-
-  // --- ESTADOS DE CARGA CONTEXTUALES (Evita el desfase visual) ---
+  // --- ESTADOS DE CARGA CONTEXTUALES ---
   const esCargaInicialPagina =
     cargando && !modoBusqueda && restaurantes.length === 0;
   const esActualizacionSilenciosa =
@@ -94,18 +94,24 @@ export default function HomePage() {
   const esActualizacionBusquedaSilenciosa =
     cargando && modoBusqueda && resultadosBusquedaPlato.length > 0;
 
-  const destacados = useMemo(() => restaurantes.slice(0, 4), [restaurantes]);
   const listaPrincipal = restaurantes;
 
   const latitud = geo.coords?.latitud;
   const longitud = geo.coords?.longitud;
 
+  const latitudRedondeada = useMemo(() => {
+    return latitud !== undefined ? Math.round(latitud * 10000) / 10000 : undefined;
+  }, [latitud]);
+
+  const longitudRedondeada = useMemo(() => {
+    return longitud !== undefined ? Math.round(longitud * 10000) / 10000 : undefined;
+  }, [longitud]);
+
   useEffect(() => {
-    // Verificamos que tengamos la ubicación y las coordenadas cargadas
-    if (!geo.tieneUbicacion || latitud === undefined || longitud === undefined)
+    if (!geo.tieneUbicacion || latitudRedondeada === undefined || longitudRedondeada === undefined)
       return;
 
-    const coordsSeguras = { latitud, longitud };
+    const coordsSeguras = { latitud: latitudRedondeada, longitud: longitudRedondeada };
     const termino = debouncedBusqueda.trim();
 
     if (termino) {
@@ -115,8 +121,8 @@ export default function HomePage() {
     }
   }, [
     geo.tieneUbicacion,
-    latitud,
-    longitud,
+    latitudRedondeada,
+    longitudRedondeada,
     debouncedBusqueda,
     buscarPlato,
     cargarZona,
@@ -136,7 +142,6 @@ export default function HomePage() {
 
   const handleSeleccionarOferta = useCallback(
     (oferta) => {
-      // Viajamos a la página del restaurante y pasamos el id del producto en la URL
       navigate(
         `/restaurante/${oferta.idRestaurante}?abrirOferta=${oferta.producto.idProducto}`,
       );
@@ -158,7 +163,7 @@ export default function HomePage() {
     listaPrincipal.length === 0;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f5f5f7]">
+    <div className="min-h-screen flex flex-col">
       <div className="flex-1 mx-auto w-full max-w-400 px-3 py-4 sm:px-6 sm:py-6">
         {/* Notificaciones de actualización silenciosa en segundo plano */}
         {esActualizacionSilenciosa && (
@@ -188,6 +193,24 @@ export default function HomePage() {
         )}
 
         {sinUbicacion && <EmptyState mensaje="No hay nada para mostrar" />}
+
+        {!geo.tieneUbicacion && !sinUbicacion && !geo.cargandoUbicacion && (
+          <div className="flex flex-col items-center justify-center py-20 text-center animate-fade-in">
+            <div className="rounded-full bg-orange-100 p-4 text-orange-600 mb-4">
+              <MapPin className="h-8 w-8 animate-bounce" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">Encuentra la mejor comida cerca de ti</h3>
+            <p className="mt-2 text-sm text-gray-500 max-w-sm">
+              Por favor activa tu ubicación para mostrarte los restaurantes locales, platos más demandados y promociones exclusivas en tu zona.
+            </p>
+            <button
+              onClick={handleActivarUbicacion}
+              className="mt-6 rounded-full bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-orange-600 transition-colors"
+            >
+              Usar ubicación actual
+            </button>
+          </div>
+        )}
 
         {geo.tieneUbicacion && !sinUbicacion && (
           <>
@@ -297,18 +320,16 @@ export default function HomePage() {
                   </section>
                 )}
 
-                {/* --- SECCIÓN DESTACADOS --- */}
-                {!modoBusqueda && destacados.length > 0 && (
-                  <SectionRow titulo="Descubre los Mejores Platos">
-                    {destacados.map((r) => (
-                      <RestaurantCard
-                        key={`destacado-${r.idUsuario}`}
-                        restaurante={r}
-                        modoBusqueda={modoBusqueda}
-                      />
-                    ))}
-                  </SectionRow>
-                )}
+            {!modoBusqueda && subcategorias.length > 0 && (
+              <SectionRow titulo="Descubre los Mejores Platos">
+                {subcategorias.map((sub) => (
+                  <SubCategoriaCard
+                    key={`subcategoria-${sub.idSubCategoria}`}
+                    subcategoria={sub}
+                  />
+                ))}
+              </SectionRow>
+            )}
 
                 {/* --- SECCIÓN LISTA GENERAL --- */}
                 {!modoBusqueda && (

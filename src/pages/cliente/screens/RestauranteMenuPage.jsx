@@ -16,7 +16,7 @@ export default function RestauranteMenuPage() {
   const { abrirDetalleProducto, validarRestauranteAbierto } = useCarrito();
 
   const [resenasInfo, setResenasInfo] = useState(null);
-  const { busqueda } = useBusqueda({ placeholder: 'Buscar en el menú...' });
+  const { busqueda } = useBusqueda({ placeholder: "Buscar en el menú..." });
   const debouncedBusqueda = useDebounce(busqueda, 500);
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -47,8 +47,8 @@ export default function RestauranteMenuPage() {
     const idOferta = searchParams.get("abrirOferta");
 
     if (idOferta && !cargando && !error && restaurante) {
-      const productoAabrir = 
-        ofertas?.find((p) => String(p.idProducto) === idOferta) || 
+      const productoAabrir =
+        ofertas?.find((p) => String(p.idProducto) === idOferta) ||
         productosFiltrados?.find((p) => String(p.idProducto) === idOferta);
 
       if (productoAabrir) {
@@ -65,12 +65,44 @@ export default function RestauranteMenuPage() {
     ofertas,
     productosFiltrados,
     abrirDetalleProducto,
-    setSearchParams
+    setSearchParams,
   ]);
 
-  const handleAgregar = useCallback((producto) => {
-    abrirDetalleProducto(producto, restaurante);
-  }, [abrirDetalleProducto, restaurante]);
+  useEffect(() => {
+    const idOferta = searchParams.get("abrirOferta");
+    const idPlato = searchParams.get("abrirPlato");
+    const idTarget = idOferta || idPlato;
+
+    if (idTarget && !cargando && !error && restaurante) {
+      const productoAabrir =
+        ofertas?.find((p) => String(p.idProducto) === idTarget) ||
+        productosFiltrados?.find((p) => String(p.idProducto) === idTarget);
+
+      if (productoAabrir) {
+        abrirDetalleProducto(productoAabrir, restaurante);
+      }
+
+      if (idOferta) searchParams.delete("abrirOferta");
+      if (idPlato) searchParams.delete("abrirPlato");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [
+    searchParams,
+    cargando,
+    error,
+    restaurante,
+    ofertas,
+    productosFiltrados,
+    abrirDetalleProducto,
+    setSearchParams,
+  ]);
+
+  const handleAgregar = useCallback(
+    (producto) => {
+      abrirDetalleProducto(producto, restaurante);
+    },
+    [abrirDetalleProducto, restaurante],
+  );
 
   const productosVisibles = useMemo(() => {
     const term = debouncedBusqueda.trim().toLowerCase();
@@ -94,7 +126,9 @@ export default function RestauranteMenuPage() {
       <PageShell>
         <div className="flex flex-col items-center justify-center py-32">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
-          <p className="mt-4 text-sm font-medium text-gray-500 animate-pulse">Cargando menú...</p>
+          <p className="mt-4 text-sm font-medium text-gray-500 animate-pulse">
+            Cargando menú...
+          </p>
         </div>
       </PageShell>
     );
@@ -105,7 +139,9 @@ export default function RestauranteMenuPage() {
       <PageShell>
         <NavBack />
         <div className="flex flex-col items-center justify-center py-24">
-           <p className="text-center text-red-600">{error ?? "No se pudo cargar el menú"}</p>
+          <p className="text-center text-red-600">
+            {error ?? "No se pudo cargar el menú"}
+          </p>
         </div>
       </PageShell>
     );
@@ -116,7 +152,9 @@ export default function RestauranteMenuPage() {
       <PageShell>
         <NavBack />
         <div className="flex flex-col items-center justify-center py-24">
-          <p className="text-center text-gray-600">Este restaurante no está disponible.</p>
+          <p className="text-center text-gray-600">
+            Este restaurante no está disponible.
+          </p>
         </div>
       </PageShell>
     );
@@ -143,7 +181,8 @@ export default function RestauranteMenuPage() {
   }
 
   const mostrarOfertas = ofertas.length > 0 && !categoria;
-  const cantidadResenas = resenasInfo?.cantidadResenas ?? restaurante?.cantidadResenas ?? 0;
+  const cantidadResenas =
+    resenasInfo?.cantidadResenas ?? restaurante?.cantidadResenas ?? 0;
 
   return (
     <PageShell>

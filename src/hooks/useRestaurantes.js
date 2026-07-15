@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react' // <-- 1. Agregamos useEffect aquí
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { obtenerRestaurantesZona } from '../api/restaurantesApi'
 import {
   buscarPlatosEnZona,
@@ -30,7 +30,11 @@ export function useRestaurantes() {
   const restaurantesZonaRef = useRef(restaurantesZona)
   const ofertasZonaRef = useRef(ofertasZona)
 
-  // Sincronizamos las referencias de forma segura DESPUÉS del renderizado
+  const activeRequestIdRef = useRef(0)
+
+  // CACHE PARA EVITAR DOBLE FETCH POR DEBOUNCE AL LIMPIAR
+  const ultimoFetchRef = useRef({ latitud: undefined, longitud: undefined, termino: undefined })
+
   useEffect(() => {
     restaurantesZonaRef.current = restaurantesZona
   }, [restaurantesZona])
@@ -53,9 +57,28 @@ export function useRestaurantes() {
     return msg || 'Error al cargar restaurantes'
   }
 
-  // CARGAMOS EN PARALELO 
-  const cargarZona = useCallback(async (coords) => {
+  // CARGA DE ZONA CON PREVENCIÓN DE DUPLICADOS
+  const cargarZona = useCallback(async (coords, forzar = false) => {
     if (!coords) return
+
+    // Redondeo preventivo a 4 decimales (~11 metros de margen de drift de GPS)
+    const lat = Math.round(coords.latitud * 10000) / 10000;
+    const lng = Math.round(coords.longitud * 10000) / 10000;
+
+    // Si ya tenemos datos del mismo lugar sin busquedas activas, evitamos el viaje al server
+    if (
+      !forzar &&
+      restaurantesZonaRef.current.length > 0 &&
+      ultimoFetchRef.current.latitud === lat &&
+      ultimoFetchRef.current.longitud === lng &&
+      ultimoFetchRef.current.termino === ''
+    ) {
+      setModoBusqueda(false)
+      setTerminoBusqueda('')
+      setResultadosPlato([])
+      return
+    }
+
     setCargando(true)
     setCargandoOfertas(true)
     setError(null)
@@ -63,64 +86,92 @@ export function useRestaurantes() {
     setTerminoBusqueda('')
     setResultadosPlato([])
 
+    const requestId = ++activeRequestIdRef.current
+    ultimoFetchRef.current = { latitud: lat, longitud: lng, termino: '' }
+
     try {
       const [restaurantesData, ofertasData] = await Promise.all([
-        obtenerRestaurantesZona({
-          latitud: coords.latitud,
-          longitud: coords.longitud,
-        }),
-        listarProductosOfertaEnZona(coords)
+        obtenerRestaurantesZona({ latitud: lat, longitud: lng }),
+        listarProductosOfertaEnZona({ latitud: lat, longitud: lng })
       ])
+
+      if (requestId !== activeRequestIdRef.current) return 
 
       setRestaurantesZona(restaurantesData)
       setOfertasZona(ofertasData)
     } catch (e) {
+      if (requestId !== activeRequestIdRef.current) return
       setError(mensajeErrorAmigable(e))
       setRestaurantesZona([])
       setOfertasZona([])
     } finally {
-      setCargando(false)
-      setCargandoOfertas(false)
+      if (requestId === activeRequestIdRef.current) {
+        setCargando(false)
+        setCargandoOfertas(false)
+      }
     }
   }, [])
 
-  const buscarPlato = useCallback(async (coords, termino) => {
+  // BÚSQUEDA DE PLATOS ASÍNCRONA 
+  const buscarPlato = useCallback(async (coords, termino, forzar = false) => {
     if (!coords || !termino.trim()) return
+    const termLimpio = termino.trim()
+
+    const lat = Math.round(coords.latitud * 10000) / 10000;
+    const lng = Math.round(coords.longitud * 10000) / 10000;
+
+    if (
+      !forzar &&
+      ultimoFetchRef.current.latitud === lat &&
+      ultimoFetchRef.current.longitud === lng &&
+      ultimoFetchRef.current.termino === termLimpio
+    ) {
+      setModoBusqueda(true)
+      setTerminoBusqueda(termLimpio)
+      return
+    }
+
     setCargando(true)
     setError(null)
     setModoBusqueda(true)
-    setTerminoBusqueda(termino.trim())
+    setTerminoBusqueda(termLimpio)
+
+    const requestId = ++activeRequestIdRef.current
+    ultimoFetchRef.current = { latitud: lat, longitud: lng, termino: termLimpio }
 
     try {
       let base = restaurantesZonaRef.current
       if (base.length === 0) {
-        base = await obtenerRestaurantesZona({
-          latitud: coords.latitud,
-          longitud: coords.longitud,
-        })
+        base = await obtenerRestaurantesZona({ latitud: lat, longitud: lng })
+        if (requestId !== activeRequestIdRef.current) return
         setRestaurantesZona(base)
       }
 
-      const promesas = [buscarPlatosEnZona(base, termino.trim())]
+      const promesas = [buscarPlatosEnZona(base, termLimpio)]
       const necesitaCargarOfertas = ofertasZonaRef.current.length === 0
 
       if (necesitaCargarOfertas) {
         setCargandoOfertas(true)
-        promesas.push(listarProductosOfertaEnZona(coords))
+        promesas.push(listarProductosOfertaEnZona({ latitud: lat, longitud: lng }))
       }
 
       const [resultados, ofertasNuevas] = await Promise.all(promesas)
+      
+      if (requestId !== activeRequestIdRef.current) return
       
       setResultadosPlato(resultados)
       if (necesitaCargarOfertas && ofertasNuevas) {
         setOfertasZona(ofertasNuevas)
       }
     } catch (e) {
+      if (requestId !== activeRequestIdRef.current) return
       setError(e.message ?? 'Error en la búsqueda de platos')
       setResultadosPlato([])
     } finally {
-      setCargando(false)
-      setCargandoOfertas(false)
+      if (requestId === activeRequestIdRef.current) {
+        setCargando(false)
+        setCargandoOfertas(false)
+      }
     }
   }, [])
 
@@ -140,9 +191,9 @@ export function useRestaurantes() {
 
   const recargar = useCallback((coords) => {
     if (modoBusqueda && terminoBusqueda) {
-      return buscarPlato(coords, terminoBusqueda)
+      return buscarPlato(coords, terminoBusqueda, true)
     }
-    return cargarZona(coords)
+    return cargarZona(coords, true)
   }, [modoBusqueda, terminoBusqueda, buscarPlato, cargarZona])
 
   const restaurantes = useMemo(() => {
@@ -155,13 +206,14 @@ export function useRestaurantes() {
     return ordenarResultadosPlato(filtrados, filtros.ordenamiento)
   }, [resultadosPlato, filtros])
 
+  const ofertasEnriquecidas = useMemo(() => {
+    return ofertasZona.map((o) => enriquecerOfertaZona(o, restaurantesZona))
+  }, [ofertasZona, restaurantesZona])
+
   const mejoresOfertas = useMemo(() => {
-    const ofertasEnriquecidas = ofertasZona.map((o) =>
-      enriquecerOfertaZona(o, restaurantesZona)
-    )
     const filtradas = filtrarOfertasPlatos(ofertasEnriquecidas, filtros)
     return ordenarOfertasPlatos(filtradas, filtros.ordenamiento)
-  }, [ofertasZona, restaurantesZona, filtros])
+  }, [ofertasEnriquecidas, filtros])
 
   return {
     restaurantes,

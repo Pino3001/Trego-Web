@@ -123,6 +123,7 @@ export default function ListarCancelados() {
           fechaHasta={fechaHasta}
           onChangeFechaDesde={setFechaDesde}
           onChangeFechaHasta={setFechaHasta}
+          wBox="w-60!"
         />
       </div>
 

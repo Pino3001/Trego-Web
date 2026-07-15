@@ -63,7 +63,7 @@ export default function ClienteLayaut() {
 
   // Si pasa todas las reglas, renderizamos la pantalla normal
   return (
-    <div className="h-screen w-screen flex flex-col bg-[#f0f0f0] overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-[#F4F4F4] overflow-hidden">
       <Header
         tipoUser="Cliente"
         onBuscar={() => {}}

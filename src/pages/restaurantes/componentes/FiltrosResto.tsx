@@ -60,7 +60,7 @@ export default function FiltrosRestaurantes<T>({
   setOfertasActivas,
   fechaInicioLabel = "Desde",
   fechaFinLabel = "Hasta",
-  wBox = "w-70"
+  wBox = "w-70!"
 }: FiltroRestoProps<T>) {
   const toggleOrden = () => setOrden(orden === "ASC" ? "DESC" : "ASC");
 
