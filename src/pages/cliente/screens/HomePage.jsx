@@ -4,6 +4,7 @@ import LocationPrompt from "../../../components/LocationPrompt.jsx";
 import EmptyState from "../../../components/EmptyState.jsx";
 import SectionRow from "../../../components/SectionRow.jsx";
 import RestaurantCard from "../../../components/RestaurantCard.jsx";
+import SubCategoriaCard from "../../../components/SubCategoriaCard.jsx";
 import OfertaPlatoCard from "../../../components/OfertaPlatoCard.jsx";
 import OrdenamientoSelect from "../../../components/OrdenamientoSelect.jsx";
 import {
@@ -15,6 +16,7 @@ import { useRestaurantes } from "../../../hooks/useRestaurantes.js";
 import { useFiltros } from "../../../context/FiltrosContext.js";
 import { useBusqueda } from "../../../context/BusquedaContext.js";
 import { useDebounce } from "../../../hooks/useDebounce.ts";
+import { useSubCategorias } from "../../../hooks/useSubCategorias.js";
 import { useCarrito } from "../../../context/CarritoContext.js";
 import { resolverProductoOfertaParaCarrito } from "../../../api/productosClienteApi.js";
 import Footer from "../../../components/body/Footer.js";
@@ -60,6 +62,7 @@ export default function HomePage() {
     setOrdenamiento,
     hayFiltrosActivos,
   } = useRestaurantes();
+  const { subcategorias } = useSubCategorias();
   const { filtrosAbiertos, cerrarFiltros } = useFiltros();
   const { abrirDetalleProducto, validarRestauranteAbierto } = useCarrito();
   const [cargandoOfertaSeleccionada, setCargandoOfertaSeleccionada] =
@@ -82,7 +85,7 @@ export default function HomePage() {
     !ubicacionCancelada &&
     !ubicacionPromptYaRespondido();
 
-  const destacados = useMemo(() => restaurantes.slice(0, 4), [restaurantes]);
+  const destacados = useMemo(() => subcategorias, [subcategorias]);
 
   const listaPrincipal = restaurantes;
 
@@ -264,11 +267,10 @@ export default function HomePage() {
 
             {!modoBusqueda && destacados.length > 0 && (
               <SectionRow titulo="Descubre los Mejores Platos">
-                {destacados.map((r) => (
-                  <RestaurantCard
-                    key={`destacado-${r.idUsuario}`}
-                    restaurante={r}
-                    modoBusqueda={modoBusqueda}
+                {destacados.map((sub) => (
+                  <SubCategoriaCard
+                    key={`subcategoria-${sub.idSubCategoria}`}
+                    subcategoria={sub}
                   />
                 ))}
               </SectionRow>

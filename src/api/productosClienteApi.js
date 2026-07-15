@@ -99,6 +99,37 @@ async function listarOfertasDesdeApi(coords, restaurantesZona = []) {
   return filtrarOfertasVisibles(items)
 }
 
+/** Productos habilitados de una subcategoría en la zona del cliente. */
+export async function listarProductosPorSubcategoriaEnZona(
+  coords,
+  idSubCategoria,
+  restaurantesZona = [],
+) {
+  if (!coords || idSubCategoria == null) return []
+
+  const url = `${ENDPOINTS.LISTAR_PRODUCTOS_SUBCATEGORIA}?idSubCategoria=${idSubCategoria}`
+  const response = await fetchConAuth(url, {
+    method: 'POST',
+    body: JSON.stringify({
+      latitud: coords.latitud,
+      longitud: coords.longitud,
+    }),
+  })
+
+  if (response.status === 404) return []
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '')
+    throw new Error(errorText || 'Error al listar platos de la subcategoría')
+  }
+
+  const data = await response.json()
+  const lista = Array.isArray(data) ? data : []
+
+  return lista
+    .map((dto) => mapearProductoZona(dto, restaurantesZona))
+    .filter(Boolean)
+}
+
 /** Productos con oferta activa en la zona del cliente. */
 export async function listarProductosOfertaEnZona(coords, restaurantesZona = []) {
   if (!coords) return []

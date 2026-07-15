@@ -73,12 +73,13 @@ export function useRestaurantes() {
           longitud: coords.longitud,
         })
         setRestaurantesZona(data)
-        await cargarOfertas(coords, data)
+        setCargando(false)
+        // Ofertas van en paralelo: no bloquean la lista (también llaman Geoapify en back)
+        void cargarOfertas(coords, data)
       } catch (e) {
         setError(mensajeErrorAmigable(e))
         setRestaurantesZona([])
         setOfertasZona([])
-      } finally {
         setCargando(false)
       }
     },
@@ -105,14 +106,14 @@ export function useRestaurantes() {
 
         const resultados = await buscarPlatosEnZona(base, termino.trim())
         setResultadosPlato(resultados)
+        setCargando(false)
 
         if (ofertasZonaRef.current.length === 0) {
-          await cargarOfertas(coords, base)
+          void cargarOfertas(coords, base)
         }
       } catch (e) {
         setError(e.message ?? 'Error en la búsqueda de platos')
         setResultadosPlato([])
-      } finally {
         setCargando(false)
       }
     },

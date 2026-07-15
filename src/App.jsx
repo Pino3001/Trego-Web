@@ -22,6 +22,7 @@ import CrearAdministradorPage from "./pages/admin/screens/CrearAdministradorPage
 import AdministradorLayaut from "./pages/admin/AdministradorLayaut.js";
 import AltaSubCategoriaPage from "./pages/admin/screens/AltaSubCategoriaPage.js";
 import RestauranteMenuPage from "./pages/cliente/screens/RestauranteMenuPage.jsx";
+import SubCategoriaPlatosPage from "./pages/cliente/screens/SubCategoriaPlatosPage.jsx";
 import HomePage from "./pages/cliente/screens/HomePage.jsx";
 import HistorialPage from "./pages/cliente/screens/HistorialPage.jsx";
 import ClienteLayaut from "./pages/cliente/ClienteLayaut.js";
@@ -185,6 +186,7 @@ export default function AppRouter() {
           }
         >
           <Route path="/restaurante/:id" element={<RestauranteMenuPage />} />
+          <Route path="/subcategoria/:id" element={<SubCategoriaPlatosPage />} />
           <Route path="/restaurantes" element={<HomePage />} />
           <Route path="/Historial" element={<HistorialPage />} />
           <Route path="/perfil/cliente" element={<PerfilCliente />} />
