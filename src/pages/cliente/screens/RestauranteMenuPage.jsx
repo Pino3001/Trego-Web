@@ -1,5 +1,5 @@
-import { Link, useParams } from "react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import MenuSidebar from "../../../components/menu/MenuSidebar.jsx";
 import ComentariosRestaurantePanel from "../../../components/menu/ComentariosRestaurantePanel.jsx";
 import { IconBack, IconTag } from "../../../components/icons.jsx";
@@ -18,6 +18,7 @@ export default function RestauranteMenuPage() {
   const [resenasInfo, setResenasInfo] = useState(null);
   const { busqueda } = useBusqueda({ placeholder: 'Buscar en el menú...' });
   const debouncedBusqueda = useDebounce(busqueda, 500);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const {
     menu,
@@ -33,22 +34,44 @@ export default function RestauranteMenuPage() {
     sinProductosEnCategoria,
   } = useMenuRestaurante(id);
 
+  const restaurante = menu?.restaurante;
+  const restauranteAbierto = restaurante?.abierto;
+
   useEffect(() => {
-    if (menu?.restaurante) {
-      validarRestauranteAbierto(menu.restaurante.abierto);
+    if (restaurante) {
+      validarRestauranteAbierto(restauranteAbierto);
+    }
+  }, [restaurante, restauranteAbierto, validarRestauranteAbierto]);
+
+  useEffect(() => {
+    const idOferta = searchParams.get("abrirOferta");
+
+    if (idOferta && !cargando && !error && restaurante) {
+      const productoAabrir = 
+        ofertas?.find((p) => String(p.idProducto) === idOferta) || 
+        productosFiltrados?.find((p) => String(p.idProducto) === idOferta);
+
+      if (productoAabrir) {
+        abrirDetalleProducto(productoAabrir, restaurante);
+      }
+      searchParams.delete("abrirOferta");
+      setSearchParams(searchParams, { replace: true });
     }
   }, [
-    menu?.restaurante?.abierto,
-    menu?.restaurante,
-    validarRestauranteAbierto,
+    searchParams,
+    cargando,
+    error,
+    restaurante,
+    ofertas,
+    productosFiltrados,
+    abrirDetalleProducto,
+    setSearchParams
   ]);
 
-  const handleAgregar = (producto) => {
-    // Paso 2 del CU: muestra detalle, cantidad, ingredientes y comentarios
-    abrirDetalleProducto(producto, menu?.restaurante);
-  };
+  const handleAgregar = useCallback((producto) => {
+    abrirDetalleProducto(producto, restaurante);
+  }, [abrirDetalleProducto, restaurante]);
 
-  // Filtrar encima de lo que ya filtra useMenuRestaurante (por categoría/precio)
   const productosVisibles = useMemo(() => {
     const term = debouncedBusqueda.trim().toLowerCase();
     if (!term) return productosFiltrados;
@@ -60,7 +83,6 @@ export default function RestauranteMenuPage() {
     );
   }, [productosFiltrados, debouncedBusqueda]);
 
-  // También filtrar las ofertas si el usuario escribe algo
   const ofertasVisibles = useMemo(() => {
     const term = debouncedBusqueda.trim().toLowerCase();
     if (!term) return ofertas;
@@ -70,7 +92,10 @@ export default function RestauranteMenuPage() {
   if (cargando) {
     return (
       <PageShell>
-        <p className="py-16 text-center text-gray-500">Cargando menú...</p>
+        <div className="flex flex-col items-center justify-center py-32">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
+          <p className="mt-4 text-sm font-medium text-gray-500 animate-pulse">Cargando menú...</p>
+        </div>
       </PageShell>
     );
   }
@@ -79,20 +104,20 @@ export default function RestauranteMenuPage() {
     return (
       <PageShell>
         <NavBack />
-        <p className="py-16 text-center text-red-600">
-          {error ?? "No se pudo cargar el menú"}
-        </p>
+        <div className="flex flex-col items-center justify-center py-24">
+           <p className="text-center text-red-600">{error ?? "No se pudo cargar el menú"}</p>
+        </div>
       </PageShell>
     );
   }
 
-  if (menu.restaurante && !menu.restaurante.habilitado) {
+  if (restaurante && !restaurante.habilitado) {
     return (
       <PageShell>
         <NavBack />
-        <p className="py-16 text-center text-gray-600">
-          Este restaurante no está disponible.
-        </p>
+        <div className="flex flex-col items-center justify-center py-24">
+          <p className="text-center text-gray-600">Este restaurante no está disponible.</p>
+        </div>
       </PageShell>
     );
   }
@@ -101,9 +126,7 @@ export default function RestauranteMenuPage() {
     return (
       <PageShell>
         <NavBack />
-        {menu.restaurante ? (
-          <RestauranteBanner restaurante={menu.restaurante} />
-        ) : null}
+        {restaurante ? <RestauranteBanner restaurante={restaurante} /> : null}
         <div className="mt-10 flex flex-col items-center gap-4 text-center">
           <p className="text-lg text-gray-600">
             {menu.mensaje ?? "Este restaurante aún no ha cargado su menú"}
@@ -120,15 +143,13 @@ export default function RestauranteMenuPage() {
   }
 
   const mostrarOfertas = ofertas.length > 0 && !categoria;
-
-  const cantidadResenas =
-    resenasInfo?.cantidadResenas ?? menu.restaurante?.cantidadResenas ?? 0;
+  const cantidadResenas = resenasInfo?.cantidadResenas ?? restaurante?.cantidadResenas ?? 0;
 
   return (
     <PageShell>
       <NavBack />
       <RestauranteBanner
-        restaurante={menu.restaurante}
+        restaurante={restaurante}
         cantidadResenas={cantidadResenas}
       />
 
@@ -189,11 +210,10 @@ export default function RestauranteMenuPage() {
     </PageShell>
   );
 }
-
 function PageShell({ children }) {
   return (
-    <div className=" bg-[#f0f0f0]">
-      <div className="mx-auto max-w-275 px-4 py-3 sm:px-6 sm:py-4">
+    <div className="flex min-h-screen flex-col bg-[#f0f0f0]">
+      <div className="mx-auto w-full max-w-275 flex-1 px-4 py-3 sm:px-6 sm:py-4">
         {children}
       </div>
     </div>
@@ -204,7 +224,7 @@ function NavBack() {
   return (
     <Link
       to="/restaurantes"
-      className="mb-4 inline-flex items-center gap-1.5 text-[14px] font-medium text-gray-800 hover:text-trego-orange"
+      className="mb-4 inline-flex items-center gap-1.5 text-[14px] font-medium text-gray-800 hover:text-trego-orange transition-colors"
     >
       <IconBack className="h-5 w-5" />
       Lista de Restaurantes

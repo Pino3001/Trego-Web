@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FiltersModal from "../../../components/FiltersModal.jsx";
 import LocationPrompt from "../../../components/LocationPrompt.jsx";
 import EmptyState from "../../../components/EmptyState.jsx";
@@ -15,9 +15,8 @@ import { useRestaurantes } from "../../../hooks/useRestaurantes.js";
 import { useFiltros } from "../../../context/FiltrosContext.js";
 import { useBusqueda } from "../../../context/BusquedaContext.js";
 import { useDebounce } from "../../../hooks/useDebounce.ts";
-import { useCarrito } from "../../../context/CarritoContext.js";
-import { resolverProductoOfertaParaCarrito } from "../../../api/productosClienteApi.js";
 import Footer from "../../../components/body/Footer.js";
+import { useNavigate } from "react-router";
 
 function SeccionEncabezado({ titulo, subtitulo, acciones }) {
   return (
@@ -61,9 +60,6 @@ export default function HomePage() {
     hayFiltrosActivos,
   } = useRestaurantes();
   const { filtrosAbiertos, cerrarFiltros } = useFiltros();
-  const { abrirDetalleProducto, validarRestauranteAbierto } = useCarrito();
-  const [cargandoOfertaSeleccionada, setCargandoOfertaSeleccionada] =
-    useState(false);
 
   const { busqueda, setBusqueda } = useBusqueda({
     placeholder: "Buscar producto o restaurante",
@@ -82,26 +78,48 @@ export default function HomePage() {
     !ubicacionCancelada &&
     !ubicacionPromptYaRespondido();
 
-  const destacados = useMemo(() => restaurantes.slice(0, 4), [restaurantes]);
+  const restaurantesRef = useRef(restaurantes);
+  useEffect(() => {
+    restaurantesRef.current = restaurantes;
+  }, [restaurantes]);
 
+  // --- ESTADOS DE CARGA CONTEXTUALES (Evita el desfase visual) ---
+  const esCargaInicialPagina =
+    cargando && !modoBusqueda && restaurantes.length === 0;
+  const esActualizacionSilenciosa =
+    cargando && !modoBusqueda && restaurantes.length > 0;
+
+  const esCargaInicialBusqueda =
+    cargando && modoBusqueda && resultadosBusquedaPlato.length === 0;
+  const esActualizacionBusquedaSilenciosa =
+    cargando && modoBusqueda && resultadosBusquedaPlato.length > 0;
+
+  const destacados = useMemo(() => restaurantes.slice(0, 4), [restaurantes]);
   const listaPrincipal = restaurantes;
 
-  useEffect(() => {
-    if (!geo.tieneUbicacion || !geo.coords) return;
+  const latitud = geo.coords?.latitud;
+  const longitud = geo.coords?.longitud;
 
+  useEffect(() => {
+    // Verificamos que tengamos la ubicación y las coordenadas cargadas
+    if (!geo.tieneUbicacion || latitud === undefined || longitud === undefined)
+      return;
+
+    const coordsSeguras = { latitud, longitud };
     const termino = debouncedBusqueda.trim();
+
     if (termino) {
-      buscarPlato(geo.coords, termino);
+      buscarPlato(coordsSeguras, termino);
     } else {
-      cargarZona(geo.coords);
+      cargarZona(coordsSeguras);
     }
-    // buscarPlato y cargarZona son estables (useCallback con deps fijas)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     geo.tieneUbicacion,
-    geo.coords?.latitud,
-    geo.coords?.longitud,
+    latitud,
+    longitud,
     debouncedBusqueda,
+    buscarPlato,
+    cargarZona,
   ]);
 
   const handleActivarUbicacion = () => {
@@ -114,30 +132,16 @@ export default function HomePage() {
     geo.marcarPromptRechazado();
   };
 
+  const navigate = useNavigate();
+
   const handleSeleccionarOferta = useCallback(
-    async (oferta) => {
-      if (cargandoOfertaSeleccionada) return;
-      setCargandoOfertaSeleccionada(true);
-      try {
-        const { producto, restaurante } =
-          await resolverProductoOfertaParaCarrito(oferta, {
-            restaurantesZona: restaurantes,
-          });
-        if (!producto) return;
-        if (restaurante) {
-          validarRestauranteAbierto(restaurante.abierto ?? true);
-        }
-        abrirDetalleProducto(producto, restaurante);
-      } finally {
-        setCargandoOfertaSeleccionada(false);
-      }
+    (oferta) => {
+      // Viajamos a la página del restaurante y pasamos el id del producto en la URL
+      navigate(
+        `/restaurante/${oferta.idRestaurante}?abrirOferta=${oferta.producto.idProducto}`,
+      );
     },
-    [
-      abrirDetalleProducto,
-      cargandoOfertaSeleccionada,
-      restaurantes,
-      validarRestauranteAbierto,
-    ],
+    [navigate],
   );
 
   const sinUbicacion =
@@ -156,12 +160,25 @@ export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f5f7]">
       <div className="flex-1 mx-auto w-full max-w-400 px-3 py-4 sm:px-6 sm:py-6">
-        {cargando && (
-          <p className="mb-4 text-center text-sm text-gray-500">
-            {modoBusqueda
-              ? `Buscando "${terminoBusqueda}"…`
-              : "Cargando restaurantes..."}
-          </p>
+        {/* Notificaciones de actualización silenciosa en segundo plano */}
+        {esActualizacionSilenciosa && (
+          <div className="mb-4 flex items-center justify-center gap-2 rounded-xl border border-blue-100 bg-blue-50 py-2 text-xs font-medium text-blue-700 animate-pulse">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+            </span>
+            Actualizando comercios de la zona...
+          </div>
+        )}
+
+        {esActualizacionBusquedaSilenciosa && (
+          <div className="mb-4 flex items-center justify-center gap-2 rounded-xl border border-blue-100 bg-blue-50 py-2 text-xs font-medium text-blue-700 animate-pulse">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+            </span>
+            Actualizando resultados de búsqueda...
+          </div>
         )}
 
         {error && (
@@ -174,143 +191,165 @@ export default function HomePage() {
 
         {geo.tieneUbicacion && !sinUbicacion && (
           <>
-            {modoBusqueda && (
-              <section className="mb-6 sm:mb-7">
-                <SeccionEncabezado
-                  titulo={`Restaurantes con "${terminoBusqueda}"`}
-                  subtitulo="Locales en tu zona que coinciden con tu búsqueda"
-                  acciones={
-                    <OrdenamientoSelect
-                      value={filtros.ordenamiento}
-                      onChange={setOrdenamiento}
-                    />
-                  }
-                />
-
-                {vacioBusqueda ? (
-                  <EmptyState
-                    mensaje={`Ningún restaurante en tu zona coincide con "${terminoBusqueda}"`}
-                    onLimpiarFiltros={
-                      hayFiltrosActivos || busqueda.trim()
-                        ? () => {
-                            setBusqueda("");
-                            limpiarFiltros(geo.coords);
-                          }
-                        : undefined
-                    }
-                  />
-                ) : (
-                  <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 xl:grid-cols-3">
-                    {resultadosBusquedaPlato.map(
-                      ({ restaurante, productos }) => (
-                        <RestaurantCard
-                          key={restaurante.idUsuario}
-                          restaurante={restaurante}
-                          modoBusqueda={modoBusqueda}
-                          productosCoincidentes={productos}
-                          enGrid
+            {esCargaInicialPagina ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
+                <p className="mt-4 text-sm font-medium text-gray-500 animate-pulse">
+                  Buscando los locales y ofertas más cercanos...
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* --- SECCIÓN BÚSQUEDA --- */}
+                {modoBusqueda && (
+                  <section className="mb-6 sm:mb-7">
+                    <SeccionEncabezado
+                      titulo={`Restaurantes con "${terminoBusqueda || busqueda}"`}
+                      subtitulo="Locales en tu zona que coinciden con tu búsqueda"
+                      acciones={
+                        <OrdenamientoSelect
+                          value={filtros.ordenamiento}
+                          onChange={setOrdenamiento}
                         />
-                      ),
+                      }
+                    />
+
+                    {esCargaInicialBusqueda ? (
+                      <div className="flex flex-col items-center justify-center py-12">
+                        <div className="h-6 w-6 animate-spin rounded-full border-3 border-orange-500 border-t-transparent"></div>
+                        <p className="mt-3 text-xs text-gray-500 animate-pulse">
+                          Buscando platos en el menú...
+                        </p>
+                      </div>
+                    ) : vacioBusqueda ? (
+                      <EmptyState
+                        mensaje={`Ningún restaurante en tu zona coincide con "${terminoBusqueda}"`}
+                        onLimpiarFiltros={
+                          hayFiltrosActivos || busqueda.trim()
+                            ? () => {
+                                setBusqueda("");
+                                limpiarFiltros(geo.coords);
+                              }
+                            : undefined
+                        }
+                      />
+                    ) : (
+                      <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 xl:grid-cols-3">
+                        {resultadosBusquedaPlato.map(
+                          ({ restaurante, productos }) => (
+                            <RestaurantCard
+                              key={restaurante.idUsuario}
+                              restaurante={restaurante}
+                              modoBusqueda={modoBusqueda}
+                              productosCoincidentes={productos}
+                              enGrid
+                            />
+                          ),
+                        )}
+                      </div>
                     )}
-                  </div>
-                )}
-              </section>
-            )}
-
-            {(cargandoOfertas || mejoresOfertas.length > 0) && (
-              <section className="mb-6 sm:mb-7">
-                <SeccionEncabezado
-                  titulo="Mejores ofertas"
-                  subtitulo="Platos en promoción en tu zona"
-                  acciones={
-                    <OrdenamientoSelect
-                      value={filtros.ordenamiento}
-                      onChange={setOrdenamiento}
-                    />
-                  }
-                />
-
-                {cargandoOfertas && mejoresOfertas.length === 0 && (
-                  <p className="text-center text-sm text-gray-500">
-                    Cargando ofertas…
-                  </p>
+                  </section>
                 )}
 
-                {mejoresOfertas.length > 0 && (
-                  <>
-                    <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden px-1 pb-2 scrollbar-gutter-stable sm:hidden">
-                      {mejoresOfertas.map((oferta) => (
-                        <OfertaPlatoCard
-                          key={`${oferta.idRestaurante}-${oferta.producto?.idProducto}`}
-                          oferta={oferta}
-                          onSeleccionar={handleSeleccionarOferta}
+                {/* --- SECCIÓN MEJORES OFERTAS --- */}
+                {(cargandoOfertas || mejoresOfertas.length > 0) && (
+                  <section className="mb-6 sm:mb-7">
+                    <SeccionEncabezado
+                      titulo="Mejores ofertas"
+                      subtitulo="Platos en promoción en tu zona"
+                      acciones={
+                        <OrdenamientoSelect
+                          value={filtros.ordenamiento}
+                          onChange={setOrdenamiento}
                         />
-                      ))}
-                    </div>
-                    <div className="hidden grid-cols-3 gap-3 sm:grid lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-                      {mejoresOfertas.map((oferta) => (
-                        <OfertaPlatoCard
-                          key={`grid-${oferta.idRestaurante}-${oferta.producto?.idProducto}`}
-                          oferta={oferta}
-                          enGrid
-                          onSeleccionar={handleSeleccionarOferta}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </section>
-            )}
-
-            {!modoBusqueda && destacados.length > 0 && (
-              <SectionRow titulo="Descubre los Mejores Platos">
-                {destacados.map((r) => (
-                  <RestaurantCard
-                    key={`destacado-${r.idUsuario}`}
-                    restaurante={r}
-                    modoBusqueda={modoBusqueda}
-                  />
-                ))}
-              </SectionRow>
-            )}
-
-            {!modoBusqueda && (
-              <section>
-                <SeccionEncabezado
-                  titulo="Lista de Restaurantes"
-                  acciones={
-                    <OrdenamientoSelect
-                      value={filtros.ordenamiento}
-                      onChange={setOrdenamiento}
+                      }
                     />
-                  }
-                />
 
-                {vacioLista ? (
-                  <EmptyState
-                    mensaje="No hay nada para mostrar"
-                    onLimpiarFiltros={
-                      hayFiltrosActivos
-                        ? () => {
-                            setBusqueda("");
-                            limpiarFiltros(geo.coords);
-                          }
-                        : undefined
-                    }
-                  />
-                ) : (
-                  <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 xl:grid-cols-3">
-                    {listaPrincipal.map((r) => (
+                    {cargandoOfertas && mejoresOfertas.length === 0 ? (
+                      <div className="flex justify-center py-6">
+                        <p className="text-sm text-gray-400 animate-pulse">
+                          Cargando ofertas…
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto overflow-y-hidden px-1 pb-2 scrollbar-gutter-stable sm:hidden">
+                          {mejoresOfertas.map((oferta) => (
+                            <OfertaPlatoCard
+                              key={`${oferta.idRestaurante}-${oferta.producto?.idProducto}`}
+                              oferta={oferta}
+                              onSeleccionar={handleSeleccionarOferta}
+                            />
+                          ))}
+                        </div>
+                        <div className="hidden grid-cols-3 gap-3 sm:grid lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                          {mejoresOfertas.map((oferta) => (
+                            <OfertaPlatoCard
+                              key={`grid-${oferta.idRestaurante}-${oferta.producto?.idProducto}`}
+                              oferta={oferta}
+                              enGrid
+                              onSeleccionar={handleSeleccionarOferta}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </section>
+                )}
+
+                {/* --- SECCIÓN DESTACADOS --- */}
+                {!modoBusqueda && destacados.length > 0 && (
+                  <SectionRow titulo="Descubre los Mejores Platos">
+                    {destacados.map((r) => (
                       <RestaurantCard
-                        key={r.idUsuario}
+                        key={`destacado-${r.idUsuario}`}
                         restaurante={r}
                         modoBusqueda={modoBusqueda}
-                        enGrid
                       />
                     ))}
-                  </div>
+                  </SectionRow>
                 )}
-              </section>
+
+                {/* --- SECCIÓN LISTA GENERAL --- */}
+                {!modoBusqueda && (
+                  <section>
+                    <SeccionEncabezado
+                      titulo="Lista de Restaurantes"
+                      acciones={
+                        <OrdenamientoSelect
+                          value={filtros.ordenamiento}
+                          onChange={setOrdenamiento}
+                        />
+                      }
+                    />
+
+                    {vacioLista ? (
+                      <EmptyState
+                        mensaje="No hay nada para mostrar"
+                        onLimpiarFiltros={
+                          hayFiltrosActivos
+                            ? () => {
+                                setBusqueda("");
+                                limpiarFiltros(geo.coords);
+                              }
+                            : undefined
+                        }
+                      />
+                    ) : (
+                      <div className="grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 xl:grid-cols-3">
+                        {listaPrincipal.map((r) => (
+                          <RestaurantCard
+                            key={r.idUsuario}
+                            restaurante={r}
+                            modoBusqueda={modoBusqueda}
+                            enGrid
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                )}
+              </>
             )}
           </>
         )}

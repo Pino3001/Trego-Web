@@ -20,7 +20,7 @@ function idsRestaurantesEnZona(restaurantesZona) {
   )
 }
 
-function enriquecerOfertaZona(item, restaurantesZona) {
+export function enriquecerOfertaZona(item, restaurantesZona) {
   const id = item.idRestaurante ?? item.producto?.idRestaurante
   const resto = (restaurantesZona ?? []).find(
     (r) => (r.idUsuario ?? r.idRestaurante) === id,
@@ -58,43 +58,35 @@ function mapearProductoZona(dto, restaurantesZona = [], { desdeApiOfertas = fals
   )
 }
 
+/**Listar ofertas segun la zona del usuario */
 async function listarOfertasDesdeApi(coords, restaurantesZona = []) {
+  if (!coords) return []
+
   const body = JSON.stringify({
     latitud: coords.latitud,
     longitud: coords.longitud,
   })
 
-  let response = await fetchConAuth(ENDPOINTS.LISTAR_PRODUCTOS_OFERTA, {
+  // Hacemos el POST directo que espera tu backend de Spring Boot
+  const response = await fetchConAuth(ENDPOINTS.LISTAR_PRODUCTOS_OFERTA, {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json', 
+    },
     body,
   })
-
-  let filtrarPorZonaEnCliente = false
-
-  // Backend en ejecución puede exponer solo GET (POST devuelve 405).
-  if (response.status === 405) {
-    response = await fetchConAuth(ENDPOINTS.LISTAR_PRODUCTOS_OFERTA, {
-      method: 'GET',
-    })
-    filtrarPorZonaEnCliente = true
-  }
 
   if (response.status === 404) return []
   if (!response.ok) return null
 
   const data = await response.json()
   const lista = Array.isArray(data) ? data : []
-  const idsZona = idsRestaurantesEnZona(restaurantesZona)
 
-  let items = lista
+  const items = lista
     .map((dto) =>
       mapearProductoZona(dto, restaurantesZona, { desdeApiOfertas: true }),
     )
     .filter(Boolean)
-
-  if (filtrarPorZonaEnCliente && idsZona.size > 0) {
-    items = items.filter((item) => idsZona.has(item.idRestaurante))
-  }
 
   return filtrarOfertasVisibles(items)
 }

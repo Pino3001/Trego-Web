@@ -1,8 +1,9 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react' // <-- 1. Agregamos useEffect aquí
 import { obtenerRestaurantesZona } from '../api/restaurantesApi'
 import {
   buscarPlatosEnZona,
   listarProductosOfertaEnZona,
+  enriquecerOfertaZona,
 } from '../api/productosClienteApi.js'
 import {
   FILTROS_INICIALES,
@@ -28,8 +29,15 @@ export function useRestaurantes() {
 
   const restaurantesZonaRef = useRef(restaurantesZona)
   const ofertasZonaRef = useRef(ofertasZona)
-  restaurantesZonaRef.current = restaurantesZona
-  ofertasZonaRef.current = ofertasZona
+
+  // Sincronizamos las referencias de forma segura DESPUÉS del renderizado
+  useEffect(() => {
+    restaurantesZonaRef.current = restaurantesZona
+  }, [restaurantesZona])
+
+  useEffect(() => {
+    ofertasZonaRef.current = ofertasZona
+  }, [ofertasZona])
 
   const mensajeErrorAmigable = (e) => {
     const msg = e?.message ?? ''
@@ -45,79 +53,76 @@ export function useRestaurantes() {
     return msg || 'Error al cargar restaurantes'
   }
 
-  const cargarOfertas = useCallback(async (coords, restaurantes = null) => {
+  // CARGAMOS EN PARALELO 
+  const cargarZona = useCallback(async (coords) => {
     if (!coords) return
+    setCargando(true)
     setCargandoOfertas(true)
+    setError(null)
+    setModoBusqueda(false)
+    setTerminoBusqueda('')
+    setResultadosPlato([])
+
     try {
-      const base = restaurantes ?? restaurantesZonaRef.current
-      const data = await listarProductosOfertaEnZona(coords, base)
-      setOfertasZona(data)
-    } catch {
+      const [restaurantesData, ofertasData] = await Promise.all([
+        obtenerRestaurantesZona({
+          latitud: coords.latitud,
+          longitud: coords.longitud,
+        }),
+        listarProductosOfertaEnZona(coords)
+      ])
+
+      setRestaurantesZona(restaurantesData)
+      setOfertasZona(ofertasData)
+    } catch (e) {
+      setError(mensajeErrorAmigable(e))
+      setRestaurantesZona([])
       setOfertasZona([])
     } finally {
+      setCargando(false)
       setCargandoOfertas(false)
     }
   }, [])
 
-  const cargarZona = useCallback(
-    async (coords) => {
-      if (!coords) return
-      setCargando(true)
-      setError(null)
-      setModoBusqueda(false)
-      setTerminoBusqueda('')
-      setResultadosPlato([])
-      try {
-        const data = await obtenerRestaurantesZona({
+  const buscarPlato = useCallback(async (coords, termino) => {
+    if (!coords || !termino.trim()) return
+    setCargando(true)
+    setError(null)
+    setModoBusqueda(true)
+    setTerminoBusqueda(termino.trim())
+
+    try {
+      let base = restaurantesZonaRef.current
+      if (base.length === 0) {
+        base = await obtenerRestaurantesZona({
           latitud: coords.latitud,
           longitud: coords.longitud,
         })
-        setRestaurantesZona(data)
-        await cargarOfertas(coords, data)
-      } catch (e) {
-        setError(mensajeErrorAmigable(e))
-        setRestaurantesZona([])
-        setOfertasZona([])
-      } finally {
-        setCargando(false)
+        setRestaurantesZona(base)
       }
-    },
-    [cargarOfertas],
-  )
 
-  const buscarPlato = useCallback(
-    async (coords, termino) => {
-      if (!coords || !termino.trim()) return
-      setCargando(true)
-      setError(null)
-      setModoBusqueda(true)
-      setTerminoBusqueda(termino.trim())
+      const promesas = [buscarPlatosEnZona(base, termino.trim())]
+      const necesitaCargarOfertas = ofertasZonaRef.current.length === 0
 
-      try {
-        let base = restaurantesZonaRef.current
-        if (base.length === 0) {
-          base = await obtenerRestaurantesZona({
-            latitud: coords.latitud,
-            longitud: coords.longitud,
-          })
-          setRestaurantesZona(base)
-        }
-
-        const resultados = await buscarPlatosEnZona(base, termino.trim())
-        setResultadosPlato(resultados)
-
-        if (ofertasZonaRef.current.length === 0) {
-          await cargarOfertas(coords, base)
-        }
-      } catch (e) {
-        setError(e.message ?? 'Error en la búsqueda de platos')
-        setResultadosPlato([])
-      } finally {
-        setCargando(false)
+      if (necesitaCargarOfertas) {
+        setCargandoOfertas(true)
+        promesas.push(listarProductosOfertaEnZona(coords))
       }
-    },
-    [cargarOfertas],
-  )
+
+      const [resultados, ofertasNuevas] = await Promise.all(promesas)
+      
+      setResultadosPlato(resultados)
+      if (necesitaCargarOfertas && ofertasNuevas) {
+        setOfertasZona(ofertasNuevas)
+      }
+    } catch (e) {
+      setError(e.message ?? 'Error en la búsqueda de platos')
+      setResultadosPlato([])
+    } finally {
+      setCargando(false)
+      setCargandoOfertas(false)
+    }
+  }, [])
 
   const aplicarFiltros = useCallback((nuevosFiltros) => {
     setFiltros(nuevosFiltros)
@@ -133,15 +138,12 @@ export function useRestaurantes() {
     }
   }, [cargarZona])
 
-  const recargar = useCallback(
-    (coords) => {
-      if (modoBusqueda && terminoBusqueda) {
-        return buscarPlato(coords, terminoBusqueda)
-      }
-      return cargarZona(coords)
-    },
-    [modoBusqueda, terminoBusqueda, buscarPlato, cargarZona],
-  )
+  const recargar = useCallback((coords) => {
+    if (modoBusqueda && terminoBusqueda) {
+      return buscarPlato(coords, terminoBusqueda)
+    }
+    return cargarZona(coords)
+  }, [modoBusqueda, terminoBusqueda, buscarPlato, cargarZona])
 
   const restaurantes = useMemo(() => {
     const filtrados = filtrarRestaurantes(restaurantesZona, filtros)
@@ -154,9 +156,12 @@ export function useRestaurantes() {
   }, [resultadosPlato, filtros])
 
   const mejoresOfertas = useMemo(() => {
-    const filtradas = filtrarOfertasPlatos(ofertasZona, filtros)
+    const ofertasEnriquecidas = ofertasZona.map((o) =>
+      enriquecerOfertaZona(o, restaurantesZona)
+    )
+    const filtradas = filtrarOfertasPlatos(ofertasEnriquecidas, filtros)
     return ordenarOfertasPlatos(filtradas, filtros.ordenamiento)
-  }, [ofertasZona, filtros])
+  }, [ofertasZona, restaurantesZona, filtros])
 
   return {
     restaurantes,

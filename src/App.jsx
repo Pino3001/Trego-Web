@@ -40,6 +40,7 @@ import EstadisticasPage from "./pages/restaurantes/screens/EstadisticasPage.js";
 import ReputacionPage from "./pages/restaurantes/screens/ReputacionPage.tsx";
 import { CarritoProvider } from "./context/CarritoContext";
 import ListarOfertas from "./pages/restaurantes/screens/ListarOfertas.js";
+import { PedidosProvider } from "./context/PedidosRestauranteContext.js";
 
 export default function AppRouter() {
   return (
@@ -65,14 +66,26 @@ export default function AppRouter() {
         />
 
         {/* --- RUTAS DE RETORNO MERCADO PAGO --- */}
-        <Route element={<CarritoProvider><Outlet /></CarritoProvider>}>
+        <Route
+          element={
+            <CarritoProvider>
+              <Outlet />
+            </CarritoProvider>
+          }
+        >
           <Route path="/success" element={<PagoExito />} />
           <Route path="/failure" element={<PagoError />} />
           <Route path="/pending" element={<PagoPendiente />} />
         </Route>
 
         {/* --- RUTAS RESTAURANTE --- */}
-        <Route element={<RestauranteLayout />}>
+        <Route
+          element={
+            <PedidosProvider>
+              <RestauranteLayout />
+            </PedidosProvider>
+          }
+        >
           <Route
             path="/restaurantes/solicitarAlta"
             element={<SolicitarAltaRestaurante />}
@@ -140,11 +153,11 @@ export default function AppRouter() {
             path="/restaurantes/estadisticas/monto"
             element={<EstadisticasPage vista="monto" />}
           />
+          <Route path="/restaurantes/reputacion" element={<ReputacionPage />} />
           <Route
-            path="/restaurantes/reputacion"
-            element={<ReputacionPage />}
+            path="/restaurantes/listar-ofertas"
+            element={<ListarOfertas />}
           />
-          <Route path="/restaurantes/listar-ofertas" element={<ListarOfertas />} />
         </Route>
 
         {/* --- RUTAS ADMIN (LAYOUT CON SIDEBAR) --- */}
@@ -153,7 +166,10 @@ export default function AppRouter() {
             path="/admin/restaurantes"
             element={<GestionRestaurantesPage />}
           />
-          <Route path="/admin/subcategorias/nueva" element={<AltaSubCategoriaPage />} />
+          <Route
+            path="/admin/subcategorias/nueva"
+            element={<AltaSubCategoriaPage />}
+          />
           <Route
             path="/admin/restaurantes/todos"
             element={<ListarRestaurantesPage />}
